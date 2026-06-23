@@ -1311,7 +1311,17 @@ function makeTextCanvas(text, color, fontSize, useEmojiFont) {
 }
 
 function createNumberMesh(cell) {
-  if (cell.numberMesh) { cell.mesh && cell.mesh.remove(cell.numberMesh); cell.numberMesh=null; }
+  if (cell.numberMesh) {
+    if(cell.numberMesh.material){
+      // _mineTextureは共有テクスチャなのでdisposeしない
+      if(cell.numberMesh.material.map && cell.numberMesh.material.map !== _mineTexture){
+        cell.numberMesh.material.map.dispose();
+      }
+      cell.numberMesh.material.dispose();
+    }
+    cell.mesh && cell.mesh.remove(cell.numberMesh);
+    cell.numberMesh = null;
+  }
   let text='', colorHex='#00ffff', fsz=36, isFlag=false;
   if (cell.isMine && !cell.isRemoved){
     // mine.pngが読み込み済みならpngテクスチャを使用
