@@ -2668,7 +2668,6 @@ const mouse2=new THREE.Vector2();
 
 function handleMouseAction(cx,cy,action){
   if(gameState==='lose' && gameOverCheckMode){ reopenGameOverDialog(); return; }
-  if(gameState==='win'||gameState==='lose') return;
   if(gamePaused) return;
   mouse2.x=(cx/window.innerWidth)*2-1;
   mouse2.y=-(cy/window.innerHeight)*2+1;
@@ -2775,14 +2774,15 @@ function handleCellAction(row,col,action){
     }
   }
   if(gameState==='idle'){
-    gameState='playing';
+    gameState='generating';
     placeMines(row,col);
     if(logicGuarantee){
       // 非同期で再生成（UIをブロックしない）
       const maxAttempts = 300;
       showGenerating(true);
       asyncEnsureSolvable(row, col, maxAttempts, ()=>{
-        showGenerating(false);
+      showGenerating(false);
+        gameState='playing';
         startTimer();
         calcTotalNonMineCells();
         autoEnableMisclickGuard();
