@@ -2678,6 +2678,7 @@ const mouse2=new THREE.Vector2();
 
 function handleMouseAction(cx,cy,action){
   if(gameState==='lose' && gameOverCheckMode){ reopenGameOverDialog(); return; }
+  if(gameState==='win'||gameState==='lose'||gameState==='generating') return;
   if(gamePaused) return;
   mouse2.x=(cx/window.innerWidth)*2-1;
   mouse2.y=-(cy/window.innerHeight)*2+1;
