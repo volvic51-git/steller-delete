@@ -3116,11 +3116,16 @@ function resetDigitTimer(){
 }
 
 // ===================== STATS =====================
+let _refreshSearchTimer = null;
 function updateStats(){
   const statMines=document.getElementById('stat-mines');
   if(statMines) statMines.textContent=mineCount-removedMines;
-  setTimeout(refreshSearchAvailability, 50);
-
+  // デバウンス：連続呼び出し時は最後の1回だけrunSolverを走らせる
+  if(_refreshSearchTimer) clearTimeout(_refreshSearchTimer);
+  _refreshSearchTimer = setTimeout(()=>{
+    _refreshSearchTimer = null;
+    refreshSearchAvailability();
+  }, 50);
 }
 
 // ===================== DIFFICULTY =====================
