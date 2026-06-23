@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellar Delete 進行フローエディタ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+html,body{ margin:0; padding:0; background:#0b0e14; }
+@media (prefers-color-scheme: light){ html,body{ background:#f3f4f7; } }
+body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:border-box; font-family:'Space Grotesk','Hiragino Kaku Gothic ProN',sans-serif; }
+.sdf-root{ width:100%; max-width:1280px; --bg:#0b0e14; --panel-bg:#11161f; --card-bg:#151b27; --border:#2a3344; --text:#e7eaf0; --text-dim:#8a93a6;
+  --accent-screen:#5da9f2; --accent-game:#f2935d; --accent-novel:#b69cf2; --accent-ending:#5fd0a6; --accent-sel:#4f8cff; color:var(--text); }
+@media (prefers-color-scheme: light){ .sdf-root{ --bg:#f3f4f7; --panel-bg:#ffffff; --card-bg:#ffffff; --border:#d7dbe3; --text:#1b2230; --text-dim:#6b7280; } }
+.sdf-root *{ box-sizing:border-box; }
+.sdf-toolbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+.sdf-title{ font-size:16px; font-weight:600; margin:0; letter-spacing:.02em; }
+.sdf-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+.sdf-actions button{ font-family:inherit; font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; }
+.sdf-actions button:active{ transform:scale(.97); }
+.sdf-legend{ display:flex; align-items:center; gap:10px; font-size:11px; color:var(--text-dim); margin-bottom:10px; flex-wrap:wrap; }
+.sdf-tag{ padding:2px 8px; border-radius:999px; font-size:11px; border:1px solid var(--border); }
+.sdf-tag-stage{ color:var(--accent-game); border-color:var(--accent-game); }
+.sdf-tag-novel{ color:var(--accent-novel); border-color:var(--accent-novel); }
+.sdf-tag-ending{ color:var(--accent-ending); border-color:var(--accent-ending); }
+.sdf-tag-screen{ color:var(--accent-screen); border-color:var(--accent-screen); }
+.sdf-dash-sample{ width:22px; height:0; border-top:2px dashed var(--text-dim); display:inline-block; }
+
+.sdf-layout{ display:grid; grid-template-columns:150px 1fr 230px; grid-template-areas:"left canvas right"; gap:12px; }
+.sdf-side{ background:var(--panel-bg); border:1px solid var(--border); border-radius:12px; padding:12px; }
+.sdf-side-left{ grid-area:left; }
+.sdf-side-right{ grid-area:right; max-height:520px; overflow:auto; }
+.sdf-canvas-col{ grid-area:canvas; }
+.sdf-sidebar-section{ margin-bottom:14px; }
+.sdf-sidebar-section h3{ font-size:11px; color:var(--text-dim); margin:0 0 8px; font-weight:500; text-transform:uppercase; letter-spacing:.04em; }
+.sdf-sidebar-section button{ display:block; width:100%; text-align:left; font-family:inherit; font-size:12.5px; padding:8px 10px; margin-bottom:6px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; }
+.sdf-sidebar-section button:active{ transform:scale(.98); }
+
+.sdf-canvas-wrap{ position:relative; width:100%; height:520px; overflow:auto; border:1px solid var(--border); border-radius:12px; background: radial-gradient(var(--border) 1px, transparent 1px) 0 0/22px 22px, var(--bg); }
+.sdf-canvas{ position:relative; width:1000px; height:600px; }
+.sdf-edges-svg{ position:absolute; top:0; left:0; pointer-events:none; }
+.sdf-edges-svg .sdf-edge-hit{ pointer-events:stroke; }
+.sdf-edges-svg marker path{ stroke:var(--text-dim); }
+.sdf-nodes-layer{ position:relative; }
+.sdf-node{ position:absolute; width:190px; background:var(--card-bg); border:1px solid var(--border); border-left:4px solid var(--accent-screen); border-radius:10px; padding:10px 26px 10px 14px; cursor:grab; touch-action:none; user-select:none; box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.sdf-node:active{ cursor:grabbing; }
+.sdf-node[data-type="stage"]{ border-left-color:var(--accent-game); }
+.sdf-node[data-type="novel"]{ border-left-color:var(--accent-novel); }
+.sdf-node[data-type="ending"]{ border-left-color:var(--accent-ending); }
+.sdf-node.future{ border-style:dashed; opacity:.85; }
+.sdf-node.selected{ outline:2px solid var(--accent-sel); outline-offset:2px; }
+.sdf-node-title{ font-weight:600; font-size:13px; margin-bottom:3px; word-break:break-word; }
+.sdf-node-sub{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); word-break:break-all; }
+.sdf-node-del{ position:absolute; top:4px; right:4px; width:20px; height:20px; border:none; background:transparent; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; border-radius:6px; }
+.sdf-node-del:hover{ background:var(--border); color:var(--text); }
+.sdf-port-out{ position:absolute; right:-8px; top:50%; transform:translateY(-50%); width:14px; height:14px; border-radius:50%; background:var(--accent-sel); border:2px solid var(--bg); cursor:crosshair; touch-action:none; }
+.sdf-port-in{ position:absolute; left:-7px; top:50%; transform:translateY(-50%); width:10px; height:10px; border-radius:50%; background:var(--card-bg); border:2px solid var(--text-dim); }
+.sdf-edge-path{ fill:none; stroke:var(--text-dim); stroke-width:1.6; }
+.sdf-edge-path.future{ stroke-dasharray:5 4; opacity:.8; }
+.sdf-edge-hit{ fill:none; stroke:transparent; stroke-width:16; cursor:pointer; }
+.sdf-edge-group.selected .sdf-edge-path{ stroke:var(--accent-sel); stroke-width:2.2; }
+.sdf-temp-edge{ fill:none; stroke:var(--accent-sel); stroke-width:1.6; stroke-dasharray:4 3; }
+
+.sdf-prop-empty{ font-size:12px; color:var(--text-dim); margin:0; }
+.sdf-prop-type{ font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
+.sdf-prop-link{ font-size:13px; margin:0 0 10px; }
+.sdf-side-right label{ display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--text-dim); margin-bottom:10px; }
+.sdf-side-right input[type=text], .sdf-side-right input[type=number], .sdf-side-right textarea{ font-family:inherit; font-size:13px; padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); }
+.sdf-checkbox{ flex-direction:row !important; align-items:center; gap:6px !important; }
+.sdf-btn-danger{ font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid #6b3030; background:transparent; color:#e08080; cursor:pointer; width:100%; }
+
+.sdf-results{ margin-bottom:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel-bg); }
+.sdf-results h3{ font-size:12px; margin:0 0 6px; color:var(--text-dim); font-weight:500; }
+.sdf-results pre{ font-family:'JetBrains Mono',monospace; font-size:11px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:10px; overflow:auto; max-height:160px; margin:0 0 6px; }
+.sdf-results-row{ margin-bottom:12px; }
+.sdf-results-actions{ display:flex; gap:8px; }
+.sdf-results-actions button, .sdf-results > button{ font-family:inherit; font-size:11px; padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; }
+
+.sdf-hint{ font-size:11px; color:var(--text-dim); margin:10px 2px 0; }
+.sdf-status{ font-size:11px; color:var(--text-dim); margin:4px 2px 0; min-height:14px; }
+
+@media (max-width: 880px){
+  .sdf-layout{ grid-template-columns:1fr; grid-template-areas:"left" "canvas" "right"; }
+  .sdf-side-left{ display:flex; flex-direction:row; flex-wrap:wrap; gap:10px; }
+  .sdf-side-left .sdf-sidebar-section{ flex:1; min-width:140px; margin-bottom:0; }
+  .sdf-side-right{ max-height:none; }
+  .sdf-canvas-wrap{ height:420px; }
+}
+</style>
+</head>
+<body>
+<div class="sdf-root" id="sdfRoot">
+  <div class="sdf-toolbar">
+    <h2 class="sdf-title">Stellar Delete 進行フローエディタ</h2>
+    <div class="sdf-actions">
+      <button id="btnSave" type="button">JSON保存</button>
+      <button id="btnLoad" type="button">JSON読込</button>
+      <button id="btnTable" type="button">遷移テーブル生成</button>
+      <button id="btnReset" type="button">リセット</button>
+    </div>
+    <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+  </div>
+
+  <div class="sdf-legend">
+    <span class="sdf-tag sdf-tag-stage">Stage</span>
+    <span class="sdf-tag sdf-tag-novel">Novel</span>
+    <span class="sdf-tag sdf-tag-ending">Ending</span>
+    <span class="sdf-tag sdf-tag-screen">画面</span>
+    <span class="sdf-dash-sample" aria-hidden="true"></span><span>未実装</span>
+  </div>
+
+  <div class="sdf-results" id="resultsPanel" hidden>
+    <div class="sdf-results-row">
+      <h3>遷移テーブル（from → to）</h3>
+      <pre id="tableOut"></pre>
+      <div class="sdf-results-actions">
+        <button id="copyTable" type="button">コピー</button>
+        <button id="dlTable" type="button">ダウンロード</button>
+      </div>
+    </div>
+    <div class="sdf-results-row">
+      <h3>stage-params.json 用パッチ（novelAfterClear）</h3>
+      <pre id="patchOut"></pre>
+      <div class="sdf-results-actions">
+        <button id="copyPatch" type="button">コピー</button>
+        <button id="dlPatch" type="button">ダウンロード</button>
+      </div>
+    </div>
+    <button id="closeResults" type="button">閉じる</button>
+  </div>
+
+  <div class="sdf-layout">
+    <div class="sdf-side sdf-side-left">
+      <div class="sdf-sidebar-section">
+        <h3>進行ノード</h3>
+        <button data-add="stage" type="button">+ Stage</button>
+        <button data-add="novel" type="button">+ Novel</button>
+        <button data-add="ending" type="button">+ Ending</button>
+      </div>
+      <div class="sdf-sidebar-section">
+        <h3>画面ノード</h3>
+        <button data-add="title" type="button">+ Title</button>
+        <button data-add="select" type="button">+ Select</button>
+        <button data-add="credits" type="button">+ Credits</button>
+      </div>
+    </div>
+
+    <div class="sdf-canvas-col">
+      <div class="sdf-canvas-wrap" id="canvasWrap">
+        <div class="sdf-canvas" id="canvas">
+          <svg id="edgesSvg" class="sdf-edges-svg">
+            <defs>
+              <marker id="sdfArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M1 1L8 5L1 9" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </marker>
+            </defs>
+          </svg>
+          <div id="nodesLayer" class="sdf-nodes-layer"></div>
+        </div>
+      </div>
+      <p class="sdf-hint">ノードはドラッグで移動。右端の◯をドラッグして他のノードへ離すと接続（出力1本・入力1本、既存接続は置き換え）。タップで右パネルに詳細表示。</p>
+      <p class="sdf-status" id="status"></p>
+    </div>
+
+    <div class="sdf-side sdf-side-right" id="propPanel">
+      <p class="sdf-prop-empty">ノードまたは接続をタップすると、ここに詳細が表示されます。</p>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var svgNS = 'http://www.w3.org/2000/svg';
+  var STORAGE_KEY = 'flow-map-v2';
+  var canvasWrap = document.getElementById('canvasWrap');
+  var canvas = document.getElementById('canvas');
+  var nodesLayer = document.getElementById('nodesLayer');
+  var edgesSvg = document.getElementById('edgesSvg');
+  var propPanel = document.getElementById('propPanel');
+  var statusEl = document.getElementById('status');
+  var resultsPanel = document.getElementById('resultsPanel');
+  var fileInput = document.getElementById('fileInput');
+
+  var state = { nodes: [], links: [] };
+  var selected = { type: null };
+  var saveTimer = null;
+  var resetArmed = false, resetTimer = null;
+
+  function uid(){ return Math.random().toString(36).slice(2,9); }
+
+  function escapeHtml(str){
+    return String(str == null ? '' : str).replace(/[&<>"]/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];
+    });
+  }
+
+  function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+  var STAGE_NAMES = ['鬼骨の星牢','密林の星牢','幻夢の星牢','砂神の星牢','暗闇の星牢','魔海の星牢','白銀の星牢','冥府の星牢','消滅の果て'];
+
+  function defaultState(){
+    var order = ['title'];
+    for(var i=1;i<=9;i++){ order.push('novel'+i, 'select'+i, 'stage'+i); }
+    order.push('novel10');
+
+    var nodes = [];
+    var perRow = 6, xStep = 200, yStep = 170, x0 = 40, y0 = 80;
+
+    order.forEach(function(id, idx){
+      var row = Math.floor(idx / perRow);
+      var col = idx % perRow;
+      if(row % 2 === 1) col = perRow - 1 - col;
+      var x = x0 + col * xStep;
+      var y = y0 + row * yStep;
+
+      if(id === 'title'){
+        nodes.push({ id:'title', type:'title', label:'タイトル', future:false, memo:'STORYボタン → novel/novel01.html。SIMPLEボタン経由のステージセレクトはこのチェーンとは別経路', x:x, y:y });
+        return;
+      }
+      if(id === 'novel10'){
+        nodes.push({ id:'novel10', type:'novel', file:'novel/novel10.html', title:'エンディング', future:false, memo:'ステージ9クリア後。HTML/JS/nextUrlは動作確認済み。css・images・bgm・seは別途準備', x:x, y:y });
+        return;
+      }
+      var m = id.match(/^novel(\d+)$/);
+      if(m){
+        var n = parseInt(m[1], 10);
+        var ttl = n === 1 ? 'オープニング' : ('ステージ' + (n - 1) + 'クリア後');
+        nodes.push({ id:id, type:'novel', file:'novel/novel' + pad2(n) + '.html', title:ttl, future:false, memo:'HTML/JS/nextUrlは動作確認済み。css・images・bgm・seは別途準備', x:x, y:y });
+        return;
+      }
+      m = id.match(/^select(\d+)$/);
+      if(m){
+        var sn = parseInt(m[1], 10);
+        nodes.push({ id:id, type:'select', label:'Select(Stage' + sn + '固定)', future:false, memo:'index.html?select=1&storyStage=' + sn + '。他ステージは表示されない固定選択画面', x:x, y:y });
+        return;
+      }
+      m = id.match(/^stage(\d+)$/);
+      if(m){
+        var stn = parseInt(m[1], 10);
+        nodes.push({ id:id, type:'stage', stageId:stn, title:STAGE_NAMES[stn-1] || ('ステージ' + stn), future:false, memo:'', x:x, y:y });
+      }
+    });
+
+    var links = [];
+    for(var i = 0; i < order.length - 1; i++){
+      links.push({ from: order[i], to: order[i+1], future:false });
+    }
+    return { nodes: nodes, links: links };
+  }
+
+  function typeLabelJa(type){
+    return ({ stage:'Stage', novel:'Novel', ending:'Ending', title:'タイトル画面', select:'セレクト画面', credits:'クレジット画面' })[type] || type;
+  }
+
+  function getNodeDisplay(node){
+    if(node.type === 'stage') return { title: 'Stage ' + (node.stageId != null ? node.stageId : '?'), sub: node.title || '' };
+    if(node.type === 'novel') return { title: node.title || 'Novel', sub: node.file || '(ファイル未設定)' };
+    if(node.type === 'ending') return { title: 'Ending', sub: node.label && node.label !== 'Ending' ? node.label : '' };
+    if(node.type === 'title') return { title: node.label || 'タイトル', sub: 'index.html' };
+    if(node.type === 'select') return { title: node.label || 'ステージセレクト', sub: 'index.html?select=1' };
+    if(node.type === 'credits') return { title: node.label || 'クレジット', sub: 'index.html (credits)' };
+    return { title: node.label || node.id, sub: '' };
+  }
+
+  function flashStatus(msg){
+    statusEl.textContent = msg;
+    setTimeout(function(){ if(statusEl.textContent === msg) statusEl.textContent = ''; }, 1800);
+  }
+
+  function saveStateDebounced(){
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      try{
+        window.storage.set(STORAGE_KEY, JSON.stringify(state), false).catch(function(){});
+      }catch(e){}
+    }, 300);
+  }
+
+  function rectRelative(el){
+    var r = el.getBoundingClientRect();
+    var c = canvas.getBoundingClientRect();
+    return { left: r.left - c.left, top: r.top - c.top, right: r.right - c.left, width: r.width, height: r.height, cy: (r.top - c.top) + r.height/2 };
+  }
+
+  function resizeCanvas(){
+    var maxX = 900, maxY = 560;
+    state.nodes.forEach(function(n){ maxX = Math.max(maxX, n.x + 250); maxY = Math.max(maxY, n.y + 160); });
+    canvas.style.width = maxX + 'px';
+    canvas.style.height = maxY + 'px';
+    edgesSvg.setAttribute('width', maxX);
+    edgesSvg.setAttribute('height', maxY);
+  }
+
+  function clearSelection(){
+    selected = { type:null };
+    document.querySelectorAll('.sdf-node').forEach(function(el){ el.classList.remove('selected'); });
+    drawEdges();
+    renderPropPanel();
+  }
+
+  function selectNode(id){
+    selected = { type:'node', id:id };
+    document.querySelectorAll('.sdf-node').forEach(function(el){ el.classList.toggle('selected', el.dataset.id === id); });
+    drawEdges();
+    renderPropPanel();
+  }
+
+  function selectLink(from, to){
+    selected = { type:'link', from:from, to:to };
+    document.querySelectorAll('.sdf-node').forEach(function(el){ el.classList.remove('selected'); });
+    drawEdges();
+    renderPropPanel();
+  }
+
+  function deleteNode(id){
+    state.nodes = state.nodes.filter(function(n){ return n.id !== id; });
+    state.links = state.links.filter(function(l){ return l.from !== id && l.to !== id; });
+    if(selected.type === 'node' && selected.id === id) selected = { type:null };
+    if(selected.type === 'link' && (selected.from === id || selected.to === id)) selected = { type:null };
+    renderAll();
+    renderPropPanel();
+    saveStateDebounced();
+  }
+
+  function deleteLink(from, to){
+    state.links = state.links.filter(function(l){ return !(l.from === from && l.to === to); });
+    if(selected.type === 'link' && selected.from === from && selected.to === to) selected = { type:null };
+    drawEdges();
+    renderPropPanel();
+    saveStateDebounced();
+  }
+
+  function connectNodes(fromId, toId){
+    if(fromId === toId) return;
+    var replaced = false;
+    if(state.links.some(function(l){ return l.from === fromId; })){
+      state.links = state.links.filter(function(l){ return l.from !== fromId; });
+      replaced = true;
+    }
+    if(state.links.some(function(l){ return l.to === toId; })){
+      state.links = state.links.filter(function(l){ return l.to !== toId; });
+      replaced = true;
+    }
+    state.links.push({ from: fromId, to: toId, future:false });
+    drawEdges();
+    saveStateDebounced();
+    selectLink(fromId, toId);
+    if(replaced) flashStatus('既存の接続を置き換えました');
+  }
+
+  function attachNodeDrag(el, node){
+    el.addEventListener('pointerdown', function(e){
+      if(e.target.closest('.sdf-port-out') || e.target.closest('.sdf-node-del')) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      var startX = e.clientX, startY = e.clientY, origX = node.x, origY = node.y, moved = false;
+      el.classList.add('dragging');
+      function onMove(ev){
+        var dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if(Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+        node.x = Math.max(0, origX + dx);
+        node.y = Math.max(0, origY + dy);
+        el.style.left = node.x + 'px';
+        el.style.top = node.y + 'px';
+        drawEdges();
+      }
+      function onUp(ev){
+        try{ el.releasePointerCapture(e.pointerId); }catch(err){}
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup', onUp);
+        el.classList.remove('dragging');
+        resizeCanvas();
+        drawEdges();
+        if(moved) saveStateDebounced();
+        else selectNode(node.id);
+      }
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup', onUp);
+    });
+  }
+
+  function attachPortDrag(portEl, node){
+    portEl.addEventListener('pointerdown', function(e){
+      e.stopPropagation();
+      e.preventDefault();
+      portEl.setPointerCapture(e.pointerId);
+      var tempPath = document.createElementNS(svgNS, 'path');
+      tempPath.setAttribute('class', 'sdf-temp-edge');
+      edgesSvg.appendChild(tempPath);
+      var canvasRect = canvas.getBoundingClientRect();
+      var portRect = portEl.getBoundingClientRect();
+      var x1 = portRect.left + portRect.width/2 - canvasRect.left;
+      var y1 = portRect.top + portRect.height/2 - canvasRect.top;
+      function onMove(ev){
+        var x2 = ev.clientX - canvasRect.left;
+        var y2 = ev.clientY - canvasRect.top;
+        var dx = (x2 - x1) * 0.5;
+        tempPath.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + (x1+dx) + ' ' + y1 + ', ' + (x2-dx) + ' ' + y2 + ', ' + x2 + ' ' + y2);
+      }
+      function onUp(ev){
+        try{ portEl.releasePointerCapture(e.pointerId); }catch(err){}
+        portEl.removeEventListener('pointermove', onMove);
+        portEl.removeEventListener('pointerup', onUp);
+        tempPath.remove();
+        var targetEl = document.elementFromPoint(ev.clientX, ev.clientY);
+        var targetNodeEl = targetEl ? targetEl.closest('.sdf-node') : null;
+        if(targetNodeEl && targetNodeEl.dataset.id !== node.id){
+          connectNodes(node.id, targetNodeEl.dataset.id);
+        }
+      }
+      portEl.addEventListener('pointermove', onMove);
+      portEl.addEventListener('pointerup', onUp);
+    });
+  }
+
+  function createNodeEl(node){
+    var el = document.createElement('div');
+    el.className = 'sdf-node' + (node.future ? ' future' : '') + (selected.type==='node' && selected.id===node.id ? ' selected' : '');
+    el.id = 'node-' + node.id;
+    el.dataset.id = node.id;
+    el.dataset.type = node.type;
+    el.style.left = node.x + 'px';
+    el.style.top = node.y + 'px';
+    el.innerHTML =
+      '<button class="sdf-node-del" type="button" aria-label="ノードを削除">\u00d7</button>' +
+      '<div class="sdf-port-in" aria-hidden="true"></div>' +
+      '<div class="sdf-node-title"></div>' +
+      '<div class="sdf-node-sub"></div>' +
+      '<div class="sdf-port-out" title="ドラッグして接続"></div>';
+    var disp = getNodeDisplay(node);
+    el.querySelector('.sdf-node-title').textContent = disp.title;
+    el.querySelector('.sdf-node-sub').textContent = disp.sub;
+    nodesLayer.appendChild(el);
+    attachNodeDrag(el, node);
+    attachPortDrag(el.querySelector('.sdf-port-out'), node);
+    el.querySelector('.sdf-node-del').addEventListener('click', function(e){
+      e.stopPropagation();
+      deleteNode(node.id);
+    });
+    return el;
+  }
+
+  function drawEdges(){
+    Array.from(edgesSvg.querySelectorAll('.sdf-edge-group')).forEach(function(g){ g.remove(); });
+    state.links.forEach(function(link){
+      var srcEl = document.getElementById('node-' + link.from);
+      var tgtEl = document.getElementById('node-' + link.to);
+      if(!srcEl || !tgtEl) return;
+      var s = rectRelative(srcEl), t = rectRelative(tgtEl);
+      var x1,y1,x2,y2;
+      if(t.left >= s.left){ x1=s.right; y1=s.cy; x2=t.left; y2=t.cy; }
+      else { x1=s.left; y1=s.cy; x2=t.right; y2=t.cy; }
+      var dx = (x2 - x1) * 0.5;
+      var d = 'M ' + x1 + ' ' + y1 + ' C ' + (x1+dx) + ' ' + y1 + ', ' + (x2-dx) + ' ' + y2 + ', ' + x2 + ' ' + y2;
+      var g = document.createElementNS(svgNS, 'g');
+      g.setAttribute('class', 'sdf-edge-group' + (selected.type==='link' && selected.from===link.from && selected.to===link.to ? ' selected' : ''));
+      var hit = document.createElementNS(svgNS, 'path');
+      hit.setAttribute('d', d);
+      hit.setAttribute('class', 'sdf-edge-hit');
+      hit.addEventListener('click', function(){ selectLink(link.from, link.to); });
+      var vis = document.createElementNS(svgNS, 'path');
+      vis.setAttribute('d', d);
+      vis.setAttribute('class', 'sdf-edge-path' + (link.future ? ' future' : ''));
+      vis.setAttribute('marker-end', 'url(#sdfArrow)');
+      g.appendChild(hit);
+      g.appendChild(vis);
+      edgesSvg.appendChild(g);
+    });
+  }
+
+  function renderPropPanel(){
+    if(selected.type === 'node'){
+      var n = state.nodes.find(function(x){ return x.id === selected.id; });
+      if(!n){ propPanel.innerHTML = '<p class="sdf-prop-empty">ノードまたは接続をタップすると、ここに詳細が表示されます。</p>'; return; }
+      var fieldsHtml = '';
+      if(n.type === 'stage'){
+        fieldsHtml = '<label>Stage番号<input type="number" id="pStageId" min="1"></label><label>ステージ名<input type="text" id="pTitle"></label>';
+      } else if(n.type === 'novel'){
+        fieldsHtml = '<label>ファイル名<input type="text" id="pFile" placeholder="novel01.html"></label><label>シーン名<input type="text" id="pTitle"></label>';
+      } else {
+        fieldsHtml = '<label>ラベル<input type="text" id="pLabel"></label>';
+      }
+      propPanel.innerHTML =
+        '<div class="sdf-prop-type">' + typeLabelJa(n.type) + '</div>' +
+        fieldsHtml +
+        '<label class="sdf-checkbox"><input type="checkbox" id="pFuture"> 未実装</label>' +
+        '<label>メモ<textarea id="pMemo" rows="3"></textarea></label>' +
+        '<button id="pDel" class="sdf-btn-danger" type="button">ノードを削除</button>';
+
+      if(n.type === 'stage'){
+        propPanel.querySelector('#pStageId').value = n.stageId != null ? n.stageId : '';
+        propPanel.querySelector('#pTitle').value = n.title || '';
+      } else if(n.type === 'novel'){
+        propPanel.querySelector('#pFile').value = n.file || '';
+        propPanel.querySelector('#pTitle').value = n.title || '';
+      } else {
+        propPanel.querySelector('#pLabel').value = n.label || '';
+      }
+      propPanel.querySelector('#pFuture').checked = !!n.future;
+      propPanel.querySelector('#pMemo').value = n.memo || '';
+
+      function refreshCard(){
+        var el = document.getElementById('node-' + n.id);
+        if(!el) return;
+        var disp = getNodeDisplay(n);
+        el.querySelector('.sdf-node-title').textContent = disp.title;
+        el.querySelector('.sdf-node-sub').textContent = disp.sub;
+        el.classList.toggle('future', !!n.future);
+      }
+
+      if(n.type === 'stage'){
+        propPanel.querySelector('#pStageId').addEventListener('input', function(e){ n.stageId = parseInt(e.target.value, 10) || 0; refreshCard(); saveStateDebounced(); });
+        propPanel.querySelector('#pTitle').addEventListener('input', function(e){ n.title = e.target.value; refreshCard(); saveStateDebounced(); });
+      } else if(n.type === 'novel'){
+        propPanel.querySelector('#pFile').addEventListener('input', function(e){ n.file = e.target.value; refreshCard(); saveStateDebounced(); });
+        propPanel.querySelector('#pTitle').addEventListener('input', function(e){ n.title = e.target.value; refreshCard(); saveStateDebounced(); });
+      } else {
+        propPanel.querySelector('#pLabel').addEventListener('input', function(e){ n.label = e.target.value; refreshCard(); saveStateDebounced(); });
+      }
+      propPanel.querySelector('#pFuture').addEventListener('change', function(e){ n.future = e.target.checked; refreshCard(); saveStateDebounced(); });
+      propPanel.querySelector('#pMemo').addEventListener('input', function(e){ n.memo = e.target.value; saveStateDebounced(); });
+      propPanel.querySelector('#pDel').addEventListener('click', function(){ deleteNode(n.id); });
+
+    } else if(selected.type === 'link'){
+      var l = state.links.find(function(x){ return x.from === selected.from && x.to === selected.to; });
+      if(!l){ propPanel.innerHTML = '<p class="sdf-prop-empty">ノードまたは接続をタップすると、ここに詳細が表示されます。</p>'; return; }
+      var fromNode = state.nodes.find(function(x){ return x.id === l.from; });
+      var toNode = state.nodes.find(function(x){ return x.id === l.to; });
+      var fromLabel = fromNode ? getNodeDisplay(fromNode).title : l.from;
+      var toLabel = toNode ? getNodeDisplay(toNode).title : l.to;
+      propPanel.innerHTML =
+        '<div class="sdf-prop-type">接続</div>' +
+        '<p class="sdf-prop-link">' + escapeHtml(fromLabel) + ' \u2192 ' + escapeHtml(toLabel) + '</p>' +
+        '<label class="sdf-checkbox"><input type="checkbox" id="pLinkFuture"> 未実装（点線）</label>' +
+        '<button id="pLinkDel" class="sdf-btn-danger" type="button">この接続を削除</button>';
+      propPanel.querySelector('#pLinkFuture').checked = !!l.future;
+      propPanel.querySelector('#pLinkFuture').addEventListener('change', function(e){ l.future = e.target.checked; drawEdges(); saveStateDebounced(); });
+      propPanel.querySelector('#pLinkDel').addEventListener('click', function(){ deleteLink(l.from, l.to); });
+
+    } else {
+      propPanel.innerHTML = '<p class="sdf-prop-empty">ノードまたは接続をタップすると、ここに詳細が表示されます。</p>';
+    }
+  }
+
+  function renderAll(){
+    nodesLayer.innerHTML = '';
+    state.nodes.forEach(function(n){ createNodeEl(n); });
+    resizeCanvas();
+    drawEdges();
+  }
+
+  function addNodeOfType(type){
+    var x = canvasWrap.scrollLeft + 60;
+    var y = canvasWrap.scrollTop + 60;
+    var n = { id: uid(), type: type, x: x, y: y, future:false, memo:'' };
+    if(type === 'stage'){
+      var maxId = state.nodes.filter(function(o){ return o.type === 'stage'; }).reduce(function(m,o){ return Math.max(m, o.stageId || 0); }, 0);
+      n.stageId = maxId + 1;
+      n.title = '新規ステージ';
+    } else if(type === 'novel'){
+      var cnt = state.nodes.filter(function(o){ return o.type === 'novel'; }).length + 1;
+      n.file = 'novel' + pad2(cnt) + '.html';
+      n.title = '新規シーン';
+    } else if(type === 'ending'){
+      n.label = 'Ending';
+    } else if(type === 'title'){
+      n.label = 'タイトル';
+    } else if(type === 'select'){
+      n.label = 'ステージセレクト';
+    } else if(type === 'credits'){
+      n.label = 'クレジット';
+    }
+    state.nodes.push(n);
+    renderAll();
+    selectNode(n.id);
+    saveStateDebounced();
+  }
+
+  function buildTransitionTable(){
+    var table = {};
+    state.links.forEach(function(l){ table[l.from] = l.to; });
+    return table;
+  }
+
+  function buildStageParamsPatch(){
+    var patch = [];
+    state.nodes.filter(function(n){ return n.type === 'stage'; }).forEach(function(s){
+      var link = state.links.find(function(l){ return l.from === s.id; });
+      if(link){
+        var target = state.nodes.find(function(n){ return n.id === link.to; });
+        if(target && target.type === 'novel'){
+          patch.push({ id: s.stageId, novelAfterClear: target.file || '' });
+        }
+      }
+    });
+    return patch;
+  }
+
+  function downloadJSON(obj, filename){
+    var data = JSON.stringify(obj, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function saveJSON(){
+    var data = {
+      nodes: state.nodes,
+      links: state.links,
+      transitionTable: buildTransitionTable(),
+      stageParamsPatch: buildStageParamsPatch()
+    };
+    downloadJSON(data, 'stellar-delete-flow.json');
+    flashStatus('保存しました');
+  }
+
+  function normalizeLoaded(parsed){
+    var nodes = Array.isArray(parsed.nodes) ? parsed.nodes.map(function(n){
+      return Object.assign({ x:40, y:40, future:false, memo:'' }, n);
+    }) : [];
+    var rawLinks = Array.isArray(parsed.links) ? parsed.links : (Array.isArray(parsed.edges) ? parsed.edges : []);
+    var links = rawLinks.map(function(l){ return { from: l.from, to: l.to, future: !!l.future }; });
+    return { nodes: nodes, links: links };
+  }
+
+  function loadJSONFile(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var parsed = JSON.parse(e.target.result);
+        state = normalizeLoaded(parsed);
+        clearSelection();
+        renderAll();
+        saveStateDebounced();
+        flashStatus('読み込みました');
+      }catch(err){
+        flashStatus('JSONの読み込みに失敗しました');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    ta.remove();
+  }
+
+  function showResults(){
+    var table = buildTransitionTable();
+    var patch = buildStageParamsPatch();
+    document.getElementById('tableOut').textContent = JSON.stringify(table, null, 2);
+    document.getElementById('patchOut').textContent = JSON.stringify(patch, null, 2);
+    resultsPanel.hidden = false;
+    document.getElementById('copyTable').onclick = function(){ copyText(JSON.stringify(table, null, 2)); flashStatus('コピーしました'); };
+    document.getElementById('dlTable').onclick = function(){ downloadJSON(table, 'transition-table.json'); };
+    document.getElementById('copyPatch').onclick = function(){ copyText(JSON.stringify(patch, null, 2)); flashStatus('コピーしました'); };
+    document.getElementById('dlPatch').onclick = function(){ downloadJSON(patch, 'stage-params-patch.json'); };
+  }
+
+  function handleResetClick(){
+    var btnReset = document.getElementById('btnReset');
+    if(!resetArmed){
+      resetArmed = true;
+      btnReset.textContent = 'もう一度押すとリセット';
+      resetTimer = setTimeout(function(){ resetArmed = false; btnReset.textContent = 'リセット'; }, 3000);
+    } else {
+      clearTimeout(resetTimer);
+      resetArmed = false;
+      btnReset.textContent = 'リセット';
+      state = defaultState();
+      clearSelection();
+      renderAll();
+      saveStateDebounced();
+    }
+  }
+
+  canvasWrap.addEventListener('pointerdown', function(e){
+    if(!e.target.closest('.sdf-node') && !e.target.closest('.sdf-edge-hit')){
+      clearSelection();
+    }
+  });
+
+  document.addEventListener('keydown', function(e){
+    if((e.key === 'Delete' || e.key === 'Backspace') && selected.type){
+      var tag = e.target.tagName;
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if(selected.type === 'node') deleteNode(selected.id);
+      else if(selected.type === 'link') deleteLink(selected.from, selected.to);
+    }
+  });
+
+  document.querySelectorAll('[data-add]').forEach(function(btn){
+    btn.addEventListener('click', function(){ addNodeOfType(btn.dataset.add); });
+  });
+  document.getElementById('btnSave').addEventListener('click', saveJSON);
+  document.getElementById('btnLoad').addEventListener('click', function(){ fileInput.click(); });
+  document.getElementById('btnTable').addEventListener('click', showResults);
+  document.getElementById('btnReset').addEventListener('click', handleResetClick);
+  document.getElementById('closeResults').addEventListener('click', function(){ resultsPanel.hidden = true; });
+  fileInput.addEventListener('change', function(e){
+    if(e.target.files && e.target.files[0]) loadJSONFile(e.target.files[0]);
+    fileInput.value = '';
+  });
+
+  function init(){
+    function start(){ renderAll(); renderPropPanel(); }
+    try{
+      window.storage.get(STORAGE_KEY, false).then(function(res){
+        if(res && res.value){
+          try{ state = JSON.parse(res.value); }catch(err){ state = defaultState(); }
+        } else {
+          state = defaultState();
+        }
+        start();
+      }).catch(function(){ state = defaultState(); start(); });
+    }catch(e){
+      state = defaultState();
+      start();
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

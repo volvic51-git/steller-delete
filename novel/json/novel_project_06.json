@@ -1,0 +1,315 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "iroha",
+      "name": "イロハ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_iroha01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "救助完了。"
+    },
+    {
+      "type": "show",
+      "character": "iroha",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "ありがとう。でも盲目の魚なら、この牢獄でも平気だったでしょうね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "魚？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "目がほとんど退化している魚がいるの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "そんな話をしていたかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "していないわ。だから今しているの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "牢獄の話だっけ？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "魚の話よ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "そうだったわね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "盲目の魚は、聴覚や触覚の使い方が上手なこともあるわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "なるほど。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "だから私は牢獄の壁を見ないようにしていたの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "見えていたのに？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "見えると邪魔だから。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "見えたほうが便利でしょう？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "便利なものは見落としやすいの"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "前を見て歩けばいいのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "だから空を見て歩くのね"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "歩く時は前を見るわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "それなら盲目の魚より忙しそう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "魚は歩かないでしょう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "だから暇なのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "羨ましいの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "イロハ",
+      "portrait": "normal1",
+      "text": "少し。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "牢屋の方が幸せだったのかもね。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "iroha"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back07.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが6つ目の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "海みたいだけど、底はあるのかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "深さなんて関係ないわね。底よりもむしろ水面のほうが、ずっと隠し事が上手そうだわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "海は下にあるものだと思っていたけど、空の上にあるべきだったのかもね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "説明してくれる人はいないみたいだけれど。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

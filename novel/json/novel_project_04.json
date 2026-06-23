@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "darty",
+      "name": "ダーティー",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_darty01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "助かってよかったわね。"
+    },
+    {
+      "type": "show",
+      "character": "darty",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ダーティー",
+      "portrait": "normal1",
+      "text": "ええ。でも、はまぐりは閉じたままだわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "はまぐりも捕まっていたの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ダーティー",
+      "portrait": "normal1",
+      "text": "いいえ。だから心配なの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "心配じゃない理由になってないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ダーティー",
+      "portrait": "normal1",
+      "text": "心配は理由より先に着くことがあるもの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "変なの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ダーティー",
+      "portrait": "normal1",
+      "text": "変じゃないわ。はまぐりもそう言っていた。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "はまぐりと話せるの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ダーティー",
+      "portrait": "normal1",
+      "text": "話したことはないけれど、意見は一致しているわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それなら私もはまぐりと意見が一致してるかもしれないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ダーティー",
+      "portrait": "normal1",
+      "text": "確かめてみる？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "・・・やめておくわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "はまぐりが賛成したら負けた気がするもの。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "darty"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back05.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが４つ目の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ピカピカの星って、まるで空に咲く花みたい。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "でも花と違って、手を伸ばしても摘むことができないのよね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "見えるのに届かないなんて、なんとも不思議だわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "でも手が届いてしまったら、星らしくなくなってしまうのかもしれないわね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "遠くにあるからこそ星でいられるのなら、少し寂しいけれど素敵なことね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "私も時々、遠くにいるほうが自分らしくいられる気がするもの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "帰り道が、ますますわからなくなってしまうのだけれど。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

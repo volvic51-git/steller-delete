@@ -1,0 +1,3811 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>球体マインスイーパー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;overflow:hidden;font-family:'Share Tech Mono',monospace;color:#00ffff;}
+  #canvas-container{width:100vw;height:100vh;position:fixed;top:0;left:0;background:#000;}
+  canvas{display:block;position:fixed !important;top:0;left:0;z-index:3 !important;}
+  #chara-layer{
+    position:fixed;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:300px; height:300px;
+    pointer-events:none;
+    z-index:2;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #chara-layer img{
+    width:auto; height:100%; max-width:100%;
+    object-fit:contain;
+    opacity:0;
+    transition:opacity 0.5s ease;
+  }
+  #ui{position:fixed;top:0;left:0;right:0;z-index:100;pointer-events:none;}
+  #ui-row1,#ui-row2{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;overflow:hidden;pointer-events:auto;}
+  .mode-btn{background:rgba(0,30,60,0.8);border:1px solid rgba(0,255,255,0.4);color:#00ffff;padding:6px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;transition:all 0.2s;border-radius:2px;white-space:nowrap;}
+  .mode-btn.active{background:rgba(0,200,255,0.2);border-color:#00ffff;box-shadow:0 0 10px rgba(0,255,255,0.5),inset 0 0 10px rgba(0,255,255,0.1);}
+  .mode-btn:hover{border-color:#00ffff;box-shadow:0 0 8px rgba(0,255,255,0.3);}
+  .stat{font-size:12px;color:#88ffff;white-space:nowrap;padding:5px 9px;background:rgba(0,20,40,0.6);border:1px solid rgba(0,255,255,0.15);border-radius:2px;}
+  .stat span{color:#00ffff;font-weight:bold;}
+  .diff-btn{background:rgba(0,20,40,0.8);border:1px solid rgba(0,255,255,0.3);color:#88ffff;padding:4px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;transition:all 0.2s;border-radius:2px;}
+  .diff-btn.active{background:rgba(0,150,255,0.2);border-color:#0088ff;color:#00aaff;box-shadow:0 0 8px rgba(0,150,255,0.4);}
+  #hint-btn{background:rgba(0,40,80,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ddff;padding:6px 14px;cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;transition:all 0.2s;border-radius:2px;}
+  #hint-btn:hover{box-shadow:0 0 12px rgba(0,200,255,0.6);}
+  #audio-btn{background:rgba(0,20,40,0.85);border:1px solid rgba(0,200,150,0.4);color:#00ddaa;cursor:pointer;font-size:15px;transition:all 0.2s;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;}
+  #audio-btn.muted{border-color:rgba(100,100,100,0.4);color:#556677;}
+  #restart-btn{background:rgba(20,0,40,0.8);border:1px solid rgba(255,100,0,0.5);color:#ff8800;padding:6px 12px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;transition:all 0.2s;border-radius:2px;}
+  #restart-btn:hover{box-shadow:0 0 10px rgba(255,100,0,0.5);}
+  #debug-btn{background:rgba(40,0,60,0.8);border:1px solid rgba(150,0,255,0.4);color:#aa88ff;padding:3px 7px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;}
+  #debug-btn.active{border-color:#aa00ff;box-shadow:0 0 8px rgba(170,0,255,0.4);}
+  #clear-btn{background:rgba(60,20,0,0.8);border:1px solid rgba(255,160,0,0.5);color:#ffaa00;padding:3px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;}
+  #mine-input{background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:3px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;width:52px;border-radius:2px;text-align:center;}
+  #mine-input:focus{outline:none;border-color:#00ffff;box-shadow:0 0 6px rgba(0,255,255,0.4);}
+  #cursor-indicator{position:fixed;bottom:12px;left:12px;z-index:100;font-size:11px;color:#446688;font-family:'Share Tech Mono',monospace;pointer-events:none;}
+  /* ===== デバッグメニュー（タイル化） ===== */
+  .debug-tile{background:rgba(10,10,30,0.55);border:1px solid rgba(170,0,255,0.18);border-radius:6px;padding:9px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .debug-tile .lbl{font-size:9px;color:#8899aa;text-transform:uppercase;letter-spacing:1px;margin:0;}
+  .debug-tile > button, .debug-tile > select, .debug-tile > input{width:100%;box-sizing:border-box;}
+  .debug-tile-row{display:flex;gap:4px;width:100%;}
+  .debug-tile-row input{width:100%;}
+  .sep{width:1px;height:20px;background:rgba(0,255,255,0.2);}
+
+  /* ===== 不思議の国タイマー演出（テキストベース）===== */
+  #sd-timer-display{
+    display:flex; align-items:baseline; justify-content:center;
+    font-family:'Share Tech Mono','Courier New',monospace;
+    font-size:23px; font-weight:700; color:#00ccff;
+    text-shadow:0 0 6px rgba(0,200,255,0.7);
+    line-height:1;
+  }
+  #sd-timer-display span{
+    display:inline-block; line-height:1; transform-origin:50% 50%;
+    will-change:transform; padding:0 1px;
+  }
+  .sd-falling-wrap{
+    position:relative; display:inline-block; overflow:hidden;
+    height:1.3em; min-width:0.62em; vertical-align:bottom;
+  }
+  .sd-falling-wrap span.sd-sec-digit{
+    position:absolute; left:0; bottom:0; display:inline-block;
+    line-height:1; transform-origin:50% 50%;
+  }
+  .sd-falling-wrap.sd-tier-10 span.sd-sec-digit{
+    transition:transform 0.35s cubic-bezier(0.4,0,1,1), opacity 0.35s ease-in;
+  }
+  .sd-falling-wrap.sd-tier-100 span.sd-sec-digit{
+    transition:transform 0.5s cubic-bezier(0.34,1.2,0.4,1), opacity 0.5s ease-in;
+  }
+  .sd-falling-wrap.sd-tier-1000 span.sd-sec-digit{
+    transition:transform 0.7s cubic-bezier(0.3,1.6,0.4,1), opacity 0.6s ease-in;
+  }
+  .lbl{font-size:9px;color:#446677;text-transform:uppercase;letter-spacing:1px;}
+  #message{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;background:rgba(0,5,20,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:2px solid;padding:24px 28px;text-align:center;display:none;border-radius:4px;width:min(320px,85vw);box-sizing:border-box;}
+  #message.win{border-color:#00ff88;box-shadow:0 0 40px rgba(0,255,136,0.4);}
+  /* ===== ゲームオーバー（ur GONE.）：冷たく静かなSFホラー演出 ===== */
+  #message.lose{
+    border:1px solid rgba(180,20,70,0.55);
+    box-shadow:0 0 50px rgba(120,10,50,0.3), inset 0 0 30px rgba(60,0,20,0.25);
+    background:rgba(5,2,10,0.7);
+    padding:30px 26px 26px;
+  }
+  #message h2{font-family:'Orbitron',sans-serif;font-size:clamp(18px,5vw,26px);margin-bottom:10px;white-space:nowrap;}
+  #message.win h2{color:#00ff88;}
+  #message.lose h2{
+    color:#ff2d6e;font-size:clamp(28px,9vw,42px);letter-spacing:1px;white-space:nowrap;
+    text-shadow:0 0 14px rgba(255,45,110,0.85),0 0 32px rgba(255,45,110,0.45);
+    margin-bottom:14px;opacity:0;animation:goFadeIn 0.9s ease-out forwards;
+  }
+  #message p{color:#88bbff;margin-bottom:18px;font-size:clamp(11px,3vw,13px);line-height:1.6;word-break:break-word;white-space:pre-line;}
+  #message.lose p{
+    color:#ecc7d6;font-size:11px;letter-spacing:1px;margin-bottom:20px;
+    opacity:0;animation:goFadeIn 0.7s ease-out 0.3s forwards;
+  }
+  @keyframes goFadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  #message button{background:rgba(0,50,100,0.8);border:1px solid #00ffff;color:#00ffff;padding:9px 0;width:180px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;white-space:nowrap;text-align:center;}
+  #message button:hover{box-shadow:0 0 15px rgba(0,255,255,0.5);}
+  #message.lose button{
+    display:block;width:100%;margin:0 0 9px;
+    background:rgba(20,5,16,0.55);border:1px solid rgba(200,90,140,0.35);
+    color:#e6c3d2;letter-spacing:2px;font-family:'Share Tech Mono',monospace;font-size:11px;
+    padding:10px 0;border-radius:2px;cursor:pointer;transition:all 0.2s;
+    opacity:0;animation:goFadeIn 0.5s ease-out forwards;
+  }
+  #message.lose button:last-child{margin-bottom:0;}
+  #message.lose button:hover,#message.lose button:active{
+    border-color:rgba(255,80,140,0.8);color:#ffd0e2;
+    box-shadow:0 0 14px rgba(255,60,120,0.35);background:rgba(40,5,20,0.7);
+  }
+  #message.lose #msg-btn-check{animation-delay:0.45s;}
+  #message.lose #msg-btn-retry{animation-delay:0.55s;}
+  #message.lose #msg-btn-select{animation-delay:0.65s;}
+  #message.lose #msg-btn-title{animation-delay:0.75s;}
+
+  /* ===== RESCUE SCREEN ===== */
+  /* ===== セーブ完了トースト ===== */
+  #save-toast{
+    position:fixed; bottom:60px; right:16px; z-index:9999;
+    background:rgba(0,15,30,0.88); backdrop-filter:blur(6px);
+    border:1px solid rgba(0,200,255,0.5); border-radius:4px;
+    color:#00ccff; font-family:'Share Tech Mono',monospace; font-size:11px; letter-spacing:.18em;
+    padding:7px 14px; box-shadow:0 0 12px rgba(0,200,255,0.25);
+    opacity:0; pointer-events:none;
+    transition:opacity .3s ease, transform .3s ease;
+    transform:translateY(8px);
+  }
+  #save-toast.visible{ opacity:1; transform:translateY(0); }
+
+  #rescue-screen{
+    position:fixed;inset:0;z-index:300;
+    background:radial-gradient(ellipse at center, rgba(60,0,100,0.97) 0%, rgba(10,0,30,0.99) 70%);
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  #rescue-screen.active{display:flex;}
+  /* 背景パーティクルcanvas */
+  #rescue-bg{position:absolute;inset:0;pointer-events:none;}
+  /* 発光リング */
+  .rescue-ring{
+    position:absolute;border-radius:50%;border:2px solid rgba(180,100,255,0.6);
+    animation:ringPulse 2s ease-out infinite;pointer-events:none;
+  }
+  @keyframes ringPulse{
+    0%{transform:translate(-50%,-50%) scale(0.8);opacity:0.8;}
+    100%{transform:translate(-50%,-50%) scale(2.2);opacity:0;}
+  }
+  /* キャラクター表示エリア */
+  #rescue-chara-wrap{
+    position:relative;z-index:2;
+    display:flex;flex-direction:column;align-items:center;gap:20px;
+    animation:rescueAppear 0.8s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes rescueAppear{
+    from{transform:scale(0.5) translateY(40px);opacity:0;}
+    to{transform:scale(1) translateY(0);opacity:1;}
+  }
+  #rescue-chara-img{
+    max-height:55vh;max-width:min(420px,80vw);
+    object-fit:contain;
+    filter:drop-shadow(0 0 24px rgba(200,120,255,0.9)) drop-shadow(0 0 60px rgba(150,50,255,0.5));
+    border-radius:8px;
+  }
+  #rescue-info{
+    text-align:center;background:rgba(20,0,40,0.85);
+    border:1px solid rgba(180,80,255,0.5);border-radius:8px;
+    padding:18px 36px;
+    box-shadow:0 0 30px rgba(150,0,255,0.3),inset 0 0 20px rgba(100,0,200,0.1);
+    animation:rescueAppear 0.8s 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  #rescue-label{font-size:11px;letter-spacing:3px;color:#cc88ff;margin-bottom:6px;font-family:'Share Tech Mono',monospace;}
+  #rescue-title{font-family:'Orbitron',sans-serif;font-size:28px;color:#fff;text-shadow:0 0 20px #cc88ff;margin-bottom:4px;}
+  #rescue-rarity{font-size:18px;margin-bottom:8px;letter-spacing:2px;}
+  #rescue-desc{font-size:12px;color:#ccaaff;max-width:320px;line-height:1.7;font-family:'Share Tech Mono',monospace;}
+  #rescue-stats{font-size:11px;color:#aaaacc;margin-top:8px;font-family:'Share Tech Mono',monospace;}
+  #rescue-action-row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:14px;margin-top:4px;}
+  .rescue-action-btn{
+    width:170px;box-sizing:border-box;cursor:pointer;
+    font-family:'Orbitron',monospace;font-size:12px;border-radius:4px;
+    padding:10px 0;transition:all 0.2s;letter-spacing:2px;
+  }
+  #rescue-btn-novel,#rescue-btn-select,#rescue-btn-retry{
+    background:rgba(80,0,160,0.6);border:1px solid rgba(200,100,255,0.6);color:#dd99ff;
+  }
+  #rescue-btn-novel:hover,#rescue-btn-select:hover,#rescue-btn-retry:hover{
+    box-shadow:0 0 20px rgba(200,100,255,0.6);background:rgba(120,0,220,0.7);
+  }
+  #rescue-btn-title{
+    background:rgba(0,20,50,0.6);border:1px solid rgba(0,200,255,0.5);color:#00ccff;
+  }
+  #rescue-btn-title:hover{box-shadow:0 0 16px rgba(0,200,255,0.5);background:rgba(0,40,80,0.7);}
+  /* 結晶エフェクト */
+  .crystal{
+    position:absolute;pointer-events:none;
+    width:12px;height:28px;
+    background:linear-gradient(180deg,rgba(200,120,255,0.9),rgba(100,0,200,0.3));
+    clip-path:polygon(50% 0%,100% 35%,80% 100%,20% 100%,0% 35%);
+    animation:crystalFloat var(--dur,3s) var(--delay,0s) ease-in-out infinite alternate;
+  }
+  @keyframes crystalFloat{
+    from{transform:translateY(0) rotate(var(--rot,0deg)) scale(1);}
+    to{transform:translateY(-20px) rotate(calc(var(--rot,0deg) + 15deg)) scale(1.15);}
+  }
+  /* キャラ露出プログレス */
+  #expose-bar-wrap{
+    position:fixed;top:16px;left:16px;z-index:100;
+    display:flex;flex-direction:column;align-items:flex-start;gap:3px;pointer-events:none;
+  }
+  #expose-label{font-size:18px;color:#aa66cc;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+  #expose-bar-outer{position:relative;width:168px;height:12px;background:rgba(50,0,80,0.7);border:1px solid rgba(150,50,255,0.4);border-radius:6px;overflow:hidden;}
+  #expose-bar-back{position:absolute;top:0;left:0;height:100%;width:100%;background:#440088;transition:background 0.4s ease;}
+  #expose-bar-inner{position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#8800ff,#cc44ff);transition:width 0.4s ease;box-shadow:0 0 8px rgba(180,80,255,0.6);}
+  #expose-pct{font-size:20px;color:#cc88ff;font-family:'Share Tech Mono',monospace;}
+  #expose-mines{font-size:20px;color:#cc88ff;font-family:'Share Tech Mono',monospace;margin-left:10px;}
+  #clear-btn{background:rgba(60,20,0,0.8);border:1px solid rgba(255,160,0,0.5);color:#ffaa00;padding:3px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;transition:all 0.2s;}
+  #clear-btn:hover{box-shadow:0 0 8px rgba(255,160,0,0.5);}
+  #audio-btn{background:rgba(0,20,40,0.8);border:1px solid rgba(0,200,150,0.4);color:#00ddaa;padding:3px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;transition:all 0.2s;}
+  #audio-btn.muted{border-color:rgba(100,100,100,0.4);color:#556677;}
+  #audio-btn:hover{box-shadow:0 0 8px rgba(0,200,150,0.3);}
+  @keyframes searchLabelBlink{
+    0%,100%{color:#00ffcc;text-shadow:0 0 6px #00ffcc;}
+    50%{color:#ffffff;text-shadow:0 0 10px #ffffff,0 0 20px #00ffcc;}
+  }
+  @keyframes searchIconColor{
+    0%,100%{border-color:rgba(0,255,200,0.8);box-shadow:0 0 10px rgba(0,255,200,0.4);}
+    50%{border-color:rgba(255,255,255,0.9);box-shadow:0 0 16px rgba(255,255,255,0.6);}
+  }
+  /* 左下モード切り替えボタン */
+  #mode-btns-float {
+    position: fixed;
+    bottom: 48px;
+    left: 16px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .mode-btn-float {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,200,255,0.4);
+    background: rgba(0,20,50,0.85);
+    color: #00ccff;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 8px rgba(0,150,200,0.2);
+  }
+  .mode-btn-float:hover {
+    border-color: rgba(0,255,255,0.8);
+    box-shadow: 0 0 16px rgba(0,255,255,0.4);
+  }
+  .mode-btn-float.active {
+    border-color: #00ffff;
+    background: rgba(0,60,100,0.9);
+    box-shadow: 0 0 18px rgba(0,255,255,0.5), inset 0 0 10px rgba(0,200,255,0.15);
+  }
+  /* 右上モードアイコン：タイマー（top:14px〜）の下にクリアする位置 */
+  #mode-indicator {
+    position: fixed;
+    top: 78px;
+    right: 16px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+<div id="canvas-container"></div>
+<div id="chara-layer"><img id="chara-img" src="" alt=""></div>
+<div id="ui">
+  <!-- 中央上：設定アイコン＋音声アイコン（文字なし）
+       狭い画面ではRESCUEバー（左から約200px＋アイコン自身の半幅）と衝突しないよう、
+       「画面中央」と「RESCUEと確実に被らない位置」のうち大きい方を採用 -->
+  <div id="top-center-icons" style="position:fixed;top:14px;left:max(260px,50%);transform:translateX(-50%);z-index:100;display:flex;align-items:center;gap:10px;pointer-events:auto;">
+    <button id="settings-btn" onclick="openSettingsMenu()" title="設定"
+      style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚙️</button>
+    <button id="audio-btn" onclick="toggleAudio()" title="音声ON/OFF">🔊</button>
+  </div>
+  <!-- 右上：タイマー -->
+  <div id="timer-zone" style="position:fixed;top:14px;right:16px;z-index:100;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:auto;">
+    <div id="sd-timer-display"></div>
+    <div class="stat" id="stat-remaining" style="display:none;color:#ff8800;">⏱ <span id="stat-remain-time">0:00</span></div>
+    <div class="stat" id="stat-time-fallback" style="display:none;">⏱ <span id="stat-time">0:00</span></div>
+  </div>
+  <!-- 非表示（後方互換のため残す） -->
+  <div id="ui-row2" style="display:none;">
+    <button class="mode-btn" id="btn-camera" onclick="setMode('camera')">📷 カメラ</button>
+    <button class="mode-btn active" id="btn-dig" onclick="setMode('dig')">⛏ 掘削</button>
+    <button class="mode-btn" id="btn-flag" onclick="setMode('flag')">🚩 旗</button>
+  </div>
+</div>
+
+<!-- デバッグメニュー（設定アイコン→PAUSEDメニュー→DEBUG からタイル形式で開く） -->
+<div id="debug-menu" style="
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:215;display:none;
+  background:rgba(0,5,20,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:2px solid rgba(170,0,255,0.6);padding:20px 20px 18px;text-align:center;border-radius:4px;
+  width:min(560px,92vw);max-height:84vh;overflow-y:auto;box-sizing:border-box;
+">
+  <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#aa88ff;margin-bottom:16px;">🐞 DEBUG</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;">
+
+    <div class="debug-tile">
+      <div class="lbl">確率表示</div>
+      <button id="debug-btn" onclick="toggleDebug()">確率表示</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">デバッグ</div>
+      <button id="clear-btn" onclick="debugClear()">⚡ CLEAR</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">論理保証チェック</div>
+      <span id="guarantee-result" style="font-size:13px;font-family:'Share Tech Mono',monospace;color:#446677;">-</span>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">ソルバー</div>
+      <select id="solver-mode" onchange="setSolverMode(this.value)" style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
+        <option value="basic">BASIC</option>
+        <option value="logic">LOGIC</option>
+        <option value="full" selected>FULL</option>
+      </select>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">盤面色</div>
+      <select id="debug-color-select" onchange="applyBoardColor(this.value)"
+        style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
+        <option value="">DEFAULT</option>
+        <option value="#0044aa">青</option>
+        <option value="#006622">緑</option>
+        <option value="#440088">紫</option>
+        <option value="#886600">金</option>
+        <option value="#880022">赤</option>
+        <option value="#aaaacc">白銀</option>
+        <option value="#884400">オレンジ</option>
+      </select>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">盤面</div>
+      <select id="diff-select" onchange="setDiff(this.value)"
+        style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
+        <option value="s1" selected>S1   128</option>
+        <option value="s2">S2   288</option>
+        <option value="s3">S3   448</option>
+        <option value="m1">M1   720</option>
+        <option value="m2">M2 1,056</option>
+        <option value="m3">M3 1,456</option>
+        <option value="h1">H1 1,920</option>
+        <option value="h2">H2 2,448</option>
+        <option value="x1">X1    84</option>
+      </select>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">論理保証（生成時）</div>
+      <button id="logic-guarantee-btn" onclick="toggleLogicGuarantee()"
+        style="background:rgba(0,40,20,0.8);border:1px solid rgba(0,200,100,0.4);color:#00cc66;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;"
+        title="論理的に解ける盤面を保証">論理保証 OFF</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">制限時間</div>
+      <button id="time-limit-btn" onclick="toggleTimeLimitMode()"
+        style="background:rgba(40,0,20,0.8);border:1px solid rgba(255,100,0,0.4);color:#ff6600;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">制限時間 OFF</button>
+      <div class="debug-tile-row">
+        <input id="time-limit-input" type="number" min="10" max="9999" step="10" value=""
+          placeholder="AUTO（秒）"
+          onchange="setCustomTimeLimit(this.value)"
+          style="background:rgba(0,20,40,0.9);border:1px solid rgba(255,100,0,0.3);color:#ff8800;padding:4px 5px;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;text-align:right;">
+      </div>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">周回モード</div>
+      <button id="loop-mode-btn" onclick="toggleLoopMode()"
+        style="background:rgba(40,0,60,0.8);border:1px solid rgba(180,0,255,0.4);color:#bb66ff;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">周回モード OFF</button>
+      <div class="debug-tile-row">
+        <input id="loop-count-input" type="number" min="2" max="20" step="1" value="3"
+          onchange="setLoopCount(this.value)"
+          style="background:rgba(0,20,40,0.9);border:1px solid rgba(180,0,255,0.3);color:#bb66ff;padding:4px 5px;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;text-align:right;">
+      </div>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">EXモード</div>
+      <button id="ex-mode-btn" onclick="toggleExMode()"
+        style="background:rgba(60,0,0,0.8);border:1px solid rgba(255,50,50,0.5);color:#ff5555;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">EX ON</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">STモード（サーチ検証用）</div>
+      <button id="st-mode-btn" onclick="toggleStMode()"
+        style="background:rgba(0,40,20,0.8);border:1px solid rgba(0,200,100,0.5);color:#00cc66;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">ST OFF</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">セーブデータ削除</div>
+      <button onclick="debugResetSave()"
+        style="background:rgba(60,0,0,0.8);border:1px solid rgba(255,80,80,0.5);color:#ff8888;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">SAVE RESET</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">爆弾密度</div>
+      <select id="mine-density" onchange="setMineDensity(this.value)"
+        style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
+        <option value="8">8%</option>
+        <option value="10">10%</option>
+        <option value="12">12%</option>
+        <option value="14">14%</option>
+        <option value="16">16%</option>
+        <option value="18">18%</option>
+        <option value="20">20%</option>
+        <option value="22">22%</option>
+        <option value="24" selected>24%</option>
+        <option value="26">26%</option>
+        <option value="28">28%</option>
+        <option value="30">30%</option>
+        <option value="32">32%</option>
+        <option value="34">34%</option>
+        <option value="36">36%</option>
+        <option value="38">38%</option>
+        <option value="40">40%</option>
+      </select>
+      <span id="mine-count-label" style="font-size:10px;color:#88aacc;font-family:'Share Tech Mono',monospace;"></span>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">リスタート</div>
+      <button id="restart-btn2" onclick="restartGame()" style="background:rgba(20,0,40,0.8);border:1px solid rgba(255,100,0,0.5);color:#ff8800;padding:6px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:13px;border-radius:2px;">🔄</button>
+    </div>
+
+  </div>
+  <button onclick="closeDebugMenu()" style="margin-top:18px;width:100%;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#00ccff;padding:8px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">閉じる（設定に戻る）</button>
+</div>
+<div id="cursor-indicator" id="cursor-ind"></div>
+<div id="save-toast">💾 SAVED</div>
+
+<!-- 制限時間 外周SVGゲージ -->
+<svg id="time-limit-gauge" style="
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;z-index:3;display:none;
+" width="0" height="0">
+  <circle id="tlg-bg"   cx="0" cy="0" r="100" fill="none" stroke="rgba(0,50,100,0.25)" stroke-width="10"/>
+  <circle id="tlg-ring" cx="0" cy="0" r="100" fill="none" stroke="#0088ff"             stroke-width="10"
+    stroke-dasharray="628" stroke-dashoffset="0"
+    style="transform:rotate(-90deg);transform-origin:0 0;transition:stroke 0.5s;"/>
+</svg>
+
+<!-- サーチ レーダーオーバーレイ -->
+<canvas id="radar-canvas" style="position:fixed;top:0;left:0;pointer-events:none;z-index:4;"></canvas>
+<div id="auto-search-label" style="
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-200%);
+  font-family:'Orbitron',monospace;font-size:13px;color:#00ffcc;
+  letter-spacing:3px;pointer-events:none;z-index:5;
+  text-shadow:0 0 10px #00ffcc,0 0 20px #00ffcc;
+  opacity:0;transition:opacity 0.4s;
+">SEARCH</div>
+
+<!-- 左下：掘削・旗 フローティングボタン -->
+<div id="mode-btns-float">
+  <button class="mode-btn-float active" id="float-btn-toggle" onclick="toggleModeFloat()" title="モード切替">⛏</button>
+</div>
+
+<!-- 右上：モード切替ボタン（左下と同じ） -->
+<div id="mode-indicator">
+  <button class="mode-btn-float active" id="float-btn-toggle2" onclick="toggleModeFloat()" title="モード切替">⛏</button>
+</div>
+
+<!-- ヒントボタン（右側固定） -->
+<div id="hint-btn-float" style="
+  position:fixed;right:16px;bottom:122px;
+  z-index:100;display:flex;flex-direction:column;align-items:center;gap:4px;
+">
+  <div style="position:relative;width:56px;height:56px;cursor:pointer;" onclick="giveHint()" id="hint-btn-outer">
+    <!-- ヒント残量円形ゲージ（サーチと同じ構造） -->
+    <svg id="hint-gauge-svg" width="56" height="56" style="position:absolute;top:0;left:0;transform:rotate(-90deg);">
+      <circle id="hint-bg-ring"   cx="28" cy="28" r="24" fill="none" stroke="rgba(80,80,80,0.35)" stroke-width="3" stroke-dasharray="46.265 4 46.265 4 46.265 4" stroke-dashoffset="0"/>
+      <circle id="hint-fill-ring" cx="28" cy="28" r="24" fill="none" stroke="#00ffcc"             stroke-width="3" stroke-dasharray="46.265 4 46.265 4 46.265 4" stroke-dashoffset="0"/>
+    </svg>
+    <!-- アイコン本体 -->
+    <div id="hint-btn-icon" style="
+      position:absolute;inset:5px;border-radius:50%;
+      background:rgba(0,20,50,0.85);border:2px solid rgba(0,200,255,0.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;transition:all 0.3s;
+    ">💡
+      <div id="hint-btn-overlay" style="
+        position:absolute;inset:0;border-radius:50%;
+        background:rgba(0,0,0,0.55);
+        filter:grayscale(1);
+        opacity:0;
+        transition:opacity 0.3s;
+        pointer-events:none;
+      "></div>
+    </div>
+  </div>
+  <div style="font-size:9px;color:#446677;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">HINT</div>
+</div>
+
+<!-- フォーカスボタン（カメラ正面に最も近い数字セルへ移動） -->
+<div id="focus-btn-wrap" style="
+  position:fixed;right:152px;bottom:48px;
+  z-index:100;display:flex;flex-direction:column;align-items:center;gap:4px;
+">
+  <div style="position:relative;width:56px;height:56px;cursor:pointer;" onclick="focusNearestNumberCell()" id="focus-btn-outer">
+    <div id="focus-btn-icon" style="
+      position:absolute;inset:5px;border-radius:50%;
+      background:rgba(0,20,50,0.85);border:2px solid rgba(0,200,255,0.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;transition:all 0.3s;
+    ">🧭
+    </div>
+  </div>
+  <div style="font-size:9px;color:#446677;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">FOCUS</div>
+</div>
+
+<div id="misclick-guard-wrap" style="
+  position:fixed;right:84px;bottom:48px;
+  z-index:100;display:flex;flex-direction:column;align-items:center;gap:4px;
+">
+  <div style="position:relative;width:56px;height:56px;cursor:pointer;" onclick="toggleMisclickGuard()" id="misclick-guard-outer">
+    <div id="misclick-guard-icon" style="
+      position:absolute;inset:5px;border-radius:50%;
+      background:rgba(0,20,50,0.85);border:2px solid rgba(0,200,255,0.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;transition:all 0.3s;
+    ">🛡️
+    </div>
+  </div>
+  <div id="misclick-guard-label" style="font-size:9px;color:#446677;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">GUARD OFF</div>
+</div>
+
+<div id="search-btn-wrap" style="
+  position:fixed;right:16px;bottom:48px;
+  z-index:100;display:flex;flex-direction:column;align-items:center;gap:4px;
+">
+  <div style="position:relative;width:56px;height:56px;cursor:pointer;" onclick="triggerSearchButton()" id="search-btn-outer">
+    <!-- クールタイム円形プログレス -->
+    <svg id="search-cooldown-svg" width="56" height="56" style="position:absolute;top:0;left:0;transform:rotate(-90deg);">
+      <circle id="search-bg-ring" cx="28" cy="28" r="24" fill="none" stroke="rgba(0,60,80,0.6)" stroke-width="3"/>
+      <circle id="search-cooldown-ring" cx="28" cy="28" r="24" fill="none"
+        stroke="#00ffcc" stroke-width="3"
+        stroke-dasharray="151" stroke-dashoffset="151"
+        style="transition:none;"/>
+    </svg>
+    <!-- アイコン本体 -->
+    <div id="search-btn-icon" style="
+      position:absolute;inset:5px;border-radius:50%;
+      background:rgba(0,20,50,0.85);border:2px solid rgba(0,200,255,0.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;transition:all 0.3s;
+    ">🔍
+      <!-- グレーアウトオーバーレイ -->
+      <div id="search-btn-overlay" style="
+        position:absolute;inset:0;border-radius:50%;
+        background:rgba(0,0,0,0.55);
+        filter:grayscale(1);
+        transition:opacity 0.3s;
+        pointer-events:none;
+      "></div>
+    </div>
+  </div>
+  <div id="search-btn-label" style="font-size:9px;color:#446677;font-family:'Share Tech Mono',monospace;letter-spacing:1px;">SEARCH</div>
+</div>
+
+<!-- キャラ露出プログレスバー -->
+<div id="expose-bar-wrap">
+  <div id="expose-label">RESCUE PROGRESS</div>
+  <div id="expose-bar-outer"><div id="expose-bar-back"></div><div id="expose-bar-inner"></div></div>
+  <div style="display:flex;align-items:center;">
+    <div id="expose-pct">0%</div>
+    <div id="expose-mines" style="display:none;"><img src="images/mine.png" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:4px;"> 0 / 0</div>
+  </div>
+</div>
+
+<!-- 救出画面 -->
+<div id="rescue-screen">
+  <canvas id="rescue-bg"></canvas>
+  <!-- 発光リング群 -->
+  <div class="rescue-ring" style="width:300px;height:300px;top:50%;left:50%;animation-delay:0s;"></div>
+  <div class="rescue-ring" style="width:300px;height:300px;top:50%;left:50%;animation-delay:0.7s;"></div>
+  <div class="rescue-ring" style="width:300px;height:300px;top:50%;left:50%;animation-delay:1.4s;"></div>
+  <!-- 結晶 -->
+  <div class="crystal" style="left:8%;top:60%;--rot:-30deg;--dur:3.2s;--delay:0s;width:10px;height:24px;"></div>
+  <div class="crystal" style="left:12%;top:40%;--rot:20deg;--dur:2.8s;--delay:0.5s;width:14px;height:34px;"></div>
+  <div class="crystal" style="right:10%;top:55%;--rot:40deg;--dur:3.5s;--delay:0.2s;width:12px;height:28px;"></div>
+  <div class="crystal" style="right:7%;top:35%;--rot:-20deg;--dur:2.5s;--delay:0.8s;width:8px;height:20px;"></div>
+  <div class="crystal" style="left:20%;bottom:15%;--rot:10deg;--dur:4s;--delay:0.3s;width:16px;height:40px;"></div>
+  <div class="crystal" style="right:18%;bottom:18%;--rot:-15deg;--dur:3s;--delay:0.6s;width:10px;height:26px;"></div>
+  <!-- キャラ表示 -->
+  <div id="rescue-chara-wrap">
+    <img id="rescue-chara-img" src="" alt="character">
+    <div id="rescue-info">
+      <div id="rescue-label">RESCUE SUCCESS</div>
+      <div id="rescue-title">???</div>
+      <div id="rescue-rarity">★★★</div>
+      <div id="rescue-desc">球体の外殻を崩壊させ、閉じ込められたキャラクターを救出した。</div>
+      <div id="rescue-stats"></div>
+    </div>
+    <div id="rescue-action-row">
+      <button id="rescue-btn-novel"  class="rescue-action-btn" onclick="window.location.href=window._novelAfterClear" style="display:none;">✦ NEXT ✦</button>
+      <button id="rescue-btn-select" class="rescue-action-btn" onclick="window.location.href='index.html?select=1'" style="display:none;">✦ STAGE ✦</button>
+      <button id="rescue-btn-retry"  class="rescue-action-btn" onclick="document.getElementById('rescue-screen').classList.remove('active');restartGame();" style="display:none;">✦ RETRY ✦</button>
+      <button id="rescue-btn-title"  class="rescue-action-btn" onclick="window.location.href='index.html'" style="display:none;">✦ TITLE ✦</button>
+    </div>
+  </div>
+</div>
+<!-- 球体操作ブロック用オーバーレイ（一時停止中に表示） -->
+<div id="pause-overlay" style="
+  position:fixed;inset:0;z-index:50;display:none;
+  background:rgba(0,5,20,0.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+"></div>
+
+<!-- 設定メニュー（一時停止メニュー） -->
+<div id="settings-menu" style="
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:210;display:none;
+  background:rgba(0,5,20,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:2px solid rgba(0,200,255,0.6);padding:24px 28px;text-align:center;border-radius:4px;
+  width:min(280px,82vw);box-sizing:border-box;
+">
+  <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#00ffff;margin-bottom:18px;">PAUSED</h2>
+  <button onclick="confirmSettingsAction('restart')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">リスタート</button>
+  <button onclick="confirmSettingsAction('select')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">ステージ選択に戻る</button>
+  <button onclick="confirmSettingsAction('title')" style="display:block;width:100%;margin-bottom:14px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">タイトルに戻る</button>
+  <button onclick="openDebugMenu()" style="display:block;width:100%;margin-bottom:14px;background:rgba(40,0,60,0.8);border:1px solid rgba(170,0,255,0.5);color:#aa88ff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">🐞 DEBUG</button>
+  <button onclick="closeSettingsMenu()" style="display:block;width:100%;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#00ccff;padding:7px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">再開</button>
+</div>
+
+<!-- 確認ダイアログ（設定メニューのアクション確認用） -->
+<div id="confirm-dialog" style="
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:220;display:none;
+  background:rgba(0,5,20,0.92);border:2px solid rgba(255,150,0,0.7);padding:22px 26px;text-align:center;
+  border-radius:4px;width:min(260px,80vw);box-sizing:border-box;
+">
+  <p id="confirm-dialog-text" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#ffffff;margin-bottom:16px;line-height:1.6;">本当に良いですか？</p>
+  <div style="display:flex;gap:10px;justify-content:center;">
+    <button onclick="executeConfirmedAction()" style="background:rgba(80,20,0,0.9);border:1px solid rgba(255,150,0,0.8);color:#ffaa00;padding:7px 16px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">はい</button>
+    <button onclick="cancelConfirmDialog()" style="background:rgba(0,20,50,0.9);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:7px 16px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">いいえ</button>
+  </div>
+</div>
+
+<div id="message">
+  <h2 id="msg-title"></h2>
+  <p id="msg-body"></p>
+  <button id="msg-btn-check"  onclick="enterGameOverCheckMode()">CHECK</button>
+  <button id="msg-btn-retry"  onclick="gameOverCheckMode=false;restartGame();document.getElementById('message').style.display='none'">RETRY</button>
+  <button id="msg-btn-select" onclick="window.location.href='index.html?select=1'">STAGE SELECT</button>
+  <button id="msg-btn-title"  onclick="window.location.href='index.html'">TITLE</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===================== BOARD DIMENSIONS (変更可能定数) =====================
+// 難易度に応じて動的に変更される
+let COLS = 24, ROWS = 12;
+
+const DIFF_PRESETS = {
+  s1: { cols: 16, rows:  8 },  //   128
+  s2: { cols: 24, rows: 12 },  //   288
+  s3: { cols: 32, rows: 14 },  //   448
+  m1: { cols: 40, rows: 18 },  //   720
+  m2: { cols: 48, rows: 22 },  // 1,056
+  m3: { cols: 56, rows: 26 },  // 1,456
+  h1: { cols: 64, rows: 30 },  // 1,920
+  h2: { cols: 72, rows: 34 },  // 2,448
+  x1: { cols: 12, rows:  7 },  //    84  (消滅の果て専用)
+};
+let currentDiff = 's';
+
+// ===================== GAME STATE =====================
+let board = [];
+let gameState = 'idle';
+let currentMode = 'dig'; // camera / dig / flag
+let audioMuted = false;  // 音声ON/OFFフラグ
+let mineCount = 30;
+let removedMines = 0;
+let hintCount = 0;
+let maxHints = 3; // stage-params.jsonのmaxHintsで上書き可能
+let timerInterval = null;
+let elapsed = 0;
+
+// ===================== TIME LIMIT MODE =====================
+let timeLimitMode  = false;
+let totalTime      = 0;
+let remainingTime  = 0;
+const TIME_LIMITS  = { s1:60, s2:120, s3:180, m1:300, m2:420, m3:600, h1:900, h2:1200 };
+
+// 周回モード：周ごとの制限時間を取得（loopTimeLimits未設定時は従来の固定値にフォールバック）
+function getLoopTimeLimitFor(loopNum){
+  if(window._loopTimeLimits && window._loopTimeLimits.length > 0){
+    const idx = Math.min(loopNum - 1, window._loopTimeLimits.length - 1);
+    return window._loopTimeLimits[idx];
+  }
+  return window._customTimeLimit || TIME_LIMITS[currentDiff] || 300;
+}
+let debugMode = false;
+let hintTarget = null;
+let gameOverMistakeCell = null;
+let gameOverMistakeAnimTime = 0;
+let hintAnimTime = 0;
+let autoRotating = false;
+let autoRotateFrom = null;
+let autoRotateTo = null;
+let autoRotateProgress = 0;
+
+// ===================== AUDIO =====================
+const SND = {
+  bgm:     new Audio('sounds/SND_02_play.mp3'),
+  flag:    new Audio('sounds/EFE_02_flag.mp3'),
+  clear:   new Audio('sounds/SND_03_clear.mp3'),
+  destroy: new Audio('sounds/EFE_03_destroy.mp3'),
+  popen:   new Audio('sounds/EFE_01_popen.mp3'),
+  beep:    new Audio('sounds/EFE_05_beep.mp3'),
+  bell1:   new Audio('sounds/EFE_06_bell1.mp3'),
+  bell2:   new Audio('sounds/EFE_07_bell2.mp3'),
+  bell3:   new Audio('sounds/EFE_08_bell3.mp3'),
+};
+SND.bgm.loop=true; SND.bgm.volume=0.55;
+SND.clear.loop=false; SND.clear.volume=0.8;
+SND.flag.volume=0.75; SND.destroy.volume=0.4; SND.popen.volume=0.6;
+SND.beep.volume=0.5;
+SND.bell1.volume=0.6; SND.bell2.volume=0.65; SND.bell3.volume=0.7;
+
+// 効果音は複数重ねられるようにクローン再生
+function playSE(key){
+  if(audioMuted) return;
+  try{
+    const s=SND[key].cloneNode();
+    s.volume=SND[key].volume;
+    s.play().catch(()=>{});
+    s.addEventListener('ended',()=>s.src='');
+  }catch(e){}
+}
+
+function startBGM(){
+  // 既に再生中なら何もしない（周回モードの2周目以降でBGMが頭出しされるのを防止）。
+  // 一時停止・停止状態からの再生のみ currentTime を0に戻す。
+  // 将来的にRESCUE PROGRESSの進行度でBGMを切り替えたくなった場合は、
+  // こことは別に「明示的に曲を差し替える」専用関数（例: switchBGM(src)）を作る想定。
+  if(SND.bgm.paused){
+    SND.bgm.currentTime=0;
+    SND.bgm.play().catch(()=>{});
+  }
+}
+function stopBGM(){
+  SND.bgm.pause();
+  SND.bgm.currentTime=0;
+}
+function pauseBGM(){
+  SND.bgm.pause();
+}
+
+// ===================== CHARACTER SYSTEM =====================
+// キャラクターデータ定義（将来はJSONファイル化可能）
+// キャラクターデータ（characters/characters.json から読み込み、失敗時はフォールバック）
+let CHARACTER_LIST = [
+  { id:'001', name:'エコー',     rarity:'★★★★★', desc:'時の流れを読む少女。任意の数字セルの元の値を確認できる。', skill:'ECHO'  },
+  { id:'002', name:'ルナ',      rarity:'★★★★',  desc:'月光を操る魔法使い。暗闇の中でも地雷の気配を感じ取る。',  skill:'LUNA'  },
+  { id:'003', name:'フレア',    rarity:'★★★★',  desc:'炎を纏う戦士。旗を立てた瞬間に周囲を照らし出す。',        skill:'FLARE' },
+  { id:'004', name:'シルヴィア', rarity:'★★★',   desc:'静寂の中に生きる狙撃手。確率計算が得意。',               skill:'SILVA' },
+];
+
+// JSON読み込み（非同期・失敗時はフォールバックを維持）
+fetch('./characters/characters.json')
+  .then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
+  .then(data=>{ if(Array.isArray(data)&&data.length>0) CHARACTER_LIST=data; })
+  .catch(()=>{ console.info('characters.json not found, using built-in data.'); });
+
+let currentCharacter = null;
+let characterPlane   = null;
+let charTexture      = null;
+let charRevealRatio  = 0;
+let totalNonMineCells= 0;
+let vanishedNonMine  = 0;
+
+function selectCharacter(forceId){
+  // 優先順位: 引数 > ステージ指定 > デバッグ指定 > ランダム
+  const id = forceId
+    || window._stageCharId
+    || (debugMode ? (window._debugCharId||null) : null)
+    || null;
+  currentCharacter = id
+    ? CHARACTER_LIST.find(c=>c.id===id) || CHARACTER_LIST[0]
+    : CHARACTER_LIST[Math.floor(Math.random()*CHARACTER_LIST.length)];
+}
+
+function setupCharacterPlane(){
+  if(characterPlane && characterPlane.isMesh){ scene.remove(characterPlane); characterPlane=null; }
+  if(charTexture){ charTexture.dispose(); charTexture=null; }
+  const img = document.getElementById('chara-img');
+  img.style.opacity='0';
+  img.src = `./characters/${currentCharacter.id}.png`;
+  img.onerror=()=>{ img.style.display='none'; };
+  img.onload=()=>{ img.style.display=''; };
+  characterPlane = {_html:true};
+}
+
+// 露出率を更新してキャラの見え方を変える
+function updateCharacterReveal(){
+  const total = totalNonMineCells || 1;
+  charRevealRatio = Math.min(1.0, vanishedNonMine / total);
+  const minOp = (gameState==='playing'||gameState==='win') ? 0.1 : 0;
+  let op;
+  if(loopMode && currentLoop > 1){
+    // 周回モード2周目以降：キャラは既に露出済みなので、周開始のたびに透明へ戻さない
+    op = (gameState==='playing'||gameState==='win') ? 0.95 : minOp;
+  } else {
+    op = minOp + charRevealRatio * (0.95 - minOp);
+  }
+  document.getElementById('chara-img').style.opacity = op;
+  const pct = Math.round(charRevealRatio*100);
+  document.getElementById('expose-bar-inner').style.width = pct+'%';
+  document.getElementById('expose-pct').textContent = pct+'%';
+  const minesEl = document.getElementById('expose-mines');
+  if(minesEl){
+    const remaining = mineCount - removedMines;
+    minesEl.innerHTML = '<img src="images/mine.png" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:4px;"> ' + remaining + ' / ' + mineCount;
+    minesEl.style.display = gameState==='idle'||gameState==='playing'||gameState==='win' ? '' : 'none';
+  }
+}
+
+// 非地雷セル消滅時に呼ぶ
+function onNonMineCellVanished(){
+  vanishedNonMine++;
+  updateCharacterReveal();
+}
+
+// 総非地雷数を計算（地雷配置後に呼ぶ）
+function calcTotalNonMineCells(){
+  totalNonMineCells = 0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+    if(!board[r][c].isMine) totalNonMineCells++;
+  vanishedNonMine = 0;
+  updateCharacterReveal();
+}
+
+// ===================== RESCUE SCREEN =====================
+let rescueBgCtx = null;
+let rescueParticles = [];
+
+function showRescueScreen(){
+  // 全外殻消滅後に呼ばれる
+  const scr = document.getElementById('rescue-screen');
+  const img = document.getElementById('rescue-chara-img');
+
+  img.src = `./characters/${currentCharacter.id}.png`;
+  document.getElementById('rescue-title').textContent  = currentCharacter.name;
+  document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
+  document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
+  document.getElementById('rescue-stats').textContent  =
+    `TIME: ${formatTime(elapsed)}  |  HINTS: ${hintCount}`;
+  updateRescueButtons();
+  greyOutFloatButtons();
+
+  // キャラ画像が読めない時のフォールバック
+  img.onerror = ()=>{ img.style.display='none'; };
+  img.onload  = ()=>{ img.style.display=''; };
+
+  scr.classList.add('active');
+  startRescueBgAnimation();
+}
+
+function updateRescueButtons(){
+  const isStageMode = !!new URLSearchParams(window.location.search).get('stage');
+  const isStoryMode = new URLSearchParams(window.location.search).get('mode') === 'story';
+  const btnNovel  = document.getElementById('rescue-btn-novel');
+  const btnSelect = document.getElementById('rescue-btn-select');
+  const btnTitle  = document.getElementById('rescue-btn-title');
+  const btnRetry  = document.getElementById('rescue-btn-retry');
+
+  if(!isStageMode){
+    // デバッグ・ステージ指定なしの通常プレイ：もう一度のみ
+    if(btnNovel)  btnNovel.style.display  = 'none';
+    if(btnSelect) btnSelect.style.display = 'none';
+    if(btnTitle)  btnTitle.style.display  = 'none';
+    if(btnRetry)  btnRetry.style.display  = '';
+    return;
+  }
+  if(btnRetry) btnRetry.style.display = 'none';
+
+  if(isStoryMode && window._novelAfterClear){
+    // STORY：NEXT（次のノベルへ）＋ TITLE
+    if(btnNovel)  btnNovel.style.display  = '';
+    if(btnSelect) btnSelect.style.display = 'none';
+  } else {
+    // SIMPLE：STAGE（ステージ選択）＋ TITLE
+    if(btnNovel)  btnNovel.style.display  = 'none';
+    if(btnSelect) btnSelect.style.display = '';
+  }
+  if(btnTitle) btnTitle.style.display = '';
+}
+
+// 救出画面の背景パーティクルアニメ
+function startRescueBgAnimation(){
+  const cv = document.getElementById('rescue-bg');
+  cv.width  = window.innerWidth;
+  cv.height = window.innerHeight;
+  rescueBgCtx = cv.getContext('2d');
+  rescueParticles = [];
+  for(let i=0;i<80;i++) rescueParticles.push(makeRescueParticle());
+  animateRescueBg();
+}
+
+function makeRescueParticle(){
+  return {
+    x: Math.random()*window.innerWidth,
+    y: Math.random()*window.innerHeight,
+    r: 1+Math.random()*3,
+    vx:(Math.random()-.5)*0.6,
+    vy:-(0.3+Math.random()*0.8),
+    alpha: 0.3+Math.random()*0.7,
+    color: Math.random()<0.5 ? '#cc88ff' : '#8844ff'
+  };
+}
+
+function animateRescueBg(){
+  if(!document.getElementById('rescue-screen').classList.contains('active')) return;
+  const cv=document.getElementById('rescue-bg');
+  const ctx=rescueBgCtx;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  for(const p of rescueParticles){
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.color;
+    ctx.globalAlpha=p.alpha;
+    ctx.fill();
+    p.x+=p.vx; p.y+=p.vy; p.alpha-=0.003;
+    if(p.alpha<=0||p.y<-10){
+      p.x=Math.random()*cv.width; p.y=cv.height+10;
+      p.alpha=0.4+Math.random()*0.6;
+    }
+  }
+  ctx.globalAlpha=1;
+  requestAnimationFrame(animateRescueBg);
+}
+
+
+class Cell {
+  constructor(row, col) {
+    this.row = row; this.col = col;
+    this.isMine = false;
+    this.isOpen = false;
+    this.hasFlag = false;
+    this.isRemoved = false;
+    this.neighborMines = 0;
+    this.mesh = null;
+    this.numberMesh = null;
+    this._debugMesh = null;
+    this.animating = false;
+    this.animProgress = 0;
+    this.animPos = null;
+  }
+}
+
+// ===================== THREE.JS SETUP =====================
+const scene = new THREE.Scene();
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.sortObjects = true;
+const cv = renderer.domElement;
+cv.style.cssText = 'position:fixed;top:0;left:0;z-index:3;width:100%;height:100%;';
+document.body.insertBefore(cv, document.getElementById('chara-layer'));
+// 初期サイズはDOMロード後に設定
+const _initVV = window.visualViewport;
+const _initW  = _initVV ? _initVV.width  : window.innerWidth;
+const _initH  = _initVV ? _initVV.height : window.innerHeight;
+renderer.setSize(_initW, _initH);
+const camera = new THREE.PerspectiveCamera(50, _initW / _initH, 0.1, 100);
+camera.position.set(0, 0, 3.8);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x223344, 2.5));
+const dirLight = new THREE.DirectionalLight(0x44aaff, 1.5);
+dirLight.position.set(5,5,5); scene.add(dirLight);
+const rimLight = new THREE.DirectionalLight(0x0044ff, 0.8);
+rimLight.position.set(-5,-3,-5); scene.add(rimLight);
+
+// Sphere wireframe
+const sphereWire = new THREE.Mesh(
+  new THREE.SphereGeometry(1.55, 48, 24),
+  new THREE.MeshBasicMaterial({color:0x004466,wireframe:true,transparent:true,opacity:0.1})
+);
+scene.add(sphereWire);
+
+// Glow sphere (backside)
+scene.add(new THREE.Mesh(
+  new THREE.SphereGeometry(1.58, 32, 16),
+  new THREE.MeshBasicMaterial({color:0x001122,transparent:true,opacity:0.25,side:THREE.BackSide})
+));
+
+const boardGroup = new THREE.Group();
+scene.add(boardGroup);
+
+const particleGroup = new THREE.Group();
+scene.add(particleGroup);
+
+// ===================== CAGE WIRE =====================
+const cageWireGroup = new THREE.Group();
+scene.add(cageWireGroup);
+let cageWireLines = [];
+let cageWirePositions = [];
+let cageWireFading = false;
+let cageWireFadeProgress = 0;
+
+function buildCageWire(){
+  while(cageWireGroup.children.length) cageWireGroup.remove(cageWireGroup.children[0]);
+  cageWireLines = [];
+  cageWirePositions = [];
+  cageWireFading = false;
+  cageWireFadeProgress = 0;
+  cageWireGroup.visible = true;
+
+  const R = 1.52;
+  const phiStart = Math.PI * 0.10; // パネル上端
+  const phiEnd   = Math.PI * 0.90; // パネル下端
+
+  // 極点含む全範囲の座標（rowEdge: -POLE_ROWS〜ROWS+POLE_ROWS）
+  const POLE_ROWS = 3; // 極点側に追加する段数
+  function polePos(rowFrac, colEdge){
+    // rowFrac: 0.0（北極）〜1.0（南極）の連続値
+    const phi   = rowFrac * Math.PI;
+    const theta = colEdge / COLS * Math.PI * 2;
+    return new THREE.Vector3(
+      R * Math.sin(phi) * Math.cos(theta),
+      R * Math.cos(phi),
+      R * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  function edgePos(rowEdge, colEdge){
+    const phi   = phiStart + rowEdge / ROWS * (phiEnd - phiStart);
+    const theta = colEdge  / COLS * Math.PI * 2;
+    return new THREE.Vector3(
+      R * Math.sin(phi) * Math.cos(theta),
+      R * Math.cos(phi),
+      R * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  const baseOp = 0.65;
+  const _wc = buildThemeColors(window._boardTheme);
+  function makeMat(op){
+    return new THREE.LineBasicMaterial({
+      color: _wc.border, transparent: true, opacity: op||baseOp,
+      depthTest: false, depthWrite: false,
+    });
+  }
+
+  function addSeg(p0, p1, op){
+    const geo = new THREE.BufferGeometry().setFromPoints([p0, p1]);
+    const line = new THREE.Line(geo, makeMat(op));
+    line.renderOrder = 4;
+    cageWireGroup.add(line);
+    cageWireLines.push(line);
+    cageWirePositions.push(p0.clone().add(p1).normalize());
+  }
+
+  // ── 横線（緯度線）──
+  // パネル範囲（既存）
+  for(let r = 0; r <= ROWS; r++){
+    for(let c = 0; c < COLS; c++){
+      addSeg(edgePos(r, c), edgePos(r, c+1));
+    }
+  }
+  // 極点側の横線（北極・南極それぞれ POLE_ROWS 段）
+  for(let i = 1; i <= POLE_ROWS; i++){
+    // 北側：phiStart より上
+    const fracN = phiStart / Math.PI * (1 - i/(POLE_ROWS+1));
+    // 南側：phiEnd より下
+    const fracS = phiEnd   / Math.PI + (1 - phiEnd/Math.PI) * (i/(POLE_ROWS+1));
+    const opN = baseOp * (1 - i/(POLE_ROWS+1)); // 極点に近いほど薄く
+    const opS = baseOp * (1 - i/(POLE_ROWS+1));
+    for(let c = 0; c < COLS; c++){
+      addSeg(polePos(fracN, c), polePos(fracN, c+1), opN);
+      addSeg(polePos(fracS, c), polePos(fracS, c+1), opS);
+    }
+  }
+
+  // ── 縦線（経線）──
+  // パネル範囲：全列描画
+  for(let c = 0; c <= COLS; c++){
+    for(let r = 0; r < ROWS; r++){
+      addSeg(edgePos(r, c), edgePos(r+1, c));
+    }
+    // パネル上端→極点：4本に1本だけ
+    if(c % 4 === 0){
+      const op = baseOp * 0.55;
+      // 北極側：phiStart から北極へ
+      const northSteps = POLE_ROWS + 1;
+      for(let i = 0; i < northSteps; i++){
+        const f0 = phiStart/Math.PI * (1 - i    /northSteps);
+        const f1 = phiStart/Math.PI * (1 - (i+1)/northSteps);
+        addSeg(polePos(f0, c), polePos(f1, c), op);
+      }
+      // 南極側：phiEnd から南極へ
+      const southSteps = POLE_ROWS + 1;
+      for(let i = 0; i < southSteps; i++){
+        const f0 = phiEnd/Math.PI + (1-phiEnd/Math.PI) * i    /southSteps;
+        const f1 = phiEnd/Math.PI + (1-phiEnd/Math.PI) * (i+1)/southSteps;
+        addSeg(polePos(f0, c), polePos(f1, c), op);
+      }
+    }
+  }
+}
+
+function startCageWireFade(){
+  cageWireFading = true;
+  cageWireFadeProgress = 0;
+}
+
+function updateCageWire(dt){
+  if(!cageWireLines.length) return;
+  cageWireGroup.quaternion.copy(boardGroup.quaternion);
+
+  if(_backCullCamDir){
+    for(let i = 0; i < cageWireLines.length; i++){
+      cageWireLines[i].visible = cageWirePositions[i].dot(_backCullCamDir) > 0;
+    }
+  }
+
+  // フェードアウト（ちらつき消灯）
+  if(cageWireFading){
+    cageWireFadeProgress += dt * 0.6;
+    const p = Math.min(1, cageWireFadeProgress);
+    const flicker = p < 0.7
+      ? 0.7 * (1 - p) * (0.5 + 0.5 * Math.sin(p * 80))
+      : 0.7 * (1 - p) / 0.3;
+    const op = Math.max(0, flicker);
+    for(const line of cageWireLines) line.material.opacity = op;
+    if(p >= 1){ cageWireGroup.visible = false; cageWireFading = false; }
+  }
+}
+
+// ===================== GEOMETRY HELPERS =====================
+const SPHERE_RADIUS = 1.5;
+
+function cellPosition(row, col, rows, cols) {
+  const R = rows || ROWS, C = cols || COLS;
+  const phiStart = Math.PI * 0.10;
+  const phiEnd   = Math.PI * 0.90;
+  const phi   = phiStart + (row + 0.5) / R * (phiEnd - phiStart);
+  const theta = (col + 0.5) / C * Math.PI * 2;
+  return new THREE.Vector3(
+    SPHERE_RADIUS * Math.sin(phi) * Math.cos(theta),
+    SPHERE_RADIUS * Math.cos(phi),
+    SPHERE_RADIUS * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+function cellSize(row) {
+  const phiStart = Math.PI * 0.10;
+  const phiEnd   = Math.PI * 0.90;
+  const phi = phiStart + (row + 0.5) / ROWS * (phiEnd - phiStart);
+  const circ = 2 * Math.PI * SPHERE_RADIUS * Math.sin(phi);
+  const w = circ / COLS * 0.86;
+  const h = SPHERE_RADIUS * (phiEnd - phiStart) / ROWS * 0.86;
+  return { w: Math.max(w, 0.02), h: Math.max(h, 0.02) };
+}
+
+// ===================== MINE TEXTURE =====================
+let _mineTexture = null;
+(function(){
+  const loader = new THREE.TextureLoader();
+  loader.load('images/mine.png', function(tex){
+    _mineTexture = tex;
+  });
+})();
+
+// ===================== BOARD THEME =====================
+// テーマカラー管理（hex文字列 例: "#0044aa"）
+window._boardTheme = null; // nullのときはデフォルト青
+
+const BOARD_THEME_DEFAULT = {
+  cell:       0x0044aa,
+  cellEmit:   0x002266,
+  border:     0x0088cc,
+  openCell:   0x000d1a,
+  openEmit:   0x000810,
+  openBorder: 0x003355,
+};
+
+function hexStrToInt(hex){
+  return parseInt(hex.replace('#',''), 16);
+}
+
+// 輝度（0〜1）を返す
+function hexLuminance(hex){
+  const n = hexStrToInt(hex);
+  const r = ((n>>16)&0xff)/255;
+  const g = ((n>>8) &0xff)/255;
+  const b = ( n     &0xff)/255;
+  return 0.2126*r + 0.7152*g + 0.0722*b;
+}
+
+// 色を暗くする（factor: 0〜1、小さいほど暗い）
+function darkenHex(hex, factor){
+  const n = hexStrToInt(hex);
+  const r = Math.round(((n>>16)&0xff)*factor);
+  const g = Math.round(((n>>8) &0xff)*factor);
+  const b = Math.round(( n     &0xff)*factor);
+  return (r<<16)|(g<<8)|b;
+}
+
+// テーマカラーからセット一式を生成
+function buildThemeColors(hex){
+  if(!hex) return BOARD_THEME_DEFAULT;
+  const base = hexStrToInt(hex);
+  return {
+    cell:       base,
+    cellEmit:   darkenHex(hex, 0.5),
+    border:     darkenHex(hex, 1.6 > 1 ? 1 : 1.6), // 少し明るめの枠
+    openCell:   darkenHex(hex, 0.08),
+    openEmit:   darkenHex(hex, 0.05),
+    openBorder: darkenHex(hex, 0.3),
+  };
+}
+
+// 数字色：盤面色が明るい（輝度>0.35）場合に暗色セットを使う
+const NUMBER_COLORS_DARK = [
+  '#000000','#0055cc','#007744','#cc2200',
+  '#222299','#991100','#007799','#990099','#333333'
+];
+
+function getNumberColor(idx){
+  const lum = window._boardTheme ? hexLuminance(window._boardTheme) : 0;
+  const arr = lum > 0.35 ? NUMBER_COLORS_DARK : NUMBER_COLORS;
+  return arr[idx] || (lum > 0.35 ? '#333333' : '#ffffff');
+}
+
+const NUMBER_COLORS = [
+  '#000000','#00aaff','#00ff88','#ff4444',
+  '#4444ff','#ff2200','#00ffff','#ff00ff','#ffffff'
+];
+
+// ===================== MESH CREATION =====================
+function createCellMesh(cell) {
+  const {w, h} = cellSize(cell.row);
+  const geo = new THREE.PlaneGeometry(w, h);
+  const _tc = buildThemeColors(window._boardTheme);
+  const mat = new THREE.MeshLambertMaterial({
+    color: _tc.cell, emissive: _tc.cellEmit,
+    transparent: false,
+    side: THREE.FrontSide,
+    depthTest: true,
+    depthWrite: true,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 1;
+
+  // 周回モード：逆再生演出として出現アニメをかける
+  if(window._loopAppearAnim){
+    mesh.scale.setScalar(0.001);
+    mesh.userData._appearAnimating = true;
+    mesh.userData._appearProgress  = 0;
+  }
+
+  const pos = cellPosition(cell.row, cell.col);
+  mesh.position.copy(pos);
+  mesh.lookAt(pos.clone().add(pos.clone().normalize()));
+
+  const bw=w*0.5, bh=h*0.5;
+  const bverts = new Float32Array([-bw,-bh,0.001, bw,-bh,0.001, bw,bh,0.001, -bw,bh,0.001, -bw,-bh,0.001]);
+  const bgeo = new THREE.BufferGeometry();
+  bgeo.setAttribute('position', new THREE.BufferAttribute(bverts,3));
+  const borderLine = new THREE.Line(bgeo, new THREE.LineBasicMaterial({color:buildThemeColors(window._boardTheme).border,transparent:true,opacity:0.7}));
+  borderLine.renderOrder = 1;
+  mesh.add(borderLine);
+
+  boardGroup.add(mesh);
+  cell.mesh = mesh;
+}
+
+function makeTextCanvas(text, color, fontSize, useEmojiFont) {
+  const size = 64;
+  const cv = document.createElement('canvas');
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  ctx.font = useEmojiFont
+    ? `${fontSize||36}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`
+    : `bold ${fontSize||36}px 'Share Tech Mono',monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = color;
+  ctx.fillText(text, size/2, size/2);
+  return cv;
+}
+
+function createNumberMesh(cell) {
+  if (cell.numberMesh) { cell.mesh && cell.mesh.remove(cell.numberMesh); cell.numberMesh=null; }
+  let text='', colorHex='#00ffff', fsz=36, isFlag=false;
+  if (cell.isMine && !cell.isRemoved){
+    // mine.pngが読み込み済みならpngテクスチャを使用
+    if(_mineTexture){
+      const {w,h} = cellSize(cell.row);
+      const sz = Math.min(w,h)*1.00;
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(sz,sz),
+        new THREE.MeshBasicMaterial({map:_mineTexture, transparent:true, depthTest:false, side:THREE.FrontSide})
+      );
+      m.position.set(0,0,0.002);
+      m.renderOrder = 2;
+      cell.mesh && cell.mesh.add(m);
+      cell.numberMesh = m;
+      return;
+    }
+    // mine.png未読み込み時は何も表示しない
+    return;
+  }
+  else if (cell.hasFlag)                  { text='🚩'; fsz=28; isFlag=true; }
+  else if (cell.isOpen && cell.neighborMines>0) {
+    text = String(cell.neighborMines);
+    colorHex = getNumberColor(cell.neighborMines);
+  } else return;
+
+  const cv = makeTextCanvas(text, colorHex, fsz, isFlag);
+  const tex = new THREE.CanvasTexture(cv);
+  const {w,h} = cellSize(cell.row);
+  const sz = Math.min(w,h)*0.82;
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(sz,sz),
+    new THREE.MeshBasicMaterial({map:tex, transparent:true, depthTest:false, side:THREE.FrontSide})
+  );
+  m.position.set(0,0,0.002);
+  m.renderOrder = 2; // パネル(1)より上
+  cell.mesh && cell.mesh.add(m);
+  cell.numberMesh = m;
+}
+
+function createDebugMesh(cell, prob, type) {
+  if (cell._debugMesh) { cell.mesh && cell.mesh.remove(cell._debugMesh); cell._debugMesh=null; }
+  if (prob===null||prob===undefined) return;
+  let text, color;
+  if(type==='mine'){
+    text='100%'; color='#ff2222'; // 赤：論理的に必ず爆弾
+  } else if(type==='safe'){
+    text='0%';   color='#00ff66'; // 緑：論理的に必ず安全
+  } else {
+    text=Math.round(prob*100)+'%'; color='#ffee00'; // 黄：不確定
+  }
+  const cv = makeTextCanvas(text, color, 20);
+  const tex = new THREE.CanvasTexture(cv);
+  const {w,h} = cellSize(cell.row);
+  const sz = Math.min(w,h)*0.75;
+  const m = new THREE.Mesh(
+    new THREE.PlaneGeometry(sz,sz),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true,depthTest:false,side:THREE.FrontSide})
+  );
+  m.position.set(0,0,0.003); m.renderOrder=3;
+  cell.mesh && cell.mesh.add(m);
+  cell._debugMesh = m;
+}
+
+// ===================== BOARD INIT =====================
+function initBoard() {
+  while(boardGroup.children.length) boardGroup.remove(boardGroup.children[0]);
+  board = [];
+  for(let r=0;r<ROWS;r++){
+    board[r]=[];
+    for(let c=0;c<COLS;c++){
+      const cell=new Cell(r,c);
+      board[r][c]=cell;
+      createCellMesh(cell);
+    }
+  }
+}
+
+// ===================== MINE PLACEMENT =====================
+function placeMines(excludeRow, excludeCol) {
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine=false;
+  const exclude=new Set();
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    const nr=excludeRow+dr, nc=((excludeCol+dc)+COLS)%COLS;
+    if(nr>=0&&nr<ROWS) exclude.add(nr*COLS+nc);
+  }
+  // Clamp mineCount to max possible
+  const maxMines = ROWS*COLS - exclude.size;
+  const actualMines = Math.min(mineCount, maxMines);
+  let placed=0;
+  while(placed<actualMines){
+    const r=Math.floor(Math.random()*ROWS), c=Math.floor(Math.random()*COLS);
+    if(!board[r][c].isMine && !exclude.has(r*COLS+c)){ board[r][c].isMine=true; placed++; }
+  }
+  calcNeighbors();
+}
+
+function getNeighbors(row,col){
+  const result=[];
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    if(dr===0&&dc===0) continue;
+    const nr=row+dr, nc=((col+dc)+COLS)%COLS;
+    if(nr>=0&&nr<ROWS) result.push(board[nr][nc]);
+  }
+  return result;
+}
+
+function calcNeighbors(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+    board[r][c].neighborMines=getNeighbors(r,c).filter(n=>n.isMine&&!n.isRemoved).length;
+}
+
+// ===================== SEARCH BUTTON =====================
+let _radarActive    = false;
+let _radarProgress  = 0;
+let _radarTarget    = null;
+let _radarCtx       = null;
+let _searchCooldown = 0;
+let _searchAvailable = false; // キャッシュ（毎フレームrunSolverを呼ばない）
+const SEARCH_COOLDOWN = 10;
+const COOLDOWN_CIRC   = 2 * Math.PI * 22;
+
+function initRadarCanvas(){
+  const cv = document.getElementById('radar-canvas');
+  cv.width  = window.innerWidth;
+  cv.height = window.innerHeight;
+  _radarCtx = cv.getContext('2d');
+}
+
+// ゲーム状態変化時（掘削・旗・消滅・リスタート後）に呼ぶ
+function refreshSearchAvailability(){
+  if(gameState !== 'playing'){ _searchAvailable=false; updateSearchButton(); return; }
+  if(_radarActive||_searchCooldown>0){ _searchAvailable=false; updateSearchButton(); return; }
+  let anyOpen=false;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(board[r][c].isOpen||board[r][c].isRemoved){anyOpen=true;break;}
+  }
+  if(!anyOpen){ _searchAvailable=false; updateSearchButton(); return; }
+  if(stMode){ _searchAvailable=true; updateSearchButton(); return; } // STモード：確定セルの有無に関わらず常に使用可能（グレーアウトしない）
+  const {safe,mines}=runSolver();
+  _searchAvailable = safe.size===0 && mines.size===0;
+  updateSearchButton();
+}
+
+function updateSearchButton(){
+  const icon    = document.getElementById('search-btn-icon');
+  const label   = document.getElementById('search-btn-label');
+  const outer   = document.getElementById('search-btn-outer');
+  const overlay = document.getElementById('search-btn-overlay');
+  const bgRing  = document.getElementById('search-bg-ring');
+  const cdRing  = document.getElementById('search-cooldown-ring');
+  if(!icon) return;
+  if(_searchAvailable){
+    icon.style.borderColor  = 'rgba(0,255,200,0.8)';
+    icon.style.background   = 'rgba(0,60,80,0.95)';
+    icon.style.animation    = 'searchIconColor 1.8s ease-in-out infinite';
+    label.style.animation   = 'searchLabelBlink 1.8s ease-in-out infinite';
+    outer.style.cursor      = 'pointer';
+    if(overlay) overlay.style.opacity = '0';
+    if(bgRing)  bgRing.setAttribute('stroke','rgba(0,60,80,0.6)');
+    if(cdRing)  cdRing.setAttribute('stroke','#00ffcc');
+  } else {
+    icon.style.borderColor  = 'rgba(0,80,100,0.3)';
+    icon.style.background   = 'rgba(0,20,30,0.7)';
+    icon.style.boxShadow    = 'none';
+    icon.style.animation    = 'none';
+    label.style.color       = '#224455';
+    label.style.animation   = 'none';
+    outer.style.cursor      = 'default';
+    if(overlay) overlay.style.opacity = '1';
+    if(bgRing)  bgRing.setAttribute('stroke','rgba(60,60,60,0.3)');
+    if(cdRing)  cdRing.setAttribute('stroke','rgba(80,80,80,0.3)');
+  }
+}
+
+function triggerSearchButton(){
+  if(!_searchAvailable) return;
+  const {safe,mines,probs}=runSolver();
+  if(stMode && (safe.size>0 || mines.size>0)){
+    // STモード：確定セル（安全/地雷が判明済み）があるのにサーチを使った → 即ゲームオーバー
+    triggerGameOverSequence();
+    return;
+  }
+  let minAdj=Infinity, minAll=Infinity, tAdj=null, tAll=null;
+  probs.forEach((p,k)=>{
+    const r=Math.floor(k/COLS),c=k%COLS,cell=board[r][c];
+    if(cell.isOpen||cell.hasFlag||cell.isRemoved||!cell.mesh) return;
+    const adj=getNeighbors(r,c).some(n=>n.isOpen&&n.neighborMines>0);
+    if(adj){ if(p<minAdj){minAdj=p;tAdj=cell;} }
+    else   { if(p<minAll){minAll=p;tAll=cell;} }
+  });
+  const target = tAdj||tAll;
+  if(!target) return;
+  _radarTarget   = target;
+  _radarActive   = true;
+  _radarProgress = 0;
+  _searchCooldown= SEARCH_COOLDOWN;
+  _searchAvailable=false;
+  const lbl=document.getElementById('auto-search-label');
+  lbl.style.opacity='1';
+  setTimeout(()=>{lbl.style.opacity='0';},1800);
+  startAutoRotate(target.row, target.col);
+  updateSearchButton();
+}
+
+// アニメループから呼ぶ（軽量：runSolverは呼ばない）
+function updateAutoSearch(dt){
+  if(_searchCooldown > 0){
+    const wasPositive = _searchCooldown > 0;
+    _searchCooldown = Math.max(0, _searchCooldown - dt);
+    updateCooldownRing();
+    // クールタイム終了時にのみ再判定
+    if(wasPositive && _searchCooldown === 0) refreshSearchAvailability();
+  }
+  if(_radarActive) updateRadar(dt);
+}
+
+function updateCooldownRing(){
+  const ring = document.getElementById('search-cooldown-ring');
+  if(!ring) return;
+  const ratio = _searchCooldown / SEARCH_COOLDOWN;
+  ring.setAttribute('stroke-dashoffset', COOLDOWN_CIRC * ratio);
+  // クールタイム中はシアン、完了時は明るいグリーン（ただし非アクティブ中はグレーのまま）
+  if(_searchAvailable) ring.setAttribute('stroke','#00ff88');
+  else if(_searchCooldown > 0) ring.setAttribute('stroke','#00ffcc');
+  // 非アクティブかつクールタイムなしはupdateSearchButtonがグレーに制御
+}
+
+function resetAutoSearchTimer(){} // 互換用
+
+function updateRadar(dt){
+  _radarProgress += dt * 0.6;
+  if(_radarProgress >= 1){
+    _radarActive   = false;
+    _radarProgress = 0;
+    clearRadarCanvas();
+    if(_radarTarget && _radarTarget.mesh && !_radarTarget.isRemoved){
+      hintTarget   = _radarTarget;
+      hintAnimTime = 0;
+    }
+    _radarTarget = null;
+    return;
+  }
+  drawRadar();
+}
+
+function drawRadar(){
+  if(!_radarCtx) return;
+  const cv = document.getElementById('radar-canvas');
+  _radarCtx.clearRect(0, 0, cv.width, cv.height);
+
+  // 球体の画面上の中心・半径を計算
+  const cx = cv.width  * 0.5;
+  const cy = cv.height * 0.5;
+  const fovRad  = camera.fov * Math.PI / 180;
+  const dist    = camera.position.z;
+  const ratio   = SPHERE_RADIUS / (dist * Math.tan(fovRad / 2));
+  const spherePx = ratio * cv.height; // 球体の画面上の半径(px)
+
+  const p   = _radarProgress;
+  const ctx = _radarCtx;
+
+  // レーダーリング（球体表面を走査するイメージ）
+  const ringR = spherePx * (0.05 + p * 1.1);
+  const alpha = Math.max(0, 1 - p * 1.2);
+
+  // メインリング
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(0,255,200,${alpha * 0.7})`;
+  ctx.lineWidth   = 2;
+  ctx.shadowBlur  = 12;
+  ctx.shadowColor = '#00ffcc';
+  ctx.stroke();
+
+  // 残像リング
+  if(p > 0.08){
+    const ringR2 = spherePx * (0.05 + (p - 0.08) * 1.1);
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR2, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(0,200,160,${alpha * 0.3})`;
+    ctx.lineWidth   = 1;
+    ctx.shadowBlur  = 6;
+    ctx.stroke();
+  }
+
+  // ターゲットセルの画面座標を計算してピング表示
+  if(_radarTarget && _radarTarget.mesh){
+    const wp = new THREE.Vector3();
+    _radarTarget.mesh.getWorldPosition(wp);
+
+    // NDC → スクリーン座標
+    const ndc = wp.clone().project(camera);
+    const tx  = (ndc.x * 0.5 + 0.5) * cv.width;
+    const ty  = (-ndc.y * 0.5 + 0.5) * cv.height;
+
+    // セルまでの距離（中心からのpx）
+    const distPx = Math.hypot(tx - cx, ty - cy);
+
+    // リングがセルに到達したらピング
+    if(ringR >= distPx * 0.9 && ringR <= distPx * 1.4 || p > 0.7){
+      const pingAlpha = p > 0.7 ? Math.min(1, (p - 0.7) * 3) : 0.9;
+      // 十字マーカー
+      ctx.shadowBlur  = 20;
+      ctx.shadowColor = '#00ff88';
+      ctx.strokeStyle = `rgba(0,255,136,${pingAlpha})`;
+      ctx.lineWidth   = 2;
+      const s = 14;
+      ctx.beginPath(); ctx.moveTo(tx-s,ty); ctx.lineTo(tx+s,ty); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(tx,ty-s); ctx.lineTo(tx,ty+s); ctx.stroke();
+      // 外円
+      ctx.beginPath();
+      ctx.arc(tx, ty, s * 0.8, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(0,255,136,${pingAlpha * 0.7})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  }
+
+  ctx.shadowBlur = 0;
+}
+
+function clearRadarCanvas(){
+  if(!_radarCtx) return;
+  const cv = document.getElementById('radar-canvas');
+  _radarCtx.clearRect(0, 0, cv.width, cv.height);
+}
+let logicGuarantee = false;
+let misclickGuard = false; // 誤操作防止モード（周囲が全て未開封/消滅のセルへの操作を無効化）
+let gamePaused = false; // 設定メニューによる一時停止（球体操作のみ無効化、タイマー/BGMは継続）
+
+// ===================== LOOP MODE (周回モード) =====================
+let loopMode    = false;   // 周回モードON/OFF
+let exMode      = true;    // EXモード(true=既存仕様：地雷即ゲームオーバー) / false=NORMALモード(ヒントゲージで受ける)
+let stMode      = false;   // STモード(デバッグ用)：サーチを常時使用可能にする代わりに、確定セルがある状態で使うと即ゲームオーバー
+let loopCount   = 3;       // 合計周回数
+let currentLoop = 1;       // 現在の周（1始まり）
+let loopColors  = ['#0044aa','#006622','#440088','#884400','#880022']; // 各周の盤面色（boardColorとしても使用）
+window._loopMode = false; // applyStageParam/DEBUG共有用
+let _pendingConfirmAction = null; // 確認ダイアログで実行待ちのアクション
+
+function setGuaranteeResult(success, attempts){
+  const el=document.getElementById('guarantee-result');
+  if(!el) return;
+  if(success){
+    el.textContent=`✅ ${attempts}回`;
+    el.style.color='#00ff88';
+  } else {
+    el.textContent=`❌ 未達`;
+    el.style.color='#ff4444';
+  }
+}
+
+// 生成中インジケーター
+function showGenerating(show, attempts, maxAttempts){
+  let el = document.getElementById('generating-label');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'generating-label';
+    el.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'+
+      'z-index:300;font-family:Orbitron,monospace;font-size:16px;color:#00ffcc;'+
+      'text-shadow:0 0 12px #00ffcc;letter-spacing:3px;pointer-events:none;'+
+      'text-align:center;line-height:1.8;';
+    document.body.appendChild(el);
+  }
+  if(show){
+    el.style.display='block';
+    el._startTime = Date.now();
+    el._interval = setInterval(()=>{
+      const sec = ((Date.now()-el._startTime)/1000).toFixed(1);
+      const cur = el._attempts||0;
+      const max = el._maxAttempts||0;
+      el.innerHTML =
+        `GENERATING<br>`+
+        `<span style="font-size:11px;color:#88ffee;letter-spacing:1px;">`+
+        `${sec}s &nbsp;|&nbsp; ${cur} / ${max}</span>`;
+    },100);
+  } else {
+    clearInterval(el._interval);
+    el.style.display='none';
+  }
+}
+
+// 非同期で論理保証盤面を生成（UIブロックなし）
+function asyncEnsureSolvable(startRow, startCol, maxAttempts, callback){
+  let attempts=0;
+  const el=document.getElementById('generating-label');
+  if(el){ el._attempts=0; el._maxAttempts=maxAttempts; }
+  function step(){
+    if(isSolvable(startRow, startCol)){
+      console.log(`論理保証: ${attempts+1}回で生成 (${currentDiff})`);
+      setGuaranteeResult(true, attempts+1);
+      callback();
+      return;
+    }
+    attempts++;
+    if(el){ el._attempts=attempts; }
+    if(attempts >= maxAttempts){
+      console.warn(`論理保証: ${maxAttempts}回で見つからず。現在の盤面で開始`);
+      setGuaranteeResult(false, attempts);
+      callback();
+      return;
+    }
+    placeMines(startRow, startCol);
+    setTimeout(step, 0);
+  }
+  setTimeout(step, 0);
+}
+
+function toggleLogicGuarantee(){
+  logicGuarantee = !logicGuarantee;
+  const btn = document.getElementById('logic-guarantee-btn');
+  if(logicGuarantee){
+    btn.textContent = '論理保証 ON';
+    btn.style.background = 'rgba(0,80,40,0.9)';
+    btn.style.borderColor = 'rgba(0,255,100,0.7)';
+    btn.style.color = '#00ff88';
+    btn.style.boxShadow = '0 0 8px rgba(0,255,100,0.4)';
+  } else {
+    btn.textContent = '論理保証 OFF';
+    btn.style.background = 'rgba(0,40,20,0.8)';
+    btn.style.borderColor = 'rgba(0,200,100,0.4)';
+    btn.style.color = '#00cc66';
+    btn.style.boxShadow = 'none';
+  }
+}
+
+// 現在の盤面がソルバーで完全に解けるか検証（小サイズ専用）
+function isSolvable(startRow, startCol){
+  // ソルバーを使って全セルが確定できるかシミュレート
+  const opened = new Set();
+  const flagged = new Set();
+
+  // 初手で開くセルをシミュレート（openCellの連鎖を模倣）
+  function simOpen(r, c){
+    const k = r*COLS+c;
+    if(opened.has(k)) return;
+    opened.add(k);
+    if(board[r][c].neighborMines === 0){
+      getNeighbors(r,c).forEach(n=>{
+        if(!n.isMine) simOpen(n.row, n.col);
+      });
+    }
+  }
+  simOpen(startRow, startCol);
+
+  // ソルバーループ：確定セルを開き続ける
+  const maxIter = ROWS * COLS;
+  for(let iter = 0; iter < maxIter; iter++){
+    const safe = new Set(), mines = new Set();
+    let flaggedCount = flagged.size;
+    const remaining = mineCount - flaggedCount;
+    const allUnknown = [];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const cell = board[r][c];
+      const k = r*COLS+c;
+      if(!cell.isMine && !opened.has(k)) allUnknown.push(k);
+      if(cell.isMine && !flagged.has(k)) allUnknown.push(k);
+    }
+
+    // ローカル制約生成
+    const cons = [];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      if(!opened.has(r*COLS+c)) continue;
+      const nbrs = getNeighbors(r,c);
+      const unk = nbrs.filter(n=>{
+        const k=n.row*COLS+n.col;
+        return !opened.has(k)&&!flagged.has(k);
+      });
+      const km = nbrs.filter(n=>flagged.has(n.row*COLS+n.col)).length;
+      const eff = board[r][c].neighborMines - km;
+      if(unk.length===0||eff<0) continue;
+      cons.push({cells:unk.map(n=>n.row*COLS+n.col), mines:eff});
+    }
+    // 全体制約
+    const unkAll = [];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const k=r*COLS+c;
+      if(!opened.has(k)&&!flagged.has(k)) unkAll.push(k);
+    }
+    if(unkAll.length>0&&remaining>=0) cons.push({cells:unkAll, mines:remaining});
+
+    // Rule1/2 + 部分集合
+    let changed = false;
+    for(const con of cons){
+      if(con.mines===con.cells.length) con.cells.forEach(k=>{if(!mines.has(k)){mines.add(k);changed=true;}});
+      if(con.mines===0)               con.cells.forEach(k=>{if(!safe.has(k)){safe.add(k);changed=true;}});
+    }
+    for(let i=0;i<cons.length;i++) for(let j=0;j<cons.length;j++){
+      if(i===j) continue;
+      const a=cons[i],b=cons[j];
+      if(b.cells.length===0||b.cells.length>=a.cells.length) continue;
+      const bSet=new Set(b.cells);
+      if(!b.cells.every(k=>a.cells.includes(k))) continue;
+      const diff=a.cells.filter(k=>!bSet.has(k));
+      const dm=a.mines-b.mines;
+      if(dm<0||dm>diff.length) continue;
+      if(dm===diff.length) diff.forEach(k=>{if(!mines.has(k)){mines.add(k);changed=true;}});
+      if(dm===0)           diff.forEach(k=>{if(!safe.has(k)){safe.add(k);changed=true;}});
+    }
+
+    if(!changed) break;
+
+    // 確定セルを反映
+    safe.forEach(k=>{
+      const r=Math.floor(k/COLS), c=k%COLS;
+      simOpen(r,c);
+    });
+    mines.forEach(k=>flagged.add(k));
+  }
+
+  // 全非地雷セルが開かれ、全地雷が旗で確定されたら解けた
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const k=r*COLS+c;
+    if(board[r][c].isMine && !flagged.has(k)) return false;
+    if(!board[r][c].isMine && !opened.has(k)) return false;
+  }
+  return true;
+}
+function digCell(row,col){
+  const cell=board[row][col];
+  if(cell.isOpen||cell.hasFlag||cell.isRemoved) return;
+  if(gameState!=='playing') return;
+  if(cell.isMine){
+    if(!exMode){
+      // NORMALモード：ヒントゲージを2消費。0未満ならゲームオーバー
+      if(consumeNormalGauge(2)){
+        cell.isOpen=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell); return;
+      }
+      // ゲージ残あり：通常の爆発エフェクト＋セル消滅（地雷処理は通常と同じ見た目）
+      cell.isOpen=true; updateCellVisual(cell);
+      flashHintGaugePenalty();
+      cell.isMine=false; cell.isRemoved=true; removedMines++;
+      playSE('flag');
+      triggerRemovalAnimation(cell);
+      setTimeout(()=>{
+        calcNeighbors();
+        for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
+        checkCascade();
+        vanishNewZeroCells();
+        updateStats(); checkWin();
+        if(debugMode) runSolverDebug();
+      },400);
+      return;
+    }
+    cell.isOpen=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell); return;
+  }
+  playSE('popen');
+  openCell(row,col);
+  setTimeout(()=>{ updateStats(); checkWin(); }, 300);
+}
+
+function openCell(row,col){
+  const cell=board[row][col];
+  if(cell.isOpen||cell.hasFlag||cell.isRemoved||cell.isMine) return;
+  cell.isOpen=true;
+  updateCellVisual(cell);
+  if(cell.neighborMines===0){
+    // 0セルは即消滅（遅延付きで演出）
+    scheduleVanish(cell);
+    getNeighbors(row,col).forEach(n=>{ if(!n.isOpen&&!n.hasFlag&&!n.isRemoved) openCell(n.row,n.col); });
+  }
+}
+
+// 消滅SE間引き用
+let _lastDestroySE=0;
+
+// 0セル消滅スケジューラー：一括で溜めて少し遅らせて発火
+let _vanishQueue=[];
+let _vanishTimer=null;
+function scheduleVanish(cell){
+  _vanishQueue.push(cell);
+  if(_vanishTimer) clearTimeout(_vanishTimer);
+  _vanishTimer=setTimeout(()=>{
+    const batch=[..._vanishQueue];
+    _vanishQueue=[];
+    batch.forEach((c,i)=>{
+      setTimeout(()=>vanishZeroCell(c), i*8);
+    });
+  }, 80);
+}
+
+function vanishZeroCell(cell){
+  if(cell.isRemoved||cell.animating) return;
+  cell.isRemoved=true;
+  const now=Date.now();
+  if(now-_lastDestroySE>80){ playSE('destroy'); _lastDestroySE=now; }
+  onNonMineCellVanished(); // キャラ露出更新
+  triggerVanishAnimation(cell);
+}
+
+function flagCell(row,col){
+  const cell=board[row][col];
+  if(cell.isOpen||cell.isRemoved) return;
+  if(gameState!=='playing') return;
+  if(cell.hasFlag){ cell.hasFlag=false; updateCellVisual(cell); return; }
+  if(cell.isMine){
+    cell.hasFlag=true; updateCellVisual(cell); removeMine(row,col);
+  } else {
+    if(!exMode){
+      // NORMALモード：ヒントゲージを1消費。0未満ならゲームオーバー
+      if(consumeNormalGauge(1)){
+        cell.hasFlag=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell); return;
+      }
+      // ゲージ残あり：専用エフェクトで開封（数字セルと同じ見た目）
+      flashHintGaugePenalty();
+      cell.hasFlag=false;
+      playSE('popen');
+      openCell(row,col);
+      setTimeout(()=>{ updateStats(); checkWin(); }, 300);
+      return;
+    }
+    cell.hasFlag=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell);
+  }
+}
+
+function removeMine(row,col){
+  const cell=board[row][col];
+  cell.isMine=false; cell.isRemoved=true; removedMines++;
+  playSE('flag');
+  triggerRemovalAnimation(cell);
+  setTimeout(()=>{
+    calcNeighbors();
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
+    checkCascade();
+    // 数字が0になった開放済みセルを消滅させる
+    vanishNewZeroCells();
+    updateStats(); checkWin();
+    if(debugMode) runSolverDebug();
+  },400);
+}
+
+// 地雷除去後に neighborMines が 0 になった開放済みセルを消滅
+function vanishNewZeroCells(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(cell.isOpen&&!cell.isRemoved&&!cell.animating&&cell.neighborMines===0){
+      scheduleVanish(cell);
+    }
+  }
+}
+
+function checkCascade(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(cell.isOpen&&cell.neighborMines===0)
+      getNeighbors(r,c).forEach(n=>{ if(!n.isOpen&&!n.hasFlag&&!n.isRemoved&&!n.isMine) openCell(n.row,n.col); });
+  }
+}
+
+// 地雷除去アニメ（爆発的・橙色）
+function triggerRemovalAnimation(cell){
+  if(!cell.mesh) return;
+  // ワールド座標で位置を取得してからscene直下に移動
+  const worldPos = new THREE.Vector3();
+  cell.mesh.getWorldPosition(worldPos);
+  boardGroup.remove(cell.mesh);
+  cell.mesh.position.copy(worldPos);
+  cell.mesh.rotation.set(0,0,0);
+  scene.add(cell.mesh);
+  cell.animating=true; cell.animProgress=0; cell._animSpeed=2.5; cell._animType='mine';
+  cell.animPos=worldPos.clone();
+  spawnParticles(worldPos.clone(), [0xff6600,0xff3300,0xffaa00,0xffffff], 12);
+}
+
+// 0セル消滅アニメ（静かに散る・青色）
+function triggerVanishAnimation(cell){
+  if(!cell.mesh) return;
+  const worldPos = new THREE.Vector3();
+  cell.mesh.getWorldPosition(worldPos);
+  boardGroup.remove(cell.mesh);
+  cell.mesh.position.copy(worldPos);
+  cell.mesh.rotation.set(0,0,0);
+  scene.add(cell.mesh);
+  cell.animating=true; cell.animProgress=0; cell._animSpeed=1.8; cell._animType='zero';
+  cell.animPos=worldPos.clone();
+  spawnParticles(worldPos.clone(), [0x00ccff,0x0066ff,0x88ffff,0xffffff], 5);
+}
+
+function spawnParticles(pos, colors, count){
+  colors=colors||[0x00ffff,0x0088ff,0xff4400,0xffffff];
+  count=count||10;
+  for(let i=0;i<count;i++){
+    const p=new THREE.Mesh(
+      new THREE.SphereGeometry(0.014,4,4),
+      new THREE.MeshBasicMaterial({color:colors[i%colors.length],transparent:true})
+    );
+    p.position.copy(pos);
+    p._vel=new THREE.Vector3((Math.random()-.5)*2,(Math.random()-.5)*2,(Math.random()-.5)*2).normalize().multiplyScalar(0.02+Math.random()*0.035);
+    p._life=1.0;
+    particleGroup.add(p);
+  }
+}
+
+function revealAllMines(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++)
+    if(board[r][c].isMine){ board[r][c].isOpen=true; updateCellVisual(board[r][c]); }
+}
+
+function updateCellVisual(cell){
+  if(!cell.mesh||cell.isRemoved) return;
+  const mat=cell.mesh.material;
+  mat.transparent = false;
+  const _vc = buildThemeColors(window._boardTheme);
+  if(cell.isOpen){
+    mat.color.setHex(_vc.openCell); mat.emissive.setHex(_vc.openEmit);
+  } else if(cell.hasFlag){
+    mat.color.setHex(0x220011); mat.emissive.setHex(0x110008);
+  } else {
+    mat.color.setHex(_vc.cell); mat.emissive.setHex(_vc.cellEmit);
+  }
+  const border=cell.mesh.children.find(c=>c.isLine);
+  if(border){
+    if(cell.hasFlag) border.material.color.setHex(0xff4444);
+    else if(cell.isOpen) border.material.color.setHex(_vc.openBorder);
+    else border.material.color.setHex(_vc.border);
+  }
+  createNumberMesh(cell);
+}
+
+// ===================== WIN/LOSE =====================
+function endGame(win, extraMsg){
+  gameState=win?'win':'lose';
+  // クリア/ゲームオーバー時は設定メニューを強制クローズ
+  gamePaused = false;
+  document.getElementById('pause-overlay').style.display = 'none';
+  document.getElementById('settings-menu').style.display = 'none';
+  document.getElementById('confirm-dialog').style.display = 'none';
+  clearInterval(timerInterval);
+  pauseBGM();
+  if(win){
+    // 勝利はtriggerRescueSequenceから呼ばれるので通常はここに来ない
+    SND.clear.play().catch(()=>{});
+  }
+  const msg=document.getElementById('message');
+  msg.className=win?'win':'lose';
+  document.getElementById('msg-title').textContent = win ? '🎉 クリア！' : 'ur GONE.';
+  document.getElementById('msg-body').textContent  = win
+    ? `${currentCharacter?currentCharacter.name+'を救出！':''}\nタイム: ${formatTime(elapsed)}\nヒント: ${hintCount}回`
+    : 'あなたは消滅してしまった！';
+  updateMsgButtons();
+  greyOutFloatButtons();
+  msg.style.display='block';
+}
+
+// セーブ完了トースト（全画面共通）
+function showSaveToast(){
+  var t = document.getElementById('save-toast');
+  if(!t) return;
+  clearTimeout(t._timer);
+  t.classList.add('visible');
+  t._timer = setTimeout(function(){ t.classList.remove('visible'); }, 1600);
+}
+
+// ===================== GAME OVER演出（地雷ヒット／時間切れ共通）=====================
+// STEP1: 入力停止＋鐘SE① → 0.5s後 STEP2: 全セル公開＋鐘SE② → 0.5s後 STEP3: ダイアログ表示＋鐘SE③
+let gameOverCheckMode = false;
+
+function triggerGameOverSequence(extraMsg, mistakeCell){
+  gameState = 'lose'; // 即座に入力（掘削・旗）をブロック。カメラ回転/ズームは引き続き可能
+  gamePaused = false;
+  gameOverMistakeCell = mistakeCell || null;
+  clearInterval(timerInterval);
+  pauseBGM();
+  document.getElementById('pause-overlay').style.display = 'none';
+  document.getElementById('settings-menu').style.display = 'none';
+  document.getElementById('confirm-dialog').style.display = 'none';
+  playSE('bell1');
+
+  setTimeout(()=>{
+    revealAllCellsForGameOver();
+    playSE('bell2');
+
+    setTimeout(()=>{
+      showGameOverDialog(extraMsg);
+      playSE('bell3');
+    }, 1000);
+  }, 1000);
+}
+
+function revealAllCellsForGameOver(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell = board[r][c];
+    if(!cell.isOpen && !cell.isRemoved){
+      cell.isOpen = true;
+      updateCellVisual(cell);
+    }
+  }
+}
+
+function showGameOverDialog(extraMsg){
+  const msg = document.getElementById('message');
+  document.getElementById('msg-title').textContent = 'ur GONE.';
+  document.getElementById('msg-body').textContent  = 'あなたは消滅してしまった！';
+  updateMsgButtons();
+  greyOutFloatButtons();
+  gameOverCheckMode = false;
+  // 同セッション内で複数回死んでもフェードイン演出が毎回再生されるよう、
+  // classを一度外してリフロー→再付与してCSSアニメーションを再トリガー
+  msg.classList.remove('lose');
+  void msg.offsetWidth;
+  msg.style.display = 'block';
+  msg.classList.add('lose');
+}
+
+// CHECK：ダイアログを閉じて盤面確認モードへ（掘削/旗は元々gameState==='lose'でブロック済み、
+// カメラ回転・ズームのみ可能。画面タップで再びダイアログを表示）
+function enterGameOverCheckMode(){
+  gameOverCheckMode = true;
+  document.getElementById('message').style.display = 'none';
+}
+
+function reopenGameOverDialog(){
+  gameOverCheckMode = false;
+  document.getElementById('message').style.display = 'block';
+}
+
+function checkWin(){
+  if(removedMines!==mineCount) return;
+  if(gameState!=='playing') return; // 既に遷移演出が進行中なら無視（連続操作による二重発火を防止）
+  gameState='idle'; // 演出完了まで入力を即座にブロック
+  setTimeout(()=>{
+    let pending=0;
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const cell=board[r][c];
+      if(cell.isOpen&&!cell.isRemoved&&!cell.isMine){
+        pending++;
+        scheduleVanish(cell);
+        onNonMineCellVanished(); // 消滅前にカウント
+      }
+    }
+    // 周回モード：最終周以外は逆再生演出→次周へ
+    if(loopMode && currentLoop < loopCount){
+      setTimeout(()=>triggerLoopReplay(), pending>0?700:150);
+      return;
+    }
+    // 全消滅後、外殻爆散→キャラ救出へ
+    setTimeout(()=>triggerRescueSequence(), pending>0?700:150);
+  }, 200);
+}
+
+// 周回モード：1周クリア時の「逆再生」演出→次周開始
+function triggerLoopReplay(){
+  gameState = 'idle';
+  clearInterval(timerInterval);
+  greyOutFloatButtons(); // 演出中はサーチ等を非アクティブに（次周の盤面が出たらrestoreFloatButtons()で復帰）
+  // 2周目開始時：勢いで旗を立てないようピッケルモードに強制切り替え
+  setMode('dig');
+
+  // バー背面レイヤーに「今の周の色」を焼き付け
+  const backEl = document.getElementById('expose-bar-back');
+  if(backEl) backEl.style.background = loopColors[(currentLoop-1) % loopColors.length] || '#440088';
+
+  currentLoop++;
+
+  // 次周のテーマカラーを設定
+  const nextColor = loopColors[(currentLoop-1) % loopColors.length];
+  if(nextColor) window._boardTheme = nextColor;
+
+  // 進行バーを0%にリセット（次周の色で表示）
+  const innerEl = document.getElementById('expose-bar-inner');
+  if(innerEl){
+    innerEl.style.transition = 'none';
+    innerEl.style.width = '0%';
+    innerEl.style.background = nextColor || 'linear-gradient(90deg,#8800ff,#cc44ff)';
+    requestAnimationFrame(()=>{ innerEl.style.transition = 'width 0.4s ease'; });
+  }
+  const pctEl = document.getElementById('expose-pct');
+  if(pctEl) pctEl.textContent = '0%';
+  vanishedNonMine = 0;
+
+  // 残存パーティクルを一掃してから出現アニメ付きで再構築
+  while(particleGroup.children.length) particleGroup.remove(particleGroup.children[0]);
+
+  setTimeout(()=>{
+    removedMines = 0;
+    window._loopAppearAnim = true;
+    buildCageWire();
+    initBoard();
+    window._loopAppearAnim = false;
+    updateStats();
+
+    // 制限時間モード：セル再生と同時にゲージも回復（1周目クリア時ではなくここで回復）
+    if(timeLimitMode){
+      totalTime     = loopMode ? getLoopTimeLimitFor(currentLoop) : (window._customTimeLimit || TIME_LIMITS[currentDiff] || 300);
+      remainingTime = totalTime;
+      syncTimeLimitGaugeSize();
+      updateTimeLimitGauge();
+    }
+
+    // 爆弾残数表示を次周の地雷数で更新
+    const minesEl = document.getElementById('expose-mines');
+    if(minesEl){
+      minesEl.innerHTML = '<img src="images/mine.png" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:4px;"> ' + mineCount + ' / ' + mineCount;
+      minesEl.style.display = '';
+    }
+    restoreFloatButtons(); // 次周の盤面が出たので操作可能状態に戻す（サーチは既存ロジック通りセルが開くまで自然に非アクティブ）
+
+    // 2周目以降：最初の1マスを自動で開く（1周目は従来通りプレイヤーの操作待ち）
+    if(currentLoop > 1){
+      setTimeout(()=>{ handleCellAction(0,0,'dig'); }, 500);
+    }
+  }, 250);
+}
+
+// 救出シーケンス：外殻残骸を吹き飛ばしてキャラ前面表示→救出画面
+function triggerRescueSequence(){
+  gameState='win';
+  clearInterval(timerInterval);
+  if(window._stageHasCustomBgm){
+    // ステージ独自BGMが設定されている場合：クリアジングルに切り替えず、そのまま継続再生
+  } else {
+    pauseBGM();
+    if(SND.clear) SND.clear.play().catch(()=>{});
+  }
+
+  // ステージクリア時：次のエピソード（novel）を解放してセーブ
+  // URLパラメータ ?stage=N から現在ステージIDを取得
+  (function(){
+    const stageId = parseInt(new URLSearchParams(window.location.search).get('stage'), 10);
+    if(!stageId || isNaN(stageId)) return;
+    try{
+      const SAVE_KEY = 'stellarDeleteSave';
+      const raw = localStorage.getItem(SAVE_KEY);
+      const sd = raw ? JSON.parse(raw) : { unlockedStage:0, unlockedEpisode:0 };
+      if(stageId > (sd.unlockedEpisode||0)){
+        sd.unlockedEpisode = stageId; // ステージN クリア → エピソードN 解放（novel(N+1)へ進める）
+        localStorage.setItem(SAVE_KEY, JSON.stringify(sd));
+        console.log('[SAVE] stage clear: unlockedEpisode =', sd.unlockedEpisode, '| full data:', JSON.stringify(sd));
+        showSaveToast();
+      }
+    }catch(e){}
+  })();
+
+  // 残存セルを一掃
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(!cell.isRemoved&&cell.mesh&&!cell.isMine){
+      cell.isRemoved=true;
+      cell._animType='zero'; cell._animSpeed=1.5;
+      cell.animating=true; cell.animProgress=0;
+      cell.animPos=cell.mesh.position.clone();
+    }
+  }
+
+  const img = document.getElementById('chara-img');
+  img.style.transition='opacity 0.8s ease';
+  img.style.opacity='1';
+
+  startCageWireFade(); // 牢屋ワイヤーのちらつき消灯
+
+  // カメラをキャラへ引き寄せ
+  zoomDist=2.2;
+  boardGroup.rotation.x=0;
+  boardGroup.rotation.y=0;
+
+  // パーティクル爆発
+  for(let i=0;i<40;i++){
+    const angle=Math.random()*Math.PI*2;
+    const r=Math.random()*1.6;
+    spawnParticles(
+      new THREE.Vector3(Math.cos(angle)*r, (Math.random()-.5)*2, Math.sin(angle)*r),
+      [0xcc88ff,0x8844ff,0xffffff,0xffaaff], 3
+    );
+  }
+
+  setTimeout(()=>showRescueScreen(), 1500);
+}
+
+// ===================== SOLVER =====================
+let solverMode = 'full';
+function setSolverMode(v){ solverMode=v; if(debugMode) runSolverDebug(); }
+
+function runSolver(){
+  const safe=new Set(), mines=new Set();
+
+  // 旗セルは既知地雷として計上（isRemovedは除く：removedMinesに計上済み）
+  let flaggedCount=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(cell.hasFlag && !cell.isRemoved) flaggedCount++;
+  }
+  const allUnknown=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(!cell.isOpen&&!cell.hasFlag&&!cell.isRemoved) allUnknown.push(r*COLS+c);
+  }
+  const remaining = mineCount - removedMines - flaggedCount;
+
+  // ローカル制約のみ生成（全体制約を混ぜない ← バグ①④修正）
+  function buildLocalConstraints(){
+    const cons=[];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const cell=board[r][c];
+      if(!cell.isOpen) continue;
+      const nbrs=getNeighbors(r,c);
+      const unk=nbrs.filter(n=>!n.isOpen&&!n.hasFlag&&!n.isRemoved
+        &&!mines.has(n.row*COLS+n.col)&&!safe.has(n.row*COLS+n.col));
+      // isRemovedセルはneighborMinesから除外済みなのでkmにも含めない
+      const km=nbrs.filter(n=>!n.isRemoved&&(mines.has(n.row*COLS+n.col)||n.hasFlag)).length;
+      const eff=cell.neighborMines-km;
+      if(unk.length===0||eff<0) continue;
+      cons.push({cells:unk.map(n=>n.row*COLS+n.col), mines:eff});
+    }
+    return cons;
+  }
+
+  // LOGIC/FULL用：全体制約を別途生成（ローカルと分離 ← バグ①修正）
+  function buildGlobalConstraint(){
+    if(solverMode==='basic') return null;
+    const unk=allUnknown.filter(k=>!mines.has(k)&&!safe.has(k));
+    const rem=remaining-mines.size; // ← バグ②：mines.sizeはループごとに正確
+    if(unk.length===0||rem<0) return null;
+    return {cells:unk, mines:rem};
+  }
+
+  // 確定ループ
+  const maxPass = solverMode==='full'?30:solverMode==='logic'?15:5;
+  let changed=true, pass=0;
+  while(changed && pass<maxPass){
+    changed=false; pass++;
+    const localCons = buildLocalConstraints();
+    const globalCon = buildGlobalConstraint();
+    // 全体制約をローカルに加えた合成リスト（部分集合推論用のみ）
+    const allCons = globalCon ? [...localCons, globalCon] : localCons;
+
+    // Rule1/2
+    for(const con of allCons){
+      if(con.mines===con.cells.length) con.cells.forEach(k=>{ if(!mines.has(k)){mines.add(k);changed=true;} });
+      if(con.mines===0)               con.cells.forEach(k=>{ if(!safe.has(k)){safe.add(k);changed=true;} });
+    }
+
+    // Rule3: 部分集合推論
+    // 全体制約はBセット（大きい方）にのみ使う：ローカル ⊂ 全体 の差分を推論
+    for(let i=0;i<allCons.length;i++) for(let j=0;j<allCons.length;j++){
+      if(i===j) continue;
+      const a=allCons[i], b=allCons[j];
+      if(b.cells.length===0||b.cells.length>=a.cells.length) continue;
+      const bSet=new Set(b.cells);
+      if(!b.cells.every(k=>a.cells.includes(k))) continue;
+      const diff=a.cells.filter(k=>!bSet.has(k));
+      const dm=a.mines-b.mines;
+      if(dm<0||dm>diff.length) continue;
+      if(dm===diff.length) diff.forEach(k=>{ if(!mines.has(k)){mines.add(k);changed=true;} });
+      if(dm===0)           diff.forEach(k=>{ if(!safe.has(k)){safe.add(k);changed=true;} });
+    }
+  }
+
+  // FULLモード: CSP全探索 - 連結成分ごとに分割して実行
+  if(solverMode==='full'){
+    const localCons=buildLocalConstraints();
+
+    // セルと制約の対応マップ
+    const cellToCons=new Map();
+    localCons.forEach((con,ci)=>{
+      con.cells.forEach(k=>{
+        if(!cellToCons.has(k)) cellToCons.set(k,[]);
+        cellToCons.get(k).push(ci);
+      });
+    });
+
+    // 制約グラフの連結成分に分割
+    const visited=new Set();
+    for(const startK of cellToCons.keys()){
+      if(visited.has(startK)) continue;
+      const compCells=[], compConsSet=new Set();
+      const queue=[startK];
+      while(queue.length){
+        const k=queue.pop();
+        if(visited.has(k)) continue;
+        visited.add(k); compCells.push(k);
+        (cellToCons.get(k)||[]).forEach(ci=>{
+          if(compConsSet.has(ci)) return;
+          compConsSet.add(ci);
+          localCons[ci].cells.forEach(k2=>{ if(!visited.has(k2)) queue.push(k2); });
+        });
+      }
+      const compCons=[...compConsSet].map(ci=>localCons[ci]);
+      if(compCells.length===0||compCells.length>24) continue;
+
+      const n=compCells.length;
+      const indexMap=new Map(compCells.map((k,i)=>[k,i]));
+      let validCount=0;
+      const safeCount=new Array(n).fill(0);
+      const mineCount_=new Array(n).fill(0);
+      for(let mask=0;mask<(1<<n);mask++){
+        let ok=true;
+        for(const con of compCons){
+          let cnt=0;
+          for(const k of con.cells){
+            const idx=indexMap.get(k);
+            if(idx!==undefined&&(mask>>idx&1)) cnt++;
+          }
+          if(cnt!==con.mines){ok=false;break;}
+        }
+        if(!ok) continue;
+        validCount++;
+        for(let i=0;i<n;i++){
+          if(mask>>i&1) mineCount_[i]++;
+          else safeCount[i]++;
+        }
+      }
+      if(validCount>0){
+        for(let i=0;i<n;i++){
+          const k=compCells[i];
+          if(mineCount_[i]===validCount&&!mines.has(k)) mines.add(k);
+          if(safeCount[i]===validCount&&!safe.has(k))   safe.add(k);
+        }
+      }
+    }
+  }
+
+  // 確率計算（ローカル制約のみ使用 ← バグ④修正）
+  const finalLocal=buildLocalConstraints();
+  const probCount=new Map(), probTotal=new Map();
+  for(const con of finalLocal){
+    if(con.cells.length===0) continue;
+    const p=con.mines/con.cells.length;
+    con.cells.forEach(k=>{ probCount.set(k,(probCount.get(k)||0)+1); probTotal.set(k,(probTotal.get(k)||0)+p); });
+  }
+  const unkLeft=allUnknown.filter(k=>!mines.has(k)&&!safe.has(k));
+  const globalProb=unkLeft.length>0?(remaining-mines.size)/unkLeft.length:0;
+  const probs=new Map();
+  allUnknown.forEach(k=>{
+    if(mines.has(k)){probs.set(k,1.0);return;}
+    if(safe.has(k)){probs.set(k,0.0);return;}
+    probs.set(k, probCount.has(k)?probTotal.get(k)/probCount.get(k):globalProb);
+  });
+
+  return {safe,mines,probs};
+}
+
+function runSolverDebug(){
+  const {probs,safe,mines}=runSolver();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(!cell.isOpen&&!cell.hasFlag&&!cell.isRemoved){
+      const hasOpenNeighbor=getNeighbors(r,c).some(n=>n.isOpen&&n.neighborMines>0);
+      if(!hasOpenNeighbor){ if(cell._debugMesh){cell.mesh&&cell.mesh.remove(cell._debugMesh);cell._debugMesh=null;} continue; }
+      const k=r*COLS+c;
+      if(mines.has(k))     createDebugMesh(cell, 1.0, 'mine');
+      else if(safe.has(k)) createDebugMesh(cell, 0.0, 'safe');
+      else {
+        const p=probs.get(k);
+        if(p!=null) createDebugMesh(cell, p, 'uncertain');
+        else if(cell._debugMesh){cell.mesh&&cell.mesh.remove(cell._debugMesh);cell._debugMesh=null;}
+      }
+    } else if(cell._debugMesh){ cell.mesh&&cell.mesh.remove(cell._debugMesh); cell._debugMesh=null; }
+  }
+}
+
+// ===================== HINT =====================
+function clearHintHighlight(cell){
+  if(!cell||!cell.mesh) return;
+  const _hc = buildThemeColors(window._boardTheme);
+  cell.mesh.material.emissive.setHex(cell.isOpen?_hc.openEmit:_hc.cellEmit);
+  cell.mesh.material.emissiveIntensity=1;
+  const brd=cell.mesh.children.find(c=>c.isLine);
+  if(brd) brd.material.color.setHex(cell.isOpen?_hc.openBorder:_hc.border);
+}
+
+function giveHint(){
+  if(gameState!=='playing') return;
+  if(maxHints > 0 && hintCount >= maxHints) return; // 上限チェック
+  const {safe,mines,probs}=runSolver();
+
+  function hasNumberedNeighbor(cell){
+    return getNeighbors(cell.row,cell.col).some(n=>n.isOpen&&n.neighborMines>0);
+  }
+  function pickFrom(set){
+    // 数字セルに隣接しているセルを優先
+    let fallback=null;
+    for(const k of set){
+      const r=Math.floor(k/COLS),c=k%COLS,cell=board[r][c];
+      if(cell.isOpen||cell.hasFlag||cell.isRemoved) continue;
+      if(hasNumberedNeighbor(cell)) return cell;
+      if(!fallback) fallback=cell;
+    }
+    return fallback;
+  }
+
+  let target = pickFrom(safe);
+  if(!target) target = pickFrom(mines);
+  if(!target){
+    // 確率最低：数字隣接優先
+    let minAdj=Infinity, minAll=Infinity, tAdj=null, tAll=null;
+    probs.forEach((p,k)=>{
+      const r=Math.floor(k/COLS),c=k%COLS,cell=board[r][c];
+      if(cell.isOpen||cell.hasFlag||cell.isRemoved) return;
+      if(hasNumberedNeighbor(cell)){ if(p<minAdj){minAdj=p;tAdj=cell;} }
+      else { if(p<minAll){minAll=p;tAll=cell;} }
+    });
+    target = tAdj || tAll;
+  }
+  if(!target) return;
+  hintCount++;
+  const statHints=document.getElementById('stat-hints'); if(statHints) statHints.textContent=hintCount;
+  updateHintGauge();
+  hintTarget=target; hintAnimTime=0;
+  startAutoRotate(target.row,target.col);
+}
+
+// ===================== CAMERA / ROTATION =====================
+let isDragging=false, lastX=0, lastY=0, velX=0, velY=0;
+let zoomDist=7.0;
+let dragMoved=false;
+const DRAG_THRESHOLD = 4; // pixels
+
+function focusNearestNumberCell(){
+  if(gameState !== 'playing') return;
+
+  // カメラ視線方向（0,0,1）をboardGroupのローカル座標に変換
+  // boardGroupの回転の逆を適用すれば、ワールドZ+がboardGroupローカルでどの方向かわかる
+  const invQ = boardGroup.quaternion.clone().invert();
+  const camDir = new THREE.Vector3(0, 0, 1).applyQuaternion(invQ).normalize();
+
+  let bestCell = null;
+  let bestDot  = -Infinity;
+
+  for(let r = 0; r < ROWS; r++){
+    for(let c = 0; c < COLS; c++){
+      const cell = board[r][c];
+      // 開封済みで数字が表示されているセル（neighborMines > 0）が対象
+      if(!cell.isOpen || cell.isRemoved || cell.isMine || cell.neighborMines <= 0) continue;
+      // セルのローカル位置方向
+      const p = cellPosition(r, c).normalize();
+      const dot = p.dot(camDir);
+      if(dot > bestDot){
+        bestDot  = dot;
+        bestCell = cell;
+      }
+    }
+  }
+
+  if(bestCell) startAutoRotate(bestCell.row, bestCell.col);
+}
+
+function startAutoRotate(row,col){
+  // セルのローカル座標（正規化）
+  const p = cellPosition(row,col).normalize();
+
+  // boardGroup.rotation.y を変えると球体がY軸回転する
+  // セルのXZ成分をZ+正面に向けるには rotation.y = -atan2(p.x, p.z)
+  // boardGroup.rotation.x を変えると球体がX軸回転する
+  // セルのY成分を0に向けるには rotation.x = asin(p.y)
+  const targetY = -Math.atan2(p.x, p.z);
+  const targetX =  Math.asin(Math.max(-1, Math.min(1, p.y)));
+
+  autoRotateFrom = {x:boardGroup.rotation.x, y:boardGroup.rotation.y};
+
+  let dy = targetY - autoRotateFrom.y;
+  while(dy >  Math.PI) dy -= Math.PI*2;
+  while(dy < -Math.PI) dy += Math.PI*2;
+
+  let dx = targetX - autoRotateFrom.x;
+  while(dx >  Math.PI) dx -= Math.PI*2;
+  while(dx < -Math.PI) dx += Math.PI*2;
+
+  autoRotateTo = {x: autoRotateFrom.x+dx, y: autoRotateFrom.y+dy};
+  autoRotateProgress=0; autoRotating=true;
+}
+
+// ===================== INPUT — PC MOUSE =====================
+const canvas=renderer.domElement;
+
+// Prevent context menu on right-click over canvas
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+
+canvas.addEventListener('mousedown', e=>{
+  if(gamePaused) return;
+  resetAutoSearchTimer();
+  if(e.button===0){
+    isDragging=true; dragMoved=false;
+    lastX=e.clientX; lastY=e.clientY;
+    velX=0; velY=0;
+    autoRotating=false;
+  }
+});
+
+canvas.addEventListener('mousemove', e=>{
+  if(!isDragging) return;
+  const dx=e.clientX-lastX, dy=e.clientY-lastY;
+  if(Math.abs(e.clientX-lastX)>DRAG_THRESHOLD||Math.abs(e.clientY-lastY)>DRAG_THRESHOLD) dragMoved=true;
+  lastX=e.clientX; lastY=e.clientY;
+  velX=dx; velY=dy;
+  // Always rotate on left-drag regardless of mode
+  boardGroup.rotation.y+=dx*0.005;
+  boardGroup.rotation.x+=dy*0.005;
+});
+
+canvas.addEventListener('mouseup', e=>{
+  if(e.button===0){
+    if(!dragMoved){
+      // Left click = dig
+      const rect=canvas.getBoundingClientRect();
+      handleMouseAction(e.clientX-rect.left, e.clientY-rect.top, 'dig');
+    }
+    isDragging=false; dragMoved=false;
+  }
+});
+
+canvas.addEventListener('mouseup', e=>{
+  // Right click = flag (fires separately)
+  if(e.button===2){
+    const rect=canvas.getBoundingClientRect();
+    handleMouseAction(e.clientX-rect.left, e.clientY-rect.top, 'flag');
+  }
+});
+
+canvas.addEventListener('wheel', e=>{
+  zoomDist=Math.max(2.0,Math.min(8.0,zoomDist+e.deltaY*0.005));
+});
+
+// ===================== INPUT — TOUCH =====================
+let pinchDist0=null, touchMoved=false;
+canvas.addEventListener('touchstart', e=>{
+  if(gamePaused) return;
+  e.preventDefault(); autoRotating=false;
+  resetAutoSearchTimer();
+  if(e.touches.length===1){ isDragging=true; touchMoved=false; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; velX=0; velY=0; }
+  else if(e.touches.length===2){ isDragging=false; pinchDist0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+},{passive:false});
+
+canvas.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(e.touches.length===1&&isDragging){
+    const dx=e.touches[0].clientX-lastX, dy=e.touches[0].clientY-lastY;
+    if(Math.abs(dx)>3||Math.abs(dy)>3) touchMoved=true;
+    lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; velX=dx; velY=dy;
+    boardGroup.rotation.y+=dx*0.005; boardGroup.rotation.x+=dy*0.005;
+  } else if(e.touches.length===2&&pinchDist0!==null){
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    zoomDist=Math.max(2.0,Math.min(8.0,zoomDist*(pinchDist0/d))); pinchDist0=d;
+  }
+},{passive:false});
+
+canvas.addEventListener('touchend', e=>{
+  e.preventDefault();
+  if(e.changedTouches.length===1&&isDragging){
+    isDragging=false;
+    if(!touchMoved){
+      const t=e.changedTouches[0], rect=canvas.getBoundingClientRect();
+      // Touch uses current mode buttons
+      const action=currentMode==='flag'?'flag':'dig';
+      handleMouseAction(t.clientX-rect.left, t.clientY-rect.top, action);
+    }
+    velX=0; velY=0;
+  }
+  pinchDist0=null;
+},{passive:false});
+
+// ===================== RAYCASTING =====================
+const raycaster=new THREE.Raycaster();
+const mouse2=new THREE.Vector2();
+
+function handleMouseAction(cx,cy,action){
+  if(gameState==='lose' && gameOverCheckMode){ reopenGameOverDialog(); return; }
+  if(gameState==='win'||gameState==='lose') return;
+  if(gamePaused) return;
+  mouse2.x=(cx/window.innerWidth)*2-1;
+  mouse2.y=-(cy/window.innerHeight)*2+1;
+  raycaster.setFromCamera(mouse2,camera);
+  const meshes=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].mesh&&!board[r][c].isRemoved) meshes.push(board[r][c].mesh);
+  const hits=raycaster.intersectObjects(meshes);
+  if(!hits.length) return;
+  const hitMesh=hits[0].object;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(board[r][c].mesh===hitMesh){ handleCellAction(r,c,action); return; }
+  }
+}
+
+function autoEnableMisclickGuard(){
+  // 1手目終了後に自動でONにする（既にONなら何もしない）
+  if(!misclickGuard){
+    misclickGuard = true;
+    const icon  = document.getElementById('misclick-guard-icon');
+    const label = document.getElementById('misclick-guard-label');
+    if(icon){
+      icon.style.borderColor = 'rgba(0,255,180,0.9)';
+      icon.style.background  = 'rgba(0,60,40,0.9)';
+    }
+    if(label){
+      label.textContent = 'GUARD ON';
+      label.style.color = '#00ffaa';
+    }
+  }
+}
+
+// ===================== SETTINGS MENU (PAUSE) =====================
+function openSettingsMenu(){
+  // idle・playing時のみ開ける（クリア後は不可）
+  if(gameState !== 'idle' && gameState !== 'playing') return;
+  gamePaused = true;
+  document.getElementById('pause-overlay').style.display = 'block';
+  document.getElementById('settings-menu').style.display = 'block';
+}
+
+function closeSettingsMenu(){
+  gamePaused = false;
+  document.getElementById('pause-overlay').style.display = 'none';
+  document.getElementById('settings-menu').style.display = 'none';
+}
+
+function confirmSettingsAction(action){
+  _pendingConfirmAction = action;
+  const texts = {
+    restart: 'リスタートします。本当に良いですか？',
+    select:  'ステージ選択に戻ります。本当に良いですか？',
+    title:   'タイトルに戻ります。本当に良いですか？',
+  };
+  document.getElementById('confirm-dialog-text').textContent = texts[action] || '本当に良いですか？';
+  document.getElementById('confirm-dialog').style.display = 'block';
+}
+
+function cancelConfirmDialog(){
+  _pendingConfirmAction = null;
+  document.getElementById('confirm-dialog').style.display = 'none';
+}
+
+function executeConfirmedAction(){
+  const action = _pendingConfirmAction;
+  document.getElementById('confirm-dialog').style.display = 'none';
+  _pendingConfirmAction = null;
+  if(action === 'restart'){
+    closeSettingsMenu();
+    restartGame();
+  } else if(action === 'select'){
+    window.location.href = 'index.html?select=1';
+  } else if(action === 'title'){
+    window.location.href = 'index.html';
+  }
+}
+
+function toggleMisclickGuard(){
+  misclickGuard = !misclickGuard;
+  const icon  = document.getElementById('misclick-guard-icon');
+  const label = document.getElementById('misclick-guard-label');
+  if(icon){
+    icon.style.borderColor = misclickGuard ? 'rgba(0,255,180,0.9)' : 'rgba(0,200,255,0.4)';
+    icon.style.background  = misclickGuard ? 'rgba(0,60,40,0.9)'  : 'rgba(0,20,50,0.85)';
+  }
+  if(label){
+    label.textContent = misclickGuard ? 'GUARD ON' : 'GUARD OFF';
+    label.style.color = misclickGuard ? '#00ffaa' : '#446677';
+  }
+}
+
+function isSafeguardedCell(row,col){
+  // 周囲8マスが全て「未開封」または「消滅済み」のセルを誤操作防止対象とする
+  const neighbors = getNeighbors(row,col);
+  if(neighbors.length===0) return false;
+  return neighbors.every(n => n.isRemoved || (!n.isOpen && !n.hasFlag));
+}
+
+function handleCellAction(row,col,action){
+  if(gameState==='playing' && misclickGuard){
+    const cell = board[row][col];
+    if(!cell.isOpen && !cell.hasFlag && !cell.isRemoved && isSafeguardedCell(row,col)){
+      SND.beep.currentTime=0; SND.beep.play().catch(()=>{});
+      return;
+    }
+  }
+  if(gameState==='idle'){
+    gameState='playing';
+    placeMines(row,col);
+    if(logicGuarantee){
+      // 非同期で再生成（UIをブロックしない）
+      const maxAttempts = 300;
+      showGenerating(true);
+      asyncEnsureSolvable(row, col, maxAttempts, ()=>{
+        showGenerating(false);
+        startTimer();
+        calcTotalNonMineCells();
+        autoEnableMisclickGuard();
+        if(action==='dig') digCell(row,col);
+        else if(action==='flag') flagCell(row,col);
+        updateStats();
+        if(debugMode) runSolverDebug();
+      });
+      return; // 非同期なので以降の処理はコールバックで実行
+    }
+    startTimer();
+    calcTotalNonMineCells();
+    autoEnableMisclickGuard();
+  }
+  if(action==='dig') digCell(row,col);
+  else if(action==='flag') flagCell(row,col);
+  updateStats();
+  if(debugMode) runSolverDebug();
+}
+
+// ===================== MODE BUTTONS (UI still usable for mobile/preference) =====================
+function toggleModeFloat(){
+  // dig ↔ flag をトグル（cameraは上部UIから切り替え）
+  setMode(currentMode === 'dig' ? 'flag' : 'dig');
+}
+
+function setMode(m){
+  currentMode=m;
+  ['camera','dig','flag'].forEach(id=>{const b=document.getElementById('btn-'+id);if(b)b.classList.toggle('active',id===m);});
+
+  // フローティングボタンの更新（1ボタントグル）
+  const floatToggle = document.getElementById('float-btn-toggle');
+  if(floatToggle){
+    floatToggle.textContent = m === 'flag' ? '🚩' : '⛏';
+    floatToggle.classList.toggle('active', m === 'dig' || m === 'flag');
+  }
+
+  // 右上モード切替ボタン更新（左下と同期）
+  const floatToggle2 = document.getElementById('float-btn-toggle2');
+  if(floatToggle2){
+    floatToggle2.textContent = m === 'flag' ? '🚩' : '⛏';
+    floatToggle2.classList.toggle('active', m === 'dig' || m === 'flag');
+  }
+
+  // カーソルインジケーター更新
+  const ind = document.getElementById('cursor-indicator');
+  if(m==='camera') ind.textContent='🖱 左ドラッグ: 回転';
+  else if(m==='dig') ind.textContent='PC: 左クリック=掘削 / 右クリック=旗';
+  else ind.textContent='PC: 右クリック=旗 / 左クリック=掘削';
+}
+
+// ===================== TIMER =====================
+function toggleExMode(){
+  exMode = !exMode;
+  const btn = document.getElementById('ex-mode-btn');
+  if(btn){
+    btn.textContent = exMode ? 'EX ON' : 'EX OFF';
+    btn.style.background  = exMode ? 'rgba(60,0,0,0.8)'    : 'rgba(0,40,20,0.8)';
+    btn.style.borderColor = exMode ? 'rgba(255,50,50,0.5)' : 'rgba(0,200,100,0.5)';
+    btn.style.color       = exMode ? '#ff5555'             : '#00cc66';
+  }
+}
+
+function debugResetSave(){
+  try{ localStorage.removeItem('stellarDeleteSave'); }catch(e){}
+  window.location.href = 'index.html';
+}
+
+function toggleStMode(){
+  stMode = !stMode;
+  const btn = document.getElementById('st-mode-btn');
+  if(btn){
+    btn.textContent = stMode ? 'ST ON' : 'ST OFF';
+    btn.style.background  = stMode ? 'rgba(60,0,60,0.8)'    : 'rgba(0,40,20,0.8)';
+    btn.style.borderColor = stMode ? 'rgba(255,50,255,0.5)' : 'rgba(0,200,100,0.5)';
+    btn.style.color       = stMode ? '#ff55ff'              : '#00cc66';
+  }
+  refreshSearchAvailability();
+}
+
+function toggleLoopMode(){
+  loopMode = !loopMode;
+  window._loopMode = loopMode;
+  const btn = document.getElementById('loop-mode-btn');
+  if(btn){
+    btn.textContent = loopMode ? '周回モード ON' : '周回モード OFF';
+    btn.style.background  = loopMode ? 'rgba(80,0,120,0.9)'   : 'rgba(40,0,60,0.8)';
+    btn.style.borderColor = loopMode ? 'rgba(180,0,255,0.8)'  : 'rgba(180,0,255,0.4)';
+    btn.style.color       = loopMode ? '#dd99ff'              : '#bb66ff';
+  }
+  if(loopMode){
+    currentLoop = 1;
+    window._boardTheme = loopColors[0] || window._boardTheme;
+    const backEl  = document.getElementById('expose-bar-back');
+    const innerEl = document.getElementById('expose-bar-inner');
+    if(backEl)  backEl.style.background  = 'rgba(50,0,80,0.7)';
+    if(innerEl) innerEl.style.background = loopColors[0] || 'linear-gradient(90deg,#8800ff,#cc44ff)';
+  }
+}
+
+function setLoopCount(val){
+  const n = parseInt(val, 10);
+  if(!isNaN(n) && n >= 2) loopCount = n;
+}
+
+function toggleTimeLimitMode(){
+  timeLimitMode = !timeLimitMode;
+  const btn = document.getElementById('time-limit-btn');
+  if(btn){
+    btn.textContent = timeLimitMode ? '制限時間 ON' : '制限時間 OFF';
+    btn.style.background    = timeLimitMode ? 'rgba(80,20,0,0.9)'        : 'rgba(40,0,20,0.8)';
+    btn.style.borderColor   = timeLimitMode ? 'rgba(255,100,0,0.8)'      : 'rgba(255,100,0,0.4)';
+    btn.style.color         = timeLimitMode ? '#ffaa00'                   : '#ff6600';
+  }
+  const rem = document.getElementById('stat-remaining');
+  if(rem) rem.style.display = timeLimitMode ? '' : 'none';
+  const gauge = document.getElementById('time-limit-gauge');
+  if(gauge) gauge.style.display = timeLimitMode ? '' : 'none';
+}
+
+function setCustomTimeLimit(val){
+  const n = parseInt(val, 10);
+  if(!isNaN(n) && n >= 10){
+    // カスタム値をTIME_LIMITSの全キーに一時上書き
+    window._customTimeLimit = n;
+  } else {
+    window._customTimeLimit = null;
+  }
+}
+
+function updateTimeLimitGauge(){
+  const gauge  = document.getElementById('time-limit-gauge');
+  const ring   = document.getElementById('tlg-ring');
+  const remEl  = document.getElementById('stat-remain-time');
+  if(!gauge||!ring) return;
+
+  // SVGサイズを球体に合わせて更新（syncCharaLayerSizeと同タイミング）
+  const r = gauge._radius || 100;
+  const ratio = totalTime > 0 ? Math.max(0, remainingTime/totalTime) : 1;
+  const circ  = 2 * Math.PI * r;
+
+  // dashoffset: 0=全表示、circ=全非表示
+  ring.setAttribute('stroke-dasharray',  circ.toFixed(1));
+  ring.setAttribute('stroke-dashoffset', (circ * (1-ratio)).toFixed(1));
+
+  // 色変化
+  let color;
+  if(ratio > 0.5)       color = '#0088ff';
+  else if(ratio > 0.2)  color = '#aa44ff';
+  else                  color = '#ff2200';
+  ring.setAttribute('stroke', color);
+
+  // 残り10%以下で点滅
+  if(ratio <= 0.1){
+    const blink = Math.floor(Date.now()/300)%2===0;
+    ring.style.opacity = blink ? '1' : '0.2';
+  } else {
+    ring.style.opacity = '1';
+  }
+
+  // 残り時間テキスト更新
+  if(remEl) remEl.textContent = formatTime(Math.max(0, Math.ceil(remainingTime)));
+}
+
+function syncTimeLimitGaugeSize(){
+  const gauge = document.getElementById('time-limit-gauge');
+  const bg    = document.getElementById('tlg-bg');
+  const ring  = document.getElementById('tlg-ring');
+  if(!gauge) return;
+
+  // 球体の画面上のピクセルサイズを取得（syncCharaLayerSizeと同じ計算）
+  const vv = window.visualViewport;
+  const w  = vv ? vv.width  : window.innerWidth;
+  const h  = vv ? vv.height : window.innerHeight;
+  const fovRad  = camera.fov * Math.PI/180;
+  const dist    = Math.max(camera.position.z, 0.1);
+  const halfFov = dist * Math.tan(fovRad/2);
+  const spherePxH = 1.5/halfFov*(h/2);
+  const spherePxW = 1.5/(halfFov*w/h)*(w/2);
+  const spherePx  = Math.min(spherePxH, spherePxW);
+  const r = spherePx + 14; // 球体外周から14px外側
+
+  gauge.setAttribute('width',  (r*2+20)+'px');
+  gauge.setAttribute('height', (r*2+20)+'px');
+  gauge.setAttribute('viewBox', `${-r-10} ${-r-10} ${(r+10)*2} ${(r+10)*2}`);
+
+  bg.setAttribute('r',   r);
+  ring.setAttribute('r', r);
+  gauge._radius = r;
+  updateTimeLimitGauge();
+}
+
+function startTimer(){
+  if(currentLoop === 1) elapsed=0; // 経過時間は1周目開始時のみリセット。2周目以降は通しで継続
+  clearInterval(timerInterval);
+  // 制限時間モード：totalTime・remainingTimeを初期化（こちらは周回モードなら毎周リセットする仕様のまま）
+  if(timeLimitMode){
+    totalTime     = loopMode ? getLoopTimeLimitFor(currentLoop) : (window._customTimeLimit || TIME_LIMITS[currentDiff] || 300);
+    // 入力欄にAUTO表示（カスタムなし）またはカスタム値を反映
+    const tlInput = document.getElementById('time-limit-input');
+    if(tlInput && !window._customTimeLimit) tlInput.placeholder = String(TIME_LIMITS[currentDiff]||300);
+    remainingTime = totalTime;
+    const rem = document.getElementById('stat-remaining');
+    if(rem) rem.style.display = '';
+    syncTimeLimitGaugeSize();
+  }
+  startBGM();
+  updateCharacterReveal();
+  window._timerStartMs = performance.now();
+  timerInterval=setInterval(()=>{
+    elapsed++;
+    document.getElementById('stat-time').textContent=formatTime(elapsed);
+    updateDigitTimer(elapsed);
+  },1000);
+}
+function formatTime(s){ return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); }
+
+// ===================== 不思議の国タイマー（テキストベース）=====================
+const sdDigitStyle = {
+  "0": { rotate: -6,  scale: 1.08 },
+  "1": { rotate:  9,  scale: 0.88 },
+  "2": { rotate: -12, scale: 1.15 },
+  "3": { rotate:  5,  scale: 0.95 },
+  "4": { rotate: -8,  scale: 1.05 },
+  "5": { rotate: 11,  scale: 0.92 },
+  "6": { rotate: -4,  scale: 1.12 },
+  "7": { rotate: 14,  scale: 0.85 },
+  "8": { rotate: -10, scale: 1.18 },
+  "9": { rotate:  7,  scale: 0.97 },
+};
+const sdDefaultDigitStyle = { rotate: 0, scale: 1 };
+const sdFallingTierConfig = {
+  1: { tierClass: 'sd-tier-10',   travelPercent: 160, extraRotate: 0  }, // 十の位
+  2: { tierClass: 'sd-tier-100',  travelPercent: 220, extraRotate: 10 }, // 百の位
+  3: { tierClass: 'sd-tier-1000', travelPercent: 300, extraRotate: 20 }, // 千の位
+};
+let sdCurrentSpanCount = 0;
+const sdLastFallingDigit = {};
+
+function updateDigitTimer(totalSeconds){
+  const str = String(Math.max(0, Math.floor(totalSeconds)) % 10000);
+  const container = document.getElementById('sd-timer-display');
+  if(!container) return;
+  const chars = str.split('');
+  const len = chars.length;
+
+  if(len !== sdCurrentSpanCount){
+    container.innerHTML = '';
+    chars.forEach((ch, i) => {
+      const placeFromRight = len - 1 - i;
+      const tier = sdFallingTierConfig[placeFromRight];
+      if(tier){
+        const wrap = document.createElement('span');
+        wrap.className = 'sd-falling-wrap ' + tier.tierClass;
+        wrap.dataset.place = String(placeFromRight);
+        container.appendChild(wrap);
+      } else {
+        container.appendChild(document.createElement('span'));
+      }
+    });
+    sdCurrentSpanCount = len;
+    Object.keys(sdLastFallingDigit).forEach(k => delete sdLastFallingDigit[k]);
+  }
+
+  const children = container.children;
+  for(let i = 0; i < len; i++){
+    const ch = chars[i];
+    const placeFromRight = len - 1 - i;
+    const tier = sdFallingTierConfig[placeFromRight];
+    const el = children[i];
+    if(tier){
+      sdRenderFallingDigit(el, ch, placeFromRight, tier);
+    } else {
+      if(el.textContent !== ch) el.textContent = ch;
+      const style = sdDigitStyle[ch] || sdDefaultDigitStyle;
+      el.style.transform = `rotate(${style.rotate}deg) scale(${style.scale})`;
+    }
+  }
+}
+
+function sdRenderFallingDigit(wrapEl, ch, placeFromRight, tier){
+  if(ch === sdLastFallingDigit[placeFromRight]) return;
+  sdLastFallingDigit[placeFromRight] = ch;
+
+  const style = sdDigitStyle[ch] || sdDefaultDigitStyle;
+  const wobbleAtRest = `rotate(${style.rotate}deg) scale(${style.scale})`;
+  const extraRotate = tier.extraRotate || 0;
+  const travel = tier.travelPercent;
+
+  const oldSpan = wrapEl.querySelector('.sd-sec-digit.sd-is-current');
+  if(oldSpan){
+    oldSpan.classList.remove('sd-is-current');
+    oldSpan.style.transform = `rotate(${style.rotate - extraRotate}deg) scale(${style.scale}) translateY(${travel}%)`;
+    oldSpan.style.opacity = '0';
+    oldSpan.addEventListener('transitionend', function handler(){
+      oldSpan.removeEventListener('transitionend', handler);
+      if(oldSpan.parentNode) oldSpan.parentNode.removeChild(oldSpan);
+    });
+  }
+
+  const newSpan = document.createElement('span');
+  newSpan.className = 'sd-sec-digit';
+  newSpan.textContent = ch;
+  newSpan.style.transform = `rotate(${style.rotate + extraRotate}deg) scale(${style.scale}) translateY(${-travel}%)`;
+  newSpan.style.opacity = '0';
+  wrapEl.appendChild(newSpan);
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      newSpan.style.transform = wobbleAtRest + ' translateY(0)';
+      newSpan.style.opacity = '1';
+    });
+  });
+  newSpan.classList.add('sd-is-current');
+}
+
+function resetDigitTimer(){
+  sdCurrentSpanCount = 0;
+  Object.keys(sdLastFallingDigit).forEach(k => delete sdLastFallingDigit[k]);
+  updateDigitTimer(0);
+}
+
+// ===================== STATS =====================
+function updateStats(){
+  const statMines=document.getElementById('stat-mines');
+  if(statMines) statMines.textContent=mineCount-removedMines;
+  setTimeout(refreshSearchAvailability, 50);
+
+}
+
+// ===================== DIFFICULTY =====================
+function setDiff(d){
+  currentDiff=d;
+  const sel=document.getElementById('diff-select');
+  if(sel) sel.value=d;
+  const preset=DIFF_PRESETS[d];
+  COLS=preset.cols; ROWS=preset.rows;
+  updateMineCountLabel();
+  restartGame();
+}
+
+function setMineDensity(pct){
+  updateMineCountLabel();
+  restartGame();
+}
+
+function updateMineCountLabel(){
+  const el = document.getElementById('mine-count-label');
+  const densityEl = document.getElementById('mine-density');
+  if(!el||!densityEl) return;
+  const pct = parseInt(densityEl.value, 10);
+  const count = Math.max(1, Math.round(ROWS * COLS * pct / 100));
+  el.textContent = `(${count}個)`;
+}
+
+// ===================== DEBUG =====================
+function openDebugMenu(){
+  document.getElementById('settings-menu').style.display = 'none';
+  document.getElementById('debug-menu').style.display = 'block';
+}
+function closeDebugMenu(){
+  document.getElementById('debug-menu').style.display = 'none';
+  document.getElementById('settings-menu').style.display = 'block';
+}
+
+// ステージモード時のダイアログボタン切り替え
+function greyOutFloatButtons(){
+  // サーチ
+  _searchAvailable = false;
+  updateSearchButton();
+  // モード切替ボタン（左下・右上）
+  ['float-btn-toggle','float-btn-toggle2'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.style.opacity = '0.35';
+      el.style.filter  = 'grayscale(1)';
+      el.style.pointerEvents = 'none';
+    }
+  });
+  // FOCUSボタン
+  const focusIcon = document.getElementById('focus-btn-icon');
+  if(focusIcon){ focusIcon.style.opacity='0.35'; focusIcon.style.filter='grayscale(1)'; focusIcon.style.pointerEvents='none'; }
+  // ヒント（オーバーレイを表示）
+  const hintOverlay = document.getElementById('hint-btn-overlay');
+  if(hintOverlay) hintOverlay.style.opacity = '1';
+}
+
+function restoreFloatButtons(){
+  // モード切替ボタン復元
+  ['float-btn-toggle','float-btn-toggle2'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      el.style.opacity = '';
+      el.style.filter  = '';
+      el.style.pointerEvents = '';
+    }
+  });
+  // FOCUSボタン復元
+  const focusIcon = document.getElementById('focus-btn-icon');
+  if(focusIcon){ focusIcon.style.opacity=''; focusIcon.style.filter=''; focusIcon.style.pointerEvents=''; }
+  // ヒントはupdateHintGaugeに任せる
+  updateHintGauge();
+}
+
+function updateMsgButtons(){
+  // CHECK / RETRY / TITLE は常時表示。STAGE SELECT はSTORYモード（mode=story）では非表示
+  const isStoryMode = new URLSearchParams(window.location.search).get('mode') === 'story';
+  const btnSelect = document.getElementById('msg-btn-select');
+  if(btnSelect) btnSelect.style.display = isStoryMode ? 'none' : '';
+}
+
+// ===================== NORMAL MODE PENALTY =====================
+// NORMALモード：ミス時にヒントゲージを消費。0未満になったらゲームオーバー（trueを返す）
+function consumeNormalGauge(amount){
+  hintCount += amount;
+  updateHintGauge();
+  const statHints = document.getElementById('stat-hints');
+  if(statHints) statHints.textContent = hintCount;
+  if(hintCount > maxHints){
+    return true; // ゲージ切れ→ゲームオーバー
+  }
+  return false;
+}
+
+// ヒントゲージを1秒間赤く点滅させる（ペナルティ発生の視覚フィードバック）
+function flashHintGaugePenalty(){
+  const fillRing = document.getElementById('hint-fill-ring');
+  const bgRing   = document.getElementById('hint-bg-ring');
+  if(!fillRing) return;
+  let blinkCount = 0;
+  const maxBlinks = 4; // 0.25秒×4=1秒
+  const originalFill = fillRing.getAttribute('stroke');
+  const blinkInterval = setInterval(()=>{
+    blinkCount++;
+    const isRed = blinkCount % 2 === 1;
+    fillRing.setAttribute('stroke', isRed ? '#ff2200' : (originalFill||'#00ffcc'));
+    if(bgRing) bgRing.setAttribute('stroke', isRed ? 'rgba(255,30,0,0.5)' : 'rgba(0,60,80,0.3)');
+    if(blinkCount >= maxBlinks){
+      clearInterval(blinkInterval);
+      fillRing.setAttribute('stroke', originalFill||'#00ffcc');
+      if(bgRing) bgRing.setAttribute('stroke', 'rgba(0,60,80,0.3)');
+    }
+  }, 250);
+}
+
+function updateHintGauge(){
+  const bgRing   = document.getElementById('hint-bg-ring');
+  const fillRing = document.getElementById('hint-fill-ring');
+  if(!bgRing || !fillRing) return;
+
+  const r    = 24;
+  const circ = 2 * Math.PI * r;   // 150.796
+  const gap  = 4;
+  const n    = maxHints;
+  const segLen = n > 0 ? (circ - gap * n) / n : circ;
+  const remaining = Math.max(0, n - hintCount);
+
+  // dasharray: セグメント+ギャップ を n回繰り返す
+  const da = Array.from({length: n}, () => `${segLen.toFixed(3)} ${gap}`).join(' ');
+  bgRing.setAttribute('stroke-dasharray', da);
+  fillRing.setAttribute('stroke-dasharray', da);
+
+  // fill側: 残量分だけ表示（dashoffset で隠す）
+  // remaining=n → 全表示: offset=0
+  // remaining=0 → 全非表示: offset=circ（全部スキップ）
+  // remaining=k → セグメントk個分の長さ = segLen*k + gap*(k-1)
+  const filledLen = remaining > 0 ? segLen * remaining + gap * (remaining - 1) : 0;
+  // dashoffsetで前方からfilledLen分だけ表示し残りを隠す
+  // offset=0 → 最初のセグメントから表示開始
+  // 反時計回りに減らすには、末尾セグメントから消す
+  // → dashoffsetを負方向（= circ - filledLen）にして末尾から表示する
+  // → つまり 12時から反時計回りにfilledLen分を表示
+  // SVGはrotate(-90deg)で12時スタート、sweep方向は時計回り
+  // 反時計回りに減らす = 末尾（時計回り最後）から消す = 先頭からfilledLen分だけ表示
+  fillRing.setAttribute('stroke-dashoffset', '0');
+  // fill ringのdaを先頭filledLen分だけ表示するようにdaを再設定
+  if(remaining === n){
+    // 全表示
+    fillRing.setAttribute('stroke-dasharray', da);
+  } else if(remaining === 0){
+    // 全非表示
+    fillRing.setAttribute('stroke-dasharray', `0 ${circ}`);
+  } else {
+    // 先頭remaining個のセグメントのみ表示
+    const visibleDa = Array.from({length: n}, (_, i) => {
+      if(i < remaining) return `${segLen.toFixed(3)} ${gap}`;
+      // このセグメントを非表示にする（セグメント長を0にしてgapで埋める）
+      return `0 ${(segLen + gap).toFixed(3)}`;
+    }).join(' ');
+    fillRing.setAttribute('stroke-dasharray', visibleDa);
+  }
+  fillRing.setAttribute('stroke-dashoffset', '0');
+
+  // ヒント0のときアイコンをグレーアウト
+  const overlay = document.getElementById('hint-btn-overlay');
+  if(overlay) overlay.style.opacity = remaining > 0 ? '0' : '1';
+}
+
+function applyBoardColor(hex){
+  window._boardTheme = hex || null;
+  // 既存の全セルに即時反映
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(cell&&cell.mesh&&!cell.isRemoved) updateCellVisual(cell);
+  }
+  // 緯度経度線を再構築（色をテーマカラーに合わせる）
+  buildCageWire();
+}
+
+function toggleDebug(){
+  debugMode=!debugMode;
+  document.getElementById('debug-btn').classList.toggle('active',debugMode);
+  if(!debugMode){
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const cell=board[r][c];
+      if(cell._debugMesh&&cell.mesh){ cell.mesh.remove(cell._debugMesh); cell._debugMesh=null; }
+    }
+  } else {
+    runSolverDebug();
+    console.info('DEBUG: キャラ固定 → window._debugCharId = "001" など設定後リスタート');
+  }
+}
+
+// ===== デバッグ：即クリア =====
+function debugClear(){
+  if(gameState==='idle'){
+    // 未開始なら1手目を自動実行してから即クリア
+    gameState='playing';
+    placeMines(0,0);
+    startTimer();
+    calcTotalNonMineCells();
+  }
+  if(gameState!=='playing') return;
+  // 全地雷を除去済みにする
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(cell.isMine&&!cell.isRemoved){
+      cell.isMine=false; cell.isRemoved=true; removedMines++;
+      if(cell.mesh){ boardGroup.remove(cell.mesh); cell.mesh=null; }
+    }
+  }
+  // 全非地雷セルを開放・即消滅
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(!cell.isRemoved&&!cell.isMine){
+      cell.isOpen=true; cell.isRemoved=true;
+      vanishedNonMine++;
+      if(cell.mesh){ boardGroup.remove(cell.mesh); cell.mesh=null; }
+    }
+  }
+  calcNeighbors();
+  updateCharacterReveal();
+  updateStats();
+  // 救出シーケンスへ
+  setTimeout(()=>triggerRescueSequence(), 300);
+}
+
+// ===== 音声ON/OFF =====
+function toggleAudio(){
+  audioMuted = !audioMuted;
+  const btn = document.getElementById('audio-btn');
+  if(audioMuted){
+    // 全ミュート
+    Object.values(SND).forEach(s=>{ s.muted=true; });
+    btn.textContent='🔇';
+    btn.classList.add('muted');
+  } else {
+    Object.values(SND).forEach(s=>{ s.muted=false; });
+    btn.textContent='🔊';
+    btn.classList.remove('muted');
+  }
+}
+
+// ===================== RESTART =====================
+function restartGame(){
+  // 周回モード：リスタート時は1周目に戻す
+  currentLoop = 1;
+  if(loopMode){
+    window._boardTheme = loopColors[0] || window._boardTheme;
+    const backEl  = document.getElementById('expose-bar-back');
+    const innerEl = document.getElementById('expose-bar-inner');
+    if(backEl)  backEl.style.background  = 'rgba(50,0,80,0.7)';
+    if(innerEl) innerEl.style.background = loopColors[0] || 'linear-gradient(90deg,#8800ff,#cc44ff)';
+  }
+  // 地雷数の決定：ステージ直接指定 > 密度プルダウン
+  if(window._stageMines != null){
+    mineCount = window._stageMines;
+  } else {
+    const densityEl = document.getElementById('mine-density');
+    if(densityEl){
+      const pct = parseInt(densityEl.value, 10);
+      mineCount = Math.max(1, Math.round(ROWS * COLS * pct / 100));
+    }
+  }
+
+  clearInterval(timerInterval);
+  stopBGM();
+  SND.clear.pause(); SND.clear.currentTime=0;
+  gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
+  // 誤操作防止：起動時(リスタート時含む)は必ずOFF
+  misclickGuard = false;
+  gamePaused = false;
+  document.getElementById('pause-overlay').style.display = 'none';
+  document.getElementById('settings-menu').style.display = 'none';
+  document.getElementById('confirm-dialog').style.display = 'none';
+  {
+    const icon  = document.getElementById('misclick-guard-icon');
+    const label = document.getElementById('misclick-guard-label');
+    if(icon){
+      icon.style.borderColor = 'rgba(0,200,255,0.4)';
+      icon.style.background  = 'rgba(0,20,50,0.85)';
+    }
+    if(label){
+      label.textContent = 'GUARD OFF';
+      label.style.color = '#446677';
+    }
+  }
+  // 制限時間リセット
+  remainingTime=0; totalTime=0;
+  const remEl=document.getElementById('stat-remain-time'); if(remEl) remEl.textContent='0:00';
+  updateTimeLimitGauge();
+  hintTarget=null; gameOverMistakeCell=null; autoRotating=false;
+  _autoSearchTimer=0; _searchCooldown=0; _radarActive=false;
+  clearRadarCanvas();
+  updateCooldownRing();
+  document.getElementById('auto-search-label').style.opacity='0';
+  document.getElementById('stat-time').textContent='0:00';
+  resetDigitTimer();
+  const statHintsR=document.getElementById('stat-hints'); if(statHintsR) statHintsR.textContent='0';
+  if(!window._stageMaxHints) maxHints=3; // ステージ指定がなければデフォルト3
+  hintCount=0; updateHintGauge(); restoreFloatButtons();
+  document.getElementById('message').style.display='none';
+  document.getElementById('rescue-screen').classList.remove('active');
+  document.getElementById('expose-bar-inner').style.width='0%';
+  const gr=document.getElementById('guarantee-result');
+  if(gr){ gr.textContent='-'; gr.style.color='#446677'; }
+  document.getElementById('expose-pct').textContent='0%';
+  const minesElR = document.getElementById('expose-mines');
+  if(minesElR){
+    minesElR.innerHTML = '<img src="images/mine.png" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:4px;"> ' + mineCount + ' / ' + mineCount;
+    minesElR.style.display = '';
+  }
+  // キャラHTMLリセット
+  const charaImg = document.getElementById('chara-img');
+  charaImg.style.transition='none';
+  charaImg.style.opacity='0';
+  charaImg.src='';
+  while(particleGroup.children.length) particleGroup.remove(particleGroup.children[0]);
+
+  // キャラ選択（ステージ指定 > デバッグ指定 > ランダム）
+  const forceId = debugMode ? (window._debugCharId||null) : null;
+  selectCharacter(forceId);
+  setupCharacterPlane();
+  buildCageWire();
+  zoomDist=7.0;
+  setMode('dig');
+  initBoard(); updateStats();
+}
+
+// ===================== ANIMATION LOOP =====================
+const clock=new THREE.Clock();
+var _backCullCamDir, _backCullNormal, _backCullInvQ;
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
+  if(!_backCullCamDir){
+    _backCullCamDir = new THREE.Vector3();
+    _backCullNormal = new THREE.Vector3();
+    _backCullInvQ   = new THREE.Quaternion();
+  }
+
+  // Inertia when not dragging
+  if(!isDragging){
+    boardGroup.rotation.y+=velX*0.003;
+    boardGroup.rotation.x+=velY*0.003;
+    velX*=0.90; velY*=0.90;
+  }
+
+  // Auto rotate (hint camera)
+  if(autoRotating){
+    autoRotateProgress=Math.min(1,autoRotateProgress+dt*2.2);
+    const t=easeInOut(autoRotateProgress);
+    boardGroup.rotation.x=autoRotateFrom.x+(autoRotateTo.x-autoRotateFrom.x)*t;
+    boardGroup.rotation.y=autoRotateFrom.y+(autoRotateTo.y-autoRotateFrom.y)*t;
+    if(autoRotateProgress>=1) autoRotating=false;
+  }
+
+  boardGroup.rotation.x=Math.max(-Math.PI*0.45, Math.min(Math.PI*0.45, boardGroup.rotation.x));
+
+  // Zoom
+  camera.position.z+=(zoomDist-camera.position.z)*0.1;
+  syncCharaLayerSize();
+
+  // 後ろ半球のパネルを非表示（カメラ側を向いているパネルのみ表示）
+  _backCullCamDir.set(0,0,1).applyQuaternion(_backCullInvQ.copy(boardGroup.quaternion).invert());
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(!board[r]) continue; // initBoard途中のタイミング保護
+    const cell=board[r][c];
+    if(!cell||!cell.mesh||cell.isRemoved||cell.animating) continue;
+    cell.mesh.visible = (_backCullNormal.copy(cell.mesh.position).normalize().dot(_backCullCamDir) > 0);
+  }
+  updateCageWire(dt);
+  updateAutoSearch(dt);
+
+  // Hint pulse
+  if(hintTarget){
+    if(!hintTarget.mesh || hintTarget.isRemoved || hintTarget.isOpen){
+      clearHintHighlight(hintTarget);
+      hintTarget=null;
+    } else {
+      hintAnimTime+=dt*3;
+      const pulse=0.5+0.5*Math.sin(hintAnimTime*2*Math.PI);
+    hintTarget.mesh.material.emissive.setHex(hintTarget.isMine?0x441100:0x004422);
+      hintTarget.mesh.material.emissiveIntensity=0.5+pulse*1.5;
+      const brd=hintTarget.mesh.children.find(c=>c.isLine);
+      if(brd) brd.material.color.setHex(hintTarget.isMine?0xff6600:0x00ff88);
+      // ハイライトはセルが開かれるまで維持（時間による自動消灯なし）
+    }
+  }
+
+  // ゲームオーバー：ミスしたセルのハイライト（CHECKモード中も含めリスタートまで維持）
+  if(gameOverMistakeCell && gameOverMistakeCell.mesh){
+    gameOverMistakeAnimTime+=dt*3;
+    const mpulse=0.5+0.5*Math.sin(gameOverMistakeAnimTime*2*Math.PI);
+    gameOverMistakeCell.mesh.material.emissive.setHex(0xff0044);
+    gameOverMistakeCell.mesh.material.emissiveIntensity=0.6+mpulse*1.8;
+    const mbrd=gameOverMistakeCell.mesh.children.find(c=>c.isLine);
+    if(mbrd) mbrd.material.color.setHex(0xffffff);
+  }
+
+  // Cell removal animations
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=board[r][c];
+    if(cell.mesh && cell.mesh.userData._appearAnimating){
+      cell.mesh.userData._appearProgress += dt * 2.2;
+      const p = Math.min(1, cell.mesh.userData._appearProgress);
+      const ease = easeInOut(p);
+      cell.mesh.scale.setScalar(Math.max(0.001, ease));
+      if(p >= 1){ cell.mesh.userData._appearAnimating = false; }
+    }
+    if(cell.animating&&cell.mesh){
+      const speed = cell._animSpeed||2.5;
+      cell.animProgress+=dt*speed;
+      const p=Math.min(1,cell.animProgress), ease=easeInOut(p);
+      if(cell._animType==='zero'){
+        // 0セル: ゆっくり縮小しながらフェード（内側に吸い込まれる）
+        const scale=1-ease*0.9;
+        cell.mesh.scale.setScalar(Math.max(scale,0.001));
+        cell.mesh.material.transparent=true;
+        cell.mesh.material.opacity=1-ease;
+      } else {
+        // 地雷セル: 弾け飛ぶ
+        cell.mesh.position.copy(cell.animPos).addScaledVector(cell.animPos.clone().normalize(),ease*0.3);
+        cell.mesh.rotation.x=ease*Math.PI*2; cell.mesh.rotation.z=ease*Math.PI;
+        cell.mesh.material.transparent=true;
+        cell.mesh.material.opacity=1-ease;
+      }
+      if(p>=1){ scene.remove(cell.mesh); cell.mesh=null; cell.animating=false; }
+    }
+  }
+
+  // Particles
+  for(let i=particleGroup.children.length-1;i>=0;i--){
+    const p=particleGroup.children[i];
+    p.position.add(p._vel); p._vel.multiplyScalar(0.95);
+    p._life-=dt*1.5; p.material.opacity=Math.max(0,p._life);
+    if(p._life<=0) particleGroup.remove(p);
+  }
+
+  sphereWire.rotation.y+=dt*0.04;
+
+  // 制限時間ゲージ：毎フレーム滑らかに更新
+  if(timeLimitMode && gameState==='playing' && totalTime > 0){
+    const _elapsedSec = window._timerStartMs ? (performance.now() - window._timerStartMs) / 1000 : elapsed;
+    remainingTime = Math.max(0, totalTime - _elapsedSec);
+    updateTimeLimitGauge();
+    if(remainingTime <= 0 && totalTime - elapsed <= 0){
+      clearInterval(timerInterval);
+      triggerGameOverSequence('__timeup__');
+    }
+  }
+
+  renderer.render(scene,camera);
+}
+
+function easeInOut(t){ return t<0.5?2*t*t:-1+(4-2*t)*t; }
+
+// 球体の投影ピクセルサイズに合わせて #chara-layer のサイズを動的更新
+function syncCharaLayerSize(){
+  const {w, h} = getViewSize();
+  const fovRad  = camera.fov * Math.PI / 180;
+  const dist    = Math.max(camera.position.z, 0.1);
+  const halfFov = dist * Math.tan(fovRad / 2);
+  const spherePxH = 1.5 / halfFov * (h / 2);
+  const spherePxW = 1.5 / (halfFov * w / h) * (w / 2);
+  const spherePx  = Math.min(spherePxH, spherePxW);
+  const diameter  = Math.round(spherePx * 2 * 1.0);
+  const layer = document.getElementById('chara-layer');
+  if(layer){
+    layer.style.width  = diameter + 'px';
+    layer.style.height = diameter + 'px';
+  }
+
+  // 制限時間ゲージサイズも同期
+  if(timeLimitMode) syncTimeLimitGaugeSize();
+}
+
+// スマホブラウザのアドレスバーを除いた実際の表示サイズを取得
+function getViewSize(){
+  const vv = window.visualViewport;
+  return {
+    w: vv ? vv.width  : window.innerWidth,
+    h: vv ? vv.height : window.innerHeight,
+  };
+}
+
+function onResize(){
+  const {w, h} = getViewSize();
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  syncCharaLayerSize();
+  const rcv=document.getElementById('radar-canvas');
+  if(rcv){ rcv.width=w; rcv.height=h; }
+}
+
+window.addEventListener('resize', onResize);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', onResize);
+}
+
+// ===================== STAGE MODE INIT =====================
+(function applyStageParam(){
+  const urlParams = new URLSearchParams(window.location.search);
+  const stageId = urlParams.get('stage');
+  if(!stageId) return; // 通常起動
+
+  // stage-params.json のみ読み込む（ゲーム設定専用ファイル）
+  fetch('data/stage-params.json')
+    .then(r => r.json())
+    .then(params => {
+      const stage = params.find(s => String(s.id) === String(stageId));
+      if(!stage){
+        console.warn(`stage-params.json: id=${stageId} not found, using defaults.`);
+        return;
+      }
+
+      // diff 適用（setDiff は内部で restartGame するので直接設定）
+      if(stage.diff && DIFF_PRESETS[stage.diff]){
+        currentDiff = stage.diff;
+        const sel = document.getElementById('diff-select');
+        if(sel) sel.value = stage.diff;
+        const preset = DIFF_PRESETS[stage.diff];
+        COLS = preset.cols; ROWS = preset.rows;
+        updateMineCountLabel();
+      }
+
+      // mines 直接指定（density より優先）
+      if(stage.mines != null){
+        window._stageMines = stage.mines;
+      } else {
+        window._stageMines = null;
+        if(stage.density != null){
+          const densityEl = document.getElementById('mine-density');
+          if(densityEl){
+            densityEl.value = stage.density;
+            updateMineCountLabel();
+          }
+        }
+      }
+
+      // boardColor 適用
+      window._boardTheme = stage.boardColor || null;
+      const dbgColorSel = document.getElementById('debug-color-select');
+      if(dbgColorSel) dbgColorSel.value = stage.boardColor || '';
+
+      // maxHints 適用
+      if(stage.maxHints != null){
+        maxHints = stage.maxHints;
+        window._stageMaxHints = stage.maxHints;
+      } else {
+        maxHints = 3;
+        window._stageMaxHints = null;
+      }
+
+      // 制限時間モード 適用（ステージ側からの自動連携）
+      if(stage.timeLimitMode === true && stage.timeLimit != null){
+        timeLimitMode = true;
+        window._customTimeLimit = stage.timeLimit;
+        const tlBtn = document.getElementById('time-limit-btn');
+        if(tlBtn){
+          tlBtn.textContent = '制限時間 ON';
+          tlBtn.style.background  = 'rgba(80,20,0,0.9)';
+          tlBtn.style.borderColor = 'rgba(255,100,0,0.8)';
+          tlBtn.style.color       = '#ffaa00';
+        }
+        const tlInput = document.getElementById('time-limit-input');
+        if(tlInput) tlInput.value = stage.timeLimit;
+        const remEl = document.getElementById('stat-remaining');
+        if(remEl) remEl.style.display = '';
+        const gaugeEl = document.getElementById('time-limit-gauge');
+        if(gaugeEl) gaugeEl.style.display = '';
+      }
+
+      // charId 保存
+      window._stageCharId = stage.charId || null;
+
+      // novelAfterClear 保存（クリア後「つづきを見る」ボタンの遷移先）
+      window._novelAfterClear = stage.novelAfterClear || null;
+
+      // BGM 適用（指定が無ければ既定のSND_02_play.mp3のまま）
+      if(stage.bgm){
+        // 既に既定BGMが再生開始済み（最初の操作がstage-params.json取得より早かった場合）なら、
+        // src切替で一旦止まってしまうため、差し替え後に再生を続行する
+        const wasPlaying = !SND.bgm.paused;
+        SND.bgm.src = 'sounds/' + stage.bgm;
+        if(wasPlaying){
+          SND.bgm.currentTime = 0;
+          SND.bgm.play().catch(()=>{});
+        }
+      }
+      window._stageHasCustomBgm = !!stage.bgm;
+
+      // 背景画像 適用（canvas-containerはalpha:trueで透過しているのでCSS背景がそのまま見える）
+      const canvasContainer = document.getElementById('canvas-container');
+      if(canvasContainer){
+        if(stage.background){
+          canvasContainer.style.backgroundImage  = `url('images/stage-bg/${stage.background}')`;
+          canvasContainer.style.backgroundSize     = 'cover';
+          canvasContainer.style.backgroundPosition = 'center';
+        } else {
+          canvasContainer.style.backgroundImage = 'none';
+        }
+      }
+
+      // logicGuarantee 適用
+      if(typeof stage.logicGuarantee === 'boolean'){
+        logicGuarantee = stage.logicGuarantee;
+        const btn = document.getElementById('logic-guarantee-btn');
+        if(btn){
+          btn.classList.toggle('active', logicGuarantee);
+          btn.textContent = logicGuarantee ? '🔒 論理保証ON' : '🔓 論理保証OFF';
+        }
+      }
+
+      // exMode 適用（stage-params.json連携）
+      if(typeof stage.exMode === 'boolean'){
+        exMode = stage.exMode;
+        const exBtn = document.getElementById('ex-mode-btn');
+        if(exBtn){
+          exBtn.textContent = exMode ? 'EX ON' : 'EX OFF';
+          exBtn.style.background  = exMode ? 'rgba(60,0,0,0.8)'    : 'rgba(0,40,20,0.8)';
+          exBtn.style.borderColor = exMode ? 'rgba(255,50,50,0.5)' : 'rgba(0,200,100,0.5)';
+          exBtn.style.color       = exMode ? '#ff5555'             : '#00cc66';
+        }
+      }
+
+      // loopMode / loopCount 適用（stage-params.json連携）
+      if(stage.loopMode === true){
+        loopMode = true;
+        window._loopMode = true;
+        if(stage.loopCount != null){
+          const n = parseInt(stage.loopCount, 10);
+          if(!isNaN(n) && n >= 2) loopCount = n;
+        }
+        // 周ごとの制限時間（任意）。配列が足りない周は最後の値を使い回す
+        if(Array.isArray(stage.loopTimeLimits) && stage.loopTimeLimits.length > 0){
+          window._loopTimeLimits = stage.loopTimeLimits.map(v => parseInt(v, 10)).filter(v => !isNaN(v) && v > 0);
+          if(window._loopTimeLimits.length === 0) window._loopTimeLimits = null;
+        } else {
+          window._loopTimeLimits = null;
+        }
+        const loopBtn = document.getElementById('loop-mode-btn');
+        if(loopBtn){
+          loopBtn.textContent = '周回モード ON';
+          loopBtn.style.background  = 'rgba(80,0,120,0.9)';
+          loopBtn.style.borderColor = 'rgba(180,0,255,0.8)';
+          loopBtn.style.color       = '#dd99ff';
+        }
+        const loopCountInput = document.getElementById('loop-count-input');
+        if(loopCountInput) loopCountInput.value = loopCount;
+        // 1周目の盤面色・進行度バーをloopColorsで初期化（toggleLoopMode()と同じ処理）
+        currentLoop = 1;
+        window._boardTheme = loopColors[0] || window._boardTheme;
+        const backEl  = document.getElementById('expose-bar-back');
+        const innerEl = document.getElementById('expose-bar-inner');
+        if(backEl)  backEl.style.background  = 'rgba(50,0,80,0.7)';
+        if(innerEl) innerEl.style.background = loopColors[0] || 'linear-gradient(90deg,#8800ff,#cc44ff)';
+      }
+
+      // ステージモード：UI無効化
+      const diffSel = document.getElementById('diff-select');
+      if(diffSel) diffSel.disabled = true;
+      const dens = document.getElementById('mine-density');
+      if(dens) dens.disabled = true;
+      const lgBtn = document.getElementById('logic-guarantee-btn');
+      if(lgBtn) lgBtn.disabled = true;
+
+      // 設定を反映してリスタート
+      restartGame();
+    })
+    .catch(() => {
+      console.warn('stage-params.json not found, using defaults.');
+      restartGame();
+    });
+})();
+
+// ===================== INIT =====================
+setMode('dig');
+updateMineCountLabel();
+initRadarCanvas();
+// UIバー描画後にmode-indicator・expose-bar-wrapのtopを同期
+requestAnimationFrame(()=>requestAnimationFrame(()=>{ syncCharaLayerSize(); updateHintGauge(); }));
+// ステージモード時はapplyStageParam内のrestartGameに任せる
+if(!new URLSearchParams(window.location.search).get('stage')){
+  restartGame();
+}
+// 最初のマスを開く前でも、ページへの最初の操作（クリック/タップ）でBGMを開始する
+// （ブラウザの自動再生制限対策。startTimer()内のstartBGM()は1手目専用で別途呼ばれる）
+document.addEventListener('pointerdown', function(){ startBGM(); }, { once: true });
+
+animate();
+</script>
+</body>
+</html>

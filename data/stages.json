@@ -1,0 +1,101 @@
+[
+  {
+    "id": 1,
+    "name": "鬼骨の星牢",
+    "description": "深淵に眠る骨の星。静寂の中に罠が潜む。",
+    "image": "stages/st01.png",
+    "locked": false,
+    "difficulty": "初級",
+    "grid_col": 16,
+    "grid_row": 8,
+    "mines": 12
+  },
+  {
+    "id": 2,
+    "name": "密林の星牢",
+    "description": "緑に覆われた迷宮の星。視界を遮る草木の罠。",
+    "image": "stages/st02.png",
+    "locked": false,
+    "difficulty": "中級",
+    "grid_col": 24,
+    "grid_row": 12,
+    "mines": 45
+  },
+  {
+    "id": 3,
+    "name": "幻夢の星牢",
+    "description": "夢と現実の狭間に浮かぶ星。惑わされるな。",
+    "image": "stages/st03.png",
+    "locked": false,
+    "difficulty": "上級",
+    "grid_col": 32,
+    "grid_row": 14,
+    "mines": 90
+  },
+  {
+    "id": 4,
+    "name": "砂神の星牢",
+    "description": "砂嵐が支配する灼熱の星。神の怒りに触れるな。",
+    "image": "stages/st04.png",
+    "locked": false,
+    "difficulty": "星雲級",
+    "grid_col": 40,
+    "grid_row": 18,
+    "mines": 150
+  },
+  {
+    "id": 5,
+    "name": "暗闇の星牢",
+    "description": "光すら届かない暗黒の星。感覚だけを頼りに進め。",
+    "image": "stages/st05.png",
+    "locked": false,
+    "difficulty": "銀河級",
+    "grid_col": 48,
+    "grid_row": 22,
+    "mines": 220
+  },
+  {
+    "id": 6,
+    "name": "魔海の星牢",
+    "description": "呪われた海に沈む星。波間に無数の罠が潜む。",
+    "image": "stages/st06.png",
+    "locked": false,
+    "difficulty": "銀河団級",
+    "grid_col": 56,
+    "grid_row": 26,
+    "mines": 300
+  },
+  {
+    "id": 7,
+    "name": "白銀の星牢",
+    "description": "永遠の氷雪に閉ざされた星。白の迷宮を突破せよ。",
+    "image": "stages/st07.png",
+    "locked": false,
+    "difficulty": "超銀河団級",
+    "grid_col": 64,
+    "grid_row": 30,
+    "mines": 400
+  },
+  {
+    "id": 8,
+    "name": "冥府の星牢",
+    "description": "宇宙の果て、観測すら不可能な終焉の星。",
+    "image": "stages/st08.png",
+    "locked": false,
+    "difficulty": "観測不可能級",
+    "grid_col": 72,
+    "grid_row": 34,
+    "mines": 500
+  },
+  {
+    "id": 9,
+    "name": "消滅の果て",
+    "description": "消滅した星屑は、消滅を繰り返し、やがて果てる。",
+    "image": "stages/st09.png",
+    "locked": false,
+    "difficulty": "消滅級",
+    "grid_col": 12,
+    "grid_row": 7,
+    "mines": 10
+  }
+]

@@ -1,0 +1,478 @@
+/* ============================================
+   ノベルゲームエンジン — スタイルシート
+   サイバー和風テイスト / ペルソナ風演出
+   ============================================ */
+
+/* ---------- リセット & 基盤 ---------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  /* タップハイライト無効化 */
+  -webkit-tap-highlight-color: transparent;
+  /* 文字選択無効化 */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+:root {
+  /* カラーパレット */
+  --col-void:       #0D1117;
+  --col-deep:       #110D2A;
+  --col-fog:        #C8D0E0;
+  --col-white:      #FFFFFF;
+  --col-accent:     #9B59FF;
+  --col-accent-dim: #6B3FBB;
+  --col-accent-glow:#C39FFF;
+  --col-inactive:   rgba(200, 208, 224, 0.35);
+
+  /* ウィンドウ */
+  --win-bg:         rgba(10, 8, 22, 0.82);
+  --win-border:     #000000;
+  --win-height:     26%;
+
+  /* タイポ */
+  --font-body:      'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+  --font-ui:        'M PLUS 1p', 'Hiragino Kaku Gothic ProN', sans-serif;
+
+  /* アニメーション */
+  --fade-char:      0.2s;
+  --fade-scene:     0.6s;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--col-void);
+}
+
+/* ---------- ゲームコンテナ ---------- */
+#game-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 960px;
+  max-height: 640px;
+  margin: 0 auto;
+  overflow: hidden;
+  cursor: pointer;
+  /* スマホ縦でも中央に */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* スマホ縦画面対応: 全画面表示 */
+@media (max-aspect-ratio: 3/4) {
+  #game-container {
+    max-width: 100%;
+    max-height: 100%;
+    top: 0;
+    transform: none;
+  }
+}
+
+/* ---------- フェードオーバーレイ ---------- */
+#fade-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity var(--fade-scene) ease;
+}
+
+#fade-overlay.fading-out { opacity: 1; pointer-events: all; }
+#fade-overlay.fading-in  { opacity: 0; }
+
+/* ---------- 背景レイヤー ---------- */
+#background-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+#background-img {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--col-deep);
+  transition: opacity 0.5s ease;
+}
+
+/* 背景が未設定の場合のデフォルトグラデーション */
+#background-img.default-bg {
+  background: radial-gradient(ellipse at 30% 60%, #1a0e3a 0%, #0a0618 50%, #000 100%);
+}
+
+/* ---------- キャラクターレイヤー ---------- */
+#character-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* キャラクター共通 */
+.character {
+  position: absolute;
+  bottom: var(--win-height);
+  height: 85%;
+  width: auto;
+  max-width: 45%;
+  opacity: 0;
+  transition: opacity var(--fade-char) ease,
+              transform var(--fade-char) ease,
+              filter var(--fade-char) ease;
+  transform-origin: bottom center;
+  object-fit: contain;
+  object-position: bottom;
+  /* 非表示時は下へ */
+  transform: translateY(20px);
+  filter: brightness(0.4) saturate(0.5);
+}
+
+.character.visible {
+  opacity: 0.42;
+  transform: translateY(0);
+  filter: brightness(0.55) saturate(0.6);
+}
+
+.character.active {
+  opacity: 1;
+  filter: brightness(1) saturate(1) drop-shadow(0 0 18px rgba(155, 89, 255, 0.35));
+}
+
+
+/* キャラクター配置 — position指定はscript.jsのキャラデータで設定 */
+.character[data-position="left"] {
+  left: 2%;
+}
+
+.character[data-position="right"] {
+  right: 2%;
+}
+
+.character[data-position="center"] {
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+}
+.character[data-position="center"].active {
+  filter: brightness(1) saturate(1) drop-shadow(0 0 18px rgba(155, 89, 255, 0.35));
+  transform: translateX(-50%) translateY(0);
+}
+.character[data-position="center"].visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ---------- UIレイヤー ---------- */
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* クリックが必要な要素だけ pointer-events を戻す */
+#dialog-window,
+#start-screen,
+#end-screen,
+#restart-btn {
+  pointer-events: auto;
+}
+
+/* ---------- 会話ウィンドウ ---------- */
+#dialog-window {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--win-height);
+  min-height: 130px;
+  background: var(--win-bg);
+  border-top: 1px solid var(--win-border);
+  padding: 28px 32px 20px;
+  /* バックドロップブラー */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  /* 上部装飾ライン */
+  box-shadow:
+    inset 0 1px 0 rgba(155, 89, 255, 0.25),
+    0 -8px 32px rgba(0,0,0,0.6);
+}
+
+#dialog-window.hidden {
+  display: none;
+}
+
+/* 名前プレート */
+#name-plate {
+  position: absolute;
+  top: -38px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, var(--col-deep) 0%, #1a1040 100%);
+  border: 1px solid var(--win-border);
+  padding: 0 16px 0 0;
+  /* 右端斜めカット — シグネチャデザイン */
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%);
+  min-width: 100px;
+  height: 36px;
+  box-shadow: 0 0 12px rgba(155, 89, 255, 0.3);
+}
+
+/* アクセントバー */
+#name-plate-bar {
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--col-accent) 0%, var(--col-accent-dim) 100%);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+#speaker-name {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--col-accent-glow);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(155, 89, 255, 0.6);
+}
+
+/* テキストエリア */
+#dialog-text {
+  font-family: var(--font-body);
+  font-size: clamp(0.85rem, 2.2vw, 1.05rem);
+  line-height: 1.9;
+  color: var(--col-white);
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  min-height: 3.8em;
+  /* スクロール対応 */
+  overflow-y: auto;
+  max-height: calc(var(--win-height) - 60px);
+  padding-right: 24px;
+}
+
+/* 次へインジケーター */
+#next-indicator {
+  position: absolute;
+  bottom: 10px;
+  right: 20px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+#next-indicator.visible {
+  opacity: 1;
+  animation: bounce-arrow 0.8s ease-in-out infinite alternate;
+}
+
+.arrow-icon {
+  font-size: 0.75rem;
+  color: var(--col-accent);
+  filter: drop-shadow(0 0 4px var(--col-accent));
+}
+
+@keyframes bounce-arrow {
+  from { transform: translateY(0);  opacity: 0.6; }
+  to   { transform: translateY(3px); opacity: 1; }
+}
+
+/* ---------- クリック受付オーバーレイ（廃止・互換用） ---------- */
+#click-overlay {
+  display: none;
+}
+
+/* ---------- スタート画面 ---------- */
+#start-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a0838 0%, #060310 100%);
+}
+
+#start-content {
+  text-align: center;
+  position: relative;
+}
+
+#game-title {
+  font-family: var(--font-ui);
+  font-size: clamp(2.4rem, 8vw, 4.2rem);
+  font-weight: 700;
+  color: var(--col-white);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.4em;
+}
+
+#game-title span {
+  color: #00c8ff;
+  text-shadow: 0 0 20px rgba(0, 200, 255, 0.8), 0 0 40px rgba(0, 200, 255, 0.4);
+}
+
+#game-subtitle {
+  font-family: var(--font-ui);
+  font-size: clamp(0.75rem, 2.5vw, 0.95rem);
+  color: var(--col-fog);
+  letter-spacing: 0.25em;
+  opacity: 0.8;
+  animation: pulse-text 2s ease-in-out infinite;
+}
+
+#start-pulse {
+  width: 60px;
+  height: 2px;
+  background: var(--col-accent);
+  margin: 1.5em auto 0;
+  box-shadow: 0 0 10px var(--col-accent);
+  animation: pulse-line 2s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
+}
+
+@keyframes pulse-line {
+  0%, 100% { transform: scaleX(0.5); opacity: 0.4; }
+  50%       { transform: scaleX(1.0); opacity: 1;   }
+}
+
+/* ---------- エンド画面 ---------- */
+#end-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2em;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(4px);
+}
+
+#end-screen.hidden {
+  display: none;
+}
+
+#end-text {
+  font-family: var(--font-ui);
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  font-weight: 700;
+  color: var(--col-fog);
+  letter-spacing: 0.5em;
+}
+
+#restart-btn {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--col-accent-glow);
+  background: transparent;
+  border: 1px solid var(--win-border);
+  padding: 0.7em 2em;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+#restart-btn:hover {
+  background: var(--col-accent-dim);
+  color: var(--col-white);
+  box-shadow: 0 0 16px rgba(155, 89, 255, 0.5);
+}
+
+/* ---------- スクロールバー（テキスト内） ---------- */
+#dialog-text::-webkit-scrollbar {
+  width: 3px;
+}
+#dialog-text::-webkit-scrollbar-track {
+  background: transparent;
+}
+#dialog-text::-webkit-scrollbar-thumb {
+  background: var(--col-accent-dim);
+  border-radius: 2px;
+}
+
+/* ---------- モバイル対応 ---------- */
+@media (max-width: 480px) {
+  #dialog-window {
+    padding: 22px 18px 16px;
+  }
+
+  #dialog-text {
+    font-size: 0.9rem;
+    line-height: 1.8;
+  }
+
+  #name-plate {
+    top: -32px;
+    height: 30px;
+  }
+
+  #speaker-name {
+    font-size: 0.78rem;
+  }
+
+  .character[data-position="left"] {
+    left: -4%;
+  }
+
+  .character[data-position="right"] {
+    right: -4%;
+  }
+}
+
+/* スマホ縦画面: ウィンドウを広げて5行分確保 */
+@media (max-aspect-ratio: 3/4) {
+  :root {
+    /* 画面の38%か230pxの大きい方を採用（小さい画面でも5行確保） */
+    --win-height: max(38%, 230px);
+  }
+
+  #dialog-window {
+    padding: 26px 20px 18px;
+  }
+
+  #dialog-text {
+    font-size: 0.88rem;
+    line-height: 1.75;
+    max-height: calc(var(--win-height) - 80px);
+  }
+
+  .character {
+    bottom: var(--win-height);
+    height: 85%;
+  }
+}
+
+/* さらに小さい画面（高さに余裕がない端末）向けの調整 */
+@media (max-aspect-ratio: 3/4) and (max-height: 700px) {
+  :root {
+    --win-height: max(40%, 200px);
+  }
+  #dialog-text {
+    font-size: 0.82rem;
+    line-height: 1.65;
+  }
+}
+
+/* ---------- アクセシビリティ ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

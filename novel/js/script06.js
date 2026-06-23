@@ -1,0 +1,93 @@
+const CHARACTERS = {
+  alice: {
+    name: 'アリス',
+    position: 'left',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_alice01.png',
+      normal2: 'image_alice02.png',
+      normal3: 'image_alice03.png',
+    },
+  },
+  flat: {
+    name: 'フラット',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_flat01.png',
+      normal2: 'image_flat02.png',
+      normal3: 'image_flat03.png',
+    },
+  },
+  iroha: {
+    name: 'イロハ',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_iroha01.png',
+    },
+  }
+};
+
+const SCRIPT = [
+  { command: 'background', value: 'back01.png' },
+  { command: 'bgm', value: 'bgm01.mp3' },
+  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
+  { command: 'show', character: 'alice', portrait: 'normal1' },
+  { speaker: 'アリス', portrait: 'normal1', text: '救助完了。' },
+  { command: 'show', character: 'iroha', portrait: 'normal1' },
+  { speaker: 'イロハ', portrait: 'normal1', text: 'ありがとう。でも盲目の魚なら、この牢獄でも平気だったでしょうね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '魚？' },
+  { speaker: 'イロハ', portrait: 'normal1', text: '目がほとんど退化している魚がいるの。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'そんな話をしていたかしら。' },
+  { speaker: 'イロハ', portrait: 'normal1', text: 'していないわ。だから今しているの。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '牢獄の話だっけ？' },
+  { speaker: 'イロハ', portrait: 'normal1', text: '魚の話よ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'そうだったわね。' },
+  { speaker: 'イロハ', portrait: 'normal1', text: '盲目の魚は、聴覚や触覚の使い方が上手なこともあるわ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'なるほど。' },
+  { speaker: 'イロハ', portrait: 'normal1', text: 'だから私は牢獄の壁を見ないようにしていたの。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '見えていたのに？' },
+  { speaker: 'イロハ', portrait: 'normal1', text: '見えると邪魔だから。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '見えたほうが便利でしょう？' },
+  { speaker: 'イロハ', portrait: 'normal1', text: '便利なものは見落としやすいの' },
+  { speaker: 'アリス', portrait: 'normal1', text: '前を見て歩けばいいのよ。' },
+  { speaker: 'イロハ', portrait: 'normal1', text: 'だから空を見て歩くのね' },
+  { speaker: 'アリス', portrait: 'normal1', text: '歩く時は前を見るわ。' },
+  { speaker: 'イロハ', portrait: 'normal1', text: 'それなら盲目の魚より忙しそう。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '魚は歩かないでしょう。' },
+  { speaker: 'イロハ', portrait: 'normal1', text: 'だから暇なのよ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '羨ましいの？' },
+  { speaker: 'イロハ', portrait: 'normal1', text: '少し。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '牢屋の方が幸せだったのかもね。' },
+  { command: 'fadeout' },
+  { command: 'hide_all' },
+  { command: 'hide', character: 'alice' },
+  { command: 'hide', character: 'iroha' },
+  { command: 'dialog_hide' },
+  { command: 'background', value: 'back07.png', position: 'bottom' },
+  { command: 'se', value: 'gogogo.wav' },
+  { command: 'wait', duration: 2000 },
+  { command: 'fadein' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが6つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '海みたいだけど、底はあるのかしら。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '深さなんて関係ないわね。底よりもむしろ水面のほうが、ずっと隠し事が上手そうだわ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '海は下にあるものだと思っていたけど、空の上にあるべきだったのかもね。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '説明してくれる人はいないみたいだけれど。' },
+  { command: 'dialog_hide' },
+  { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
+  { command: 'wait', duration: 2000 },
+  { command: 'bgm_fade', duration: 2000 },
+];
+
+NovelEngine.init({
+  characters:  CHARACTERS,
+  imagePath:   'images/',
+  bgmPath:     '../sounds/',
+  sePath:      'se/',
+  typingSpeed: 30,
+  clickSE:     'click.wav',
+  nextUrl:     '../index.html?select=1&storyStage=6',
+});
+
+NovelEngine.play(SCRIPT);

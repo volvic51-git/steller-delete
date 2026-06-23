@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "ruge",
+      "name": "ルージュ",
+      "position": "right",
+      "defaultPortrait": "normal",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_ruge01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "終わったわね。"
+    },
+    {
+      "type": "show",
+      "character": "ruge",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "助けてくれてありがとう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どういたしまして。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "お礼に骨を一本どうぞ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "いらないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "遠慮しなくていいのに。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "本当にいらない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "じゃあ口紅にしておく？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "選択肢がおかしくない？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "骨味の口紅なんだけど。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "余計にいらないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "人気あるのに？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "誰に？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "骨に。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "骨が口紅をするの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "むしろ骨以外はあまり使わないね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "初耳だよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ルージュ",
+      "portrait": "normal1",
+      "text": "耳があるうちにね。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "ruge"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back03.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが二つ目の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "変な場所。こんなに緑ばかりだと、どれが景色でどれが緑なのかわからなくなるわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "葉っぱが風で揺れているのかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それとも緑全体が何か内緒話をしているのかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どちらでもあまり安心できないけれど。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "でも「普通」より「変」のほうが、道案内に向いている気がしてきたわ。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

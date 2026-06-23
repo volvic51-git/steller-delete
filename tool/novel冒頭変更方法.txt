@@ -1,0 +1,3 @@
+はい、編集可能です。各novelXX.html内の1行（<p id="game-subtitle">）にプレースホルダーとして仮で入れていただけのテキストなので、自由に書き換えられます。
+html<p id="game-subtitle">Stage 3 クリア後</p>
+ここは元々novel-game-final側で「クリックしてスタート」が入っていた場所で、私が仮に「Stage N クリア後」と入れていました。

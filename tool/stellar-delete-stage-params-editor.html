@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellar Delete stage-params エディタ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+html,body{ margin:0; padding:0; background:#0b0e14; }
+@media (prefers-color-scheme: light){ html,body{ background:#f3f4f7; } }
+body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:border-box; font-family:'Space Grotesk','Hiragino Kaku Gothic ProN',sans-serif; }
+.spe-root{ width:100%; max-width:1180px; --bg:#0b0e14; --panel-bg:#11161f; --card-bg:#151b27; --border:#2a3344; --text:#e7eaf0; --text-dim:#8a93a6;
+  --accent:#4f8cff; --warn:#f2935d; --danger:#e08080; --ok:#5fd0a6; color:var(--text); }
+@media (prefers-color-scheme: light){ .spe-root{ --bg:#f3f4f7; --panel-bg:#ffffff; --card-bg:#ffffff; --border:#d7dbe3; --text:#1b2230; --text-dim:#6b7280; } }
+.spe-root *{ box-sizing:border-box; }
+.spe-toolbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+.spe-title{ font-size:16px; font-weight:600; margin:0; letter-spacing:.02em; }
+.spe-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+.spe-actions button{ font-family:inherit; font-size:12px; padding:7px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; }
+.spe-actions button:active{ transform:scale(.97); }
+.spe-status{ font-size:11px; color:var(--text-dim); margin:4px 2px 10px; min-height:14px; }
+
+.spe-results{ margin-bottom:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel-bg); }
+.spe-results h3{ font-size:12px; margin:0 0 6px; color:var(--text-dim); font-weight:500; }
+.spe-results pre{ font-family:'JetBrains Mono',monospace; font-size:11px; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; padding:10px; overflow:auto; max-height:280px; margin:0 0 8px; }
+.spe-results-actions{ display:flex; gap:8px; }
+.spe-results-actions button, .spe-results > button{ font-family:inherit; font-size:11px; padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); cursor:pointer; }
+
+.spe-layout{ display:grid; grid-template-columns:220px 1fr; gap:12px; }
+.spe-list{ background:var(--panel-bg); border:1px solid var(--border); border-radius:12px; padding:10px; max-height:640px; overflow:auto; }
+.spe-list-item{ display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); margin-bottom:6px; cursor:pointer; position:relative; }
+.spe-list-item.selected{ outline:2px solid var(--accent); outline-offset:1px; }
+.spe-list-item .spe-li-top{ font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:6px; }
+.spe-list-item .spe-li-sub{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); }
+.spe-swatch{ width:10px; height:10px; border-radius:50%; border:1px solid var(--border); flex-shrink:0; }
+.spe-li-del{ position:absolute; top:4px; right:4px; width:18px; height:18px; border:none; background:transparent; color:var(--text-dim); cursor:pointer; font-size:13px; line-height:1; border-radius:5px; }
+.spe-li-del:hover{ background:var(--border); color:var(--text); }
+.spe-add-btn{ display:block; width:100%; text-align:center; font-family:inherit; font-size:12.5px; padding:8px; border-radius:8px; border:1px dashed var(--border); background:transparent; color:var(--text-dim); cursor:pointer; }
+.spe-add-btn:hover{ color:var(--text); border-color:var(--text-dim); }
+
+.spe-detail{ background:var(--panel-bg); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.spe-section{ margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+.spe-section:last-child{ border-bottom:none; margin-bottom:0; padding-bottom:0; }
+.spe-section h3{ font-size:11px; color:var(--text-dim); margin:0 0 10px; text-transform:uppercase; letter-spacing:.05em; font-weight:500; display:flex; align-items:center; gap:8px; }
+.spe-badge-future{ font-size:9.5px; padding:1px 6px; border-radius:999px; border:1px dashed var(--warn); color:var(--warn); text-transform:none; letter-spacing:0; }
+.spe-row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+.spe-row:last-child{ margin-bottom:0; }
+.spe-field{ display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--text-dim); flex:1; min-width:140px; }
+.spe-field input[type=text], .spe-field input[type=number], .spe-field select, .spe-field textarea{ font-family:inherit; font-size:13px; padding:7px 9px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text); }
+.spe-field input:disabled, .spe-field select:disabled{ opacity:.45; }
+.spe-note{ font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+.spe-warn-text{ font-size:10.5px; color:var(--danger); margin-top:2px; }
+.spe-checkrow{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text); cursor:pointer; }
+.spe-radio-group{ display:flex; gap:14px; align-items:center; font-size:12.5px; }
+.spe-radio-group label{ display:flex; align-items:center; gap:5px; cursor:pointer; color:var(--text); }
+.spe-color-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.spe-color-row input[type=color]{ width:36px; height:32px; padding:2px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); cursor:pointer; }
+.spe-color-row input[type=text]{ width:96px; }
+.spe-swatch-btn{ width:22px; height:22px; border-radius:50%; border:2px solid var(--border); cursor:pointer; padding:0; }
+.spe-swatch-btn.spe-default{ background:var(--card-bg); display:flex; align-items:center; justify-content:center; font-size:8px; color:var(--text-dim); }
+.spe-empty{ font-size:12px; color:var(--text-dim); }
+
+@media (max-width: 760px){
+  .spe-layout{ grid-template-columns:1fr; }
+  .spe-list{ max-height:240px; }
+}
+</style>
+</head>
+<body>
+<div class="spe-root" id="speRoot">
+  <div class="spe-toolbar">
+    <h2 class="spe-title">Stellar Delete stage-params エディタ</h2>
+    <div class="spe-actions">
+      <button id="btnSave" type="button">JSON保存</button>
+      <button id="btnLoad" type="button">JSON読込</button>
+      <button id="btnView" type="button">全体JSON表示</button>
+      <button id="btnReset" type="button">リセット</button>
+    </div>
+    <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
+  </div>
+  <p class="spe-status" id="status"></p>
+
+  <div class="spe-results" id="resultsPanel" hidden>
+    <h3>stage-params.json（全ステージ）</h3>
+    <pre id="jsonOut"></pre>
+    <div class="spe-results-actions">
+      <button id="copyJson" type="button">コピー</button>
+      <button id="closeResults" type="button">閉じる</button>
+    </div>
+  </div>
+
+  <div class="spe-layout">
+    <div class="spe-list" id="stageList"></div>
+    <div class="spe-detail" id="detail"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var STORAGE_KEY = 'stage-params-editor-v1';
+  var listEl = document.getElementById('stageList');
+  var detailEl = document.getElementById('detail');
+  var statusEl = document.getElementById('status');
+  var resultsPanel = document.getElementById('resultsPanel');
+  var fileInput = document.getElementById('fileInput');
+
+  var DIFF_INFO = {
+    s1:{ cols:16, rows:8,  total:128,  timeDefault:60   },
+    s2:{ cols:24, rows:12, total:288,  timeDefault:120  },
+    s3:{ cols:32, rows:14, total:448,  timeDefault:180  },
+    m1:{ cols:40, rows:18, total:720,  timeDefault:300  },
+    m2:{ cols:48, rows:22, total:1056, timeDefault:420  },
+    m3:{ cols:56, rows:26, total:1456, timeDefault:600  },
+    h1:{ cols:64, rows:30, total:1920, timeDefault:900  },
+    h2:{ cols:72, rows:34, total:2448, timeDefault:1200 },
+    x1:{ cols:12, rows:7,  total:84,   timeDefault:null }
+  };
+  var DIFF_KEYS = ['s1','s2','s3','m1','m2','m3','h1','h2','x1'];
+  var COLOR_PRESETS = [
+    { hex:'#0044aa', name:'青' }, { hex:'#006622', name:'緑' }, { hex:'#440088', name:'紫' },
+    { hex:'#886600', name:'金' }, { hex:'#880022', name:'赤' }, { hex:'#aaaacc', name:'白銀' },
+    { hex:'#884400', name:'橙' }
+  ];
+
+  var state = { stages: [] };
+  var selectedId = null;
+  var saveTimer = null;
+  var resetArmed = false, resetTimer = null;
+
+  function escapeHtml(str){
+    return String(str == null ? '' : str).replace(/[&<>"]/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];
+    });
+  }
+
+  function defaultState(){
+    return { stages: [
+      { id:1, diff:'s1', mineMode:'mines', mines:12,  density:24, charId:'001', logicGuarantee:true, boardColor:'#666666', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel02.html', bgm:'', background:'', memo:'' },
+      { id:2, diff:'s2', mineMode:'mines', mines:45,  density:24, charId:'002', logicGuarantee:true, boardColor:'#006622', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel03.html', bgm:'', background:'', memo:'' },
+      { id:3, diff:'s3', mineMode:'mines', mines:90,  density:24, charId:'003', logicGuarantee:true, boardColor:'#440088', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel04.html', bgm:'', background:'', memo:'' },
+      { id:4, diff:'m1', mineMode:'mines', mines:150, density:24, charId:'004', logicGuarantee:true, boardColor:'#886600', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel05.html', bgm:'', background:'', memo:'' },
+      { id:5, diff:'m2', mineMode:'mines', mines:220, density:24, charId:'005', logicGuarantee:true, boardColor:'#880022', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel06.html', bgm:'', background:'', memo:'' },
+      { id:6, diff:'m3', mineMode:'mines', mines:300, density:24, charId:'006', logicGuarantee:true, boardColor:'#0044aa', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel07.html', bgm:'', background:'', memo:'' },
+      { id:7, diff:'h1', mineMode:'mines', mines:400, density:24, charId:'007', logicGuarantee:true, boardColor:'#aaaacc', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel08.html', bgm:'', background:'', memo:'' },
+      { id:8, diff:'h2', mineMode:'mines', mines:500, density:24, charId:'008', logicGuarantee:true, boardColor:'#884400', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel09.html', bgm:'', background:'', memo:'' },
+      { id:9, diff:'x1', mineMode:'mines', mines:10,  density:24, charId:'009', logicGuarantee:true, boardColor:'#552255', maxHints:3, timeLimitMode:true,  timeLimit:30,   loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel10.html', bgm:'', background:'', memo:'' }
+    ] };
+  }
+
+  function flashStatus(msg){
+    statusEl.textContent = msg;
+    setTimeout(function(){ if(statusEl.textContent === msg) statusEl.textContent = ''; }, 1800);
+  }
+
+  function saveStateDebounced(){
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){
+      try{ window.storage.set(STORAGE_KEY, JSON.stringify(state), false).catch(function(){}); }catch(e){}
+    }, 300);
+  }
+
+  function findStage(id){ return state.stages.find(function(s){ return s.id === id; }); }
+
+  function isDuplicateId(id, excludeIdx){
+    var count = 0;
+    state.stages.forEach(function(s, i){ if(s.id === id && i !== excludeIdx) count++; });
+    return count > 0;
+  }
+
+  function toExportObj(s){
+    var info = DIFF_INFO[s.diff] || DIFF_INFO.s1;
+    return {
+      id: s.id,
+      diff: s.diff,
+      mines: s.mineMode === 'mines' ? s.mines : null,
+      density: s.mineMode === 'density' ? s.density : null,
+      charId: s.charId,
+      logicGuarantee: !!s.logicGuarantee,
+      boardColor: s.boardColor ? s.boardColor : null,
+      maxHints: s.maxHints,
+      grid_col: info.cols,
+      grid_row: info.rows,
+      total: info.total,
+      timeLimitMode: !!s.timeLimitMode,
+      timeLimit: s.timeLimitMode ? s.timeLimit : null,
+      loopMode: !!s.loopMode,
+      loopCount: s.loopCount,
+      loopTimeLimits: s.loopTimeLimits ? s.loopTimeLimits.split(',').map(function(v){ return parseInt(v.trim(),10); }).filter(function(v){ return !isNaN(v) && v > 0; }) : null,
+      exMode: s.exMode !== false,
+      novelAfterClear: s.novelAfterClear ? s.novelAfterClear : null,
+      bgm: s.bgm ? s.bgm : "",
+      background: s.background ? s.background : ""
+    };
+  }
+
+  function buildExportArray(){
+    return state.stages.map(toExportObj);
+  }
+
+  function downloadJSON(obj, filename){
+    var data = JSON.stringify(obj, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function saveJSON(){
+    downloadJSON(buildExportArray(), 'stage-params.json');
+    flashStatus('保存しました');
+  }
+
+  function normalizeLoaded(arr){
+    if(!Array.isArray(arr)) return [];
+    return arr.map(function(s){
+      var mineMode = (s.mines != null) ? 'mines' : 'density';
+      return {
+        id: s.id,
+        diff: DIFF_KEYS.indexOf(s.diff) >= 0 ? s.diff : 's1',
+        mineMode: mineMode,
+        mines: s.mines != null ? s.mines : 12,
+        density: s.density != null ? s.density : 24,
+        charId: s.charId || '',
+        logicGuarantee: !!s.logicGuarantee,
+        boardColor: s.boardColor || '',
+        maxHints: s.maxHints != null ? s.maxHints : 3,
+        timeLimitMode: !!s.timeLimitMode,
+        timeLimit: s.timeLimit != null ? s.timeLimit : null,
+        loopMode: !!s.loopMode,
+        loopCount: s.loopCount != null ? s.loopCount : 3,
+        loopTimeLimits: Array.isArray(s.loopTimeLimits) ? s.loopTimeLimits.join(',') : '',
+        exMode: s.exMode !== false,
+        novelAfterClear: s.novelAfterClear || '',
+        bgm: s.bgm || '',
+        background: s.background || '',
+        memo: ''
+      };
+    });
+  }
+
+  function loadJSONFile(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var parsed = JSON.parse(e.target.result);
+        state.stages = normalizeLoaded(parsed);
+        selectedId = state.stages.length ? state.stages[0].id : null;
+        renderAll();
+        saveStateDebounced();
+        flashStatus('読み込みました');
+      }catch(err){
+        flashStatus('JSONの読み込みに失敗しました');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function copyText(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+  }
+  function fallbackCopy(text){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    ta.remove();
+  }
+
+  function showResults(){
+    var arr = buildExportArray();
+    document.getElementById('jsonOut').textContent = JSON.stringify(arr, null, 2);
+    resultsPanel.hidden = false;
+    document.getElementById('copyJson').onclick = function(){ copyText(JSON.stringify(arr, null, 2)); flashStatus('コピーしました'); };
+  }
+
+  function addStage(){
+    var maxId = state.stages.reduce(function(m,s){ return Math.max(m, s.id||0); }, 0);
+    var nextId = maxId + 1;
+    var s = {
+      id: nextId, diff:'s1', mineMode:'mines', mines:12, density:24,
+      charId: String(nextId).length <= 3 ? ('00'+nextId).slice(-3) : String(nextId),
+      logicGuarantee:true, boardColor:'', maxHints:3,
+      timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'', bgm:'', background:'', memo:''
+    };
+    state.stages.push(s);
+    selectedId = s.id;
+    renderAll();
+    saveStateDebounced();
+  }
+
+  function duplicateStage(id){
+    var s = findStage(id);
+    if(!s) return;
+    var maxId = state.stages.reduce(function(m,x){ return Math.max(m, x.id||0); }, 0);
+    var copy = Object.assign({}, s, { id: maxId + 1 });
+    state.stages.push(copy);
+    selectedId = copy.id;
+    renderAll();
+    saveStateDebounced();
+  }
+
+  function deleteStage(id){
+    state.stages = state.stages.filter(function(s){ return s.id !== id; });
+    if(selectedId === id) selectedId = state.stages.length ? state.stages[0].id : null;
+    renderAll();
+    saveStateDebounced();
+  }
+
+  function renderList(){
+    listEl.innerHTML = '';
+    state.stages.forEach(function(s){
+      var item = document.createElement('div');
+      item.className = 'spe-list-item' + (s.id === selectedId ? ' selected' : '');
+      var swatch = '<span class="spe-swatch" style="background:' + (s.boardColor || 'transparent') + ';"></span>';
+      item.innerHTML =
+        '<button class="spe-li-del" type="button" aria-label="削除">\u00d7</button>' +
+        '<div class="spe-li-top">' + swatch + 'Stage ' + escapeHtml(s.id) + '</div>' +
+        '<div class="spe-li-sub">' + escapeHtml(s.diff) + ' / ' + (s.mineMode==='mines' ? (s.mines + '個') : (s.density + '%')) + '</div>';
+      item.addEventListener('click', function(e){
+        if(e.target.closest('.spe-li-del')) return;
+        selectedId = s.id;
+        renderAll();
+      });
+      item.querySelector('.spe-li-del').addEventListener('click', function(e){
+        e.stopPropagation();
+        deleteStage(s.id);
+      });
+      listEl.appendChild(item);
+    });
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'spe-add-btn';
+    addBtn.textContent = '+ ステージ追加';
+    addBtn.addEventListener('click', addStage);
+    listEl.appendChild(addBtn);
+  }
+
+  function charOption(id, name){
+    return '<option value="' + id + '">' + id + (name ? ' - ' + name : '') + '</option>';
+  }
+
+  function renderDetail(){
+    var s = findStage(selectedId);
+    if(!s){ detailEl.innerHTML = '<p class="spe-empty">左のリストからステージを選択してください。</p>'; return; }
+    var info = DIFF_INFO[s.diff] || DIFF_INFO.s1;
+    var diffOptions = DIFF_KEYS.map(function(k){
+      var d = DIFF_INFO[k];
+      return '<option value="' + k + '"' + (k===s.diff?' selected':'') + '>' + k.toUpperCase() + '（' + d.cols + '×' + d.rows + ' = ' + d.total + '）</option>';
+    }).join('');
+    var charOptions =
+      charOption('001','エコー') + charOption('002','ルナ') + charOption('003','フレア') + charOption('004','シルヴィア') +
+      charOption('005','') + charOption('006','') + charOption('007','') + charOption('008','') + charOption('009','フラット');
+
+    detailEl.innerHTML =
+      '<div class="spe-section">' +
+        '<h3>基本</h3>' +
+        '<div class="spe-row">' +
+          '<label class="spe-field">ステージID（数値）<input type="number" id="fId" min="1"></label>' +
+          '<label class="spe-field">盤面（diff）<select id="fDiff">' + diffOptions + '</select></label>' +
+          '<label class="spe-field">キャラクター（charId）<select id="fChar">' + charOptions + '</select></label>' +
+        '</div>' +
+        '<p class="spe-note" id="diffNote"></p>' +
+        '<p class="spe-warn-text" id="idWarn" style="display:none;">同じIDのステージが既に存在します</p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>地雷数</h3>' +
+        '<div class="spe-radio-group">' +
+          '<label><input type="radio" name="mineMode" value="mines"' + (s.mineMode==='mines'?' checked':'') + '> 固定数で指定</label>' +
+          '<label><input type="radio" name="mineMode" value="density"' + (s.mineMode==='density'?' checked':'') + '> 密度%で指定</label>' +
+        '</div>' +
+        '<div class="spe-row">' +
+          '<label class="spe-field">地雷数（個）<input type="number" id="fMines" min="0"></label>' +
+          '<label class="spe-field">密度（8〜40の偶数 %）<input type="number" id="fDensity" min="8" max="40" step="2"></label>' +
+        '</div>' +
+        '<p class="spe-note">mines が指定されていれば density より優先されます（ゲーム側の仕様）</p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>盤面色・ヒント・論理保証</h3>' +
+        '<div class="spe-row">' +
+          '<div class="spe-field">盤面色（boardColor）' +
+            '<div class="spe-color-row">' +
+              '<input type="color" id="fColorPicker">' +
+              '<input type="text" id="fColorHex" placeholder="#666666（空欄でDEFAULT）">' +
+              COLOR_PRESETS.map(function(c){ return '<button type="button" class="spe-swatch-btn" data-hex="' + c.hex + '" title="' + c.name + '" style="background:' + c.hex + ';"></button>'; }).join('') +
+              '<button type="button" class="spe-swatch-btn spe-default" data-hex="" title="DEFAULT">×</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="spe-row">' +
+          '<label class="spe-field">ヒント回数（maxHints）<input type="number" id="fHints" min="0"></label>' +
+          '<label class="spe-checkrow" style="margin-top:18px;"><input type="checkbox" id="fLogic"> 論理保証（解ける盤面を保証）</label>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>制限時間モード</h3>' +
+        '<div class="spe-row">' +
+          '<label class="spe-checkrow"><input type="checkbox" id="fTLMode"> 制限時間モードON</label>' +
+          '<label class="spe-field">秒数<input type="number" id="fTLTime" min="10" step="10" placeholder="AUTO"></label>' +
+        '</div>' +
+        '<p class="spe-note" id="tlNote"></p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>周回モード</h3>' +
+        '<div class="spe-row">' +
+          '<label class="spe-checkrow"><input type="checkbox" id="fLoopMode"> 周回モードON</label>' +
+          '<label class="spe-field">周回数<input type="number" id="fLoopCount" min="2" max="20"></label>' +
+        '</div>' +
+        '<label class="spe-field">周ごとの制限時間（秒・カンマ区切り。空欄で全周共通の制限時間を使用）<input type="text" id="fLoopTimeLimits" placeholder="例: 60,45,30"></label>' +
+        '<p class="spe-note">配列が周回数より短い場合、最後の値を以降の周も使い回します。</p>' +
+        '<p class="spe-note">ONにすると1周目からloopColors（青→緑→紫→橙→赤）で開始し、クリアごとに次周へ進みます。</p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>EXモード</h3>' +
+        '<label class="spe-checkrow"><input type="checkbox" id="fExMode"> EX ON（地雷即ゲームオーバー）／OFFでNORMALモード</label>' +
+        '<p class="spe-note">OFF（NORMAL）にすると、地雷掘削や誤旗でヒントゲージを消費する形に切り替わります。</p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>ノベル連携（novelAfterClear）</h3>' +
+        '<label class="spe-field">クリア後に遷移するノベルHTML（空欄でなし）<input type="text" id="fNovel" placeholder="novel/novel02.html"></label>' +
+        '<p class="spe-note">クリア画面のボタンが「NEXT」1つだけになり、ここで指定したパスへ遷移します（「ステージ選択に戻る」「タイトルに戻る」は非表示）。SIMPLE/STORYどちらの入口からクリアしても同じ挙動です。</p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>演出（BGM・背景）</h3>' +
+        '<div class="spe-row">' +
+          '<label class="spe-field">BGM（sounds/ 内のファイル名・空欄でデフォルト）<input type="text" id="fBgm" placeholder="SND_02_play.mp3"></label>' +
+          '<label class="spe-field">背景画像（images/stage-bg/ 内のファイル名・空欄で黒背景）<input type="text" id="fBg" placeholder="stage01_bg.jpg"></label>' +
+        '</div>' +
+        '<p class="spe-note">どちらも空欄なら、これまで通りデフォルトBGM・黒背景のままになります。</p>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<h3>メモ（このツール内のみ・出力JSONには含まれません）</h3>' +
+        '<textarea id="fMemo" rows="2" style="width:100%;font-family:inherit;font-size:13px;padding:7px 9px;border-radius:6px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);"></textarea>' +
+      '</div>' +
+
+      '<div class="spe-section">' +
+        '<button id="fDup" type="button" class="spe-actions-like" style="font-family:inherit;font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--card-bg);color:var(--text);cursor:pointer;margin-right:8px;">このステージを複製</button>' +
+        '<button id="fDel" type="button" style="font-family:inherit;font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid #6b3030;background:transparent;color:var(--danger);cursor:pointer;">このステージを削除</button>' +
+      '</div>';
+
+    // populate values
+    detailEl.querySelector('#fId').value = s.id;
+    detailEl.querySelector('#fChar').value = s.charId;
+    detailEl.querySelector('#fMines').value = s.mines;
+    detailEl.querySelector('#fDensity').value = s.density;
+    detailEl.querySelector('#fColorHex').value = s.boardColor || '';
+    detailEl.querySelector('#fColorPicker').value = s.boardColor || '#888888';
+    detailEl.querySelector('#fHints').value = s.maxHints;
+    detailEl.querySelector('#fLogic').checked = !!s.logicGuarantee;
+    detailEl.querySelector('#fTLMode').checked = !!s.timeLimitMode;
+    detailEl.querySelector('#fTLTime').value = s.timeLimit != null ? s.timeLimit : '';
+    detailEl.querySelector('#fLoopMode').checked = !!s.loopMode;
+    detailEl.querySelector('#fLoopCount').value = s.loopCount;
+    detailEl.querySelector('#fLoopTimeLimits').value = s.loopTimeLimits || '';
+    detailEl.querySelector('#fExMode').checked = s.exMode !== false;
+    detailEl.querySelector('#fMemo').value = s.memo || '';
+    detailEl.querySelector('#fNovel').value = s.novelAfterClear || '';
+    detailEl.querySelector('#fBgm').value = s.bgm || '';
+    detailEl.querySelector('#fBg').value = s.background || '';
+    detailEl.querySelector('#fMines').disabled = (s.mineMode !== 'mines');
+    detailEl.querySelector('#fDensity').disabled = (s.mineMode !== 'density');
+    detailEl.querySelector('#fTLTime').disabled = !s.timeLimitMode;
+    detailEl.querySelector('#diffNote').textContent = info.cols + '×' + info.rows + ' マス（合計 ' + info.total + ' マス）';
+    detailEl.querySelector('#tlNote').textContent = info.timeDefault != null
+      ? '空欄の場合、このdiffのデフォルト秒数（' + info.timeDefault + '秒）が使われます'
+      : 'このdiffにはデフォルト秒数の定義がありません。手動指定が必要です';
+    detailEl.querySelector('#idWarn').style.display = isDuplicateId(s.id, state.stages.indexOf(s)) ? '' : 'none';
+
+    function refreshListItem(){ renderList(); }
+
+    detailEl.querySelector('#fId').addEventListener('input', function(e){
+      var v = parseInt(e.target.value, 10);
+      s.id = isNaN(v) ? s.id : v;
+      selectedId = s.id;
+      detailEl.querySelector('#idWarn').style.display = isDuplicateId(s.id, state.stages.indexOf(s)) ? '' : 'none';
+      refreshListItem();
+      saveStateDebounced();
+    });
+    detailEl.querySelector('#fDiff').addEventListener('change', function(e){
+      s.diff = e.target.value;
+      renderDetail();
+      saveStateDebounced();
+    });
+    detailEl.querySelector('#fChar').addEventListener('change', function(e){ s.charId = e.target.value; saveStateDebounced(); });
+
+    Array.from(detailEl.querySelectorAll('input[name=mineMode]')).forEach(function(r){
+      r.addEventListener('change', function(e){
+        s.mineMode = e.target.value;
+        detailEl.querySelector('#fMines').disabled = (s.mineMode !== 'mines');
+        detailEl.querySelector('#fDensity').disabled = (s.mineMode !== 'density');
+        refreshListItem();
+        saveStateDebounced();
+      });
+    });
+    detailEl.querySelector('#fMines').addEventListener('input', function(e){ s.mines = parseInt(e.target.value,10) || 0; refreshListItem(); saveStateDebounced(); });
+    detailEl.querySelector('#fDensity').addEventListener('input', function(e){ s.density = parseInt(e.target.value,10) || 0; refreshListItem(); saveStateDebounced(); });
+
+    function setColor(hex){
+      s.boardColor = hex;
+      detailEl.querySelector('#fColorHex').value = hex;
+      detailEl.querySelector('#fColorPicker').value = hex || '#888888';
+      refreshListItem();
+      saveStateDebounced();
+    }
+    detailEl.querySelector('#fColorHex').addEventListener('input', function(e){ setColor(e.target.value); });
+    detailEl.querySelector('#fColorPicker').addEventListener('input', function(e){ setColor(e.target.value); });
+    Array.from(detailEl.querySelectorAll('.spe-swatch-btn')).forEach(function(btn){
+      btn.addEventListener('click', function(){ setColor(btn.dataset.hex); });
+    });
+
+    detailEl.querySelector('#fHints').addEventListener('input', function(e){ s.maxHints = parseInt(e.target.value,10) || 0; saveStateDebounced(); });
+    detailEl.querySelector('#fLogic').addEventListener('change', function(e){ s.logicGuarantee = e.target.checked; saveStateDebounced(); });
+
+    detailEl.querySelector('#fTLMode').addEventListener('change', function(e){
+      s.timeLimitMode = e.target.checked;
+      detailEl.querySelector('#fTLTime').disabled = !s.timeLimitMode;
+      saveStateDebounced();
+    });
+    detailEl.querySelector('#fTLTime').addEventListener('input', function(e){
+      var v = e.target.value;
+      s.timeLimit = v === '' ? null : (parseInt(v,10) || 0);
+      saveStateDebounced();
+    });
+
+    detailEl.querySelector('#fLoopMode').addEventListener('change', function(e){ s.loopMode = e.target.checked; saveStateDebounced(); });
+    detailEl.querySelector('#fLoopCount').addEventListener('input', function(e){ s.loopCount = parseInt(e.target.value,10) || 2; saveStateDebounced(); });
+    detailEl.querySelector('#fLoopTimeLimits').addEventListener('input', function(e){ s.loopTimeLimits = e.target.value; saveStateDebounced(); });
+    detailEl.querySelector('#fExMode').addEventListener('change', function(e){ s.exMode = e.target.checked; saveStateDebounced(); });
+    detailEl.querySelector('#fNovel').addEventListener('input', function(e){ s.novelAfterClear = e.target.value; saveStateDebounced(); });
+    detailEl.querySelector('#fBgm').addEventListener('input', function(e){ s.bgm = e.target.value; saveStateDebounced(); });
+    detailEl.querySelector('#fBg').addEventListener('input', function(e){ s.background = e.target.value; saveStateDebounced(); });
+    detailEl.querySelector('#fMemo').addEventListener('input', function(e){ s.memo = e.target.value; saveStateDebounced(); });
+
+    detailEl.querySelector('#fDup').addEventListener('click', function(){ duplicateStage(s.id); });
+    detailEl.querySelector('#fDel').addEventListener('click', function(){ deleteStage(s.id); });
+  }
+
+  function renderAll(){
+    renderList();
+    renderDetail();
+  }
+
+  function handleResetClick(){
+    var btnReset = document.getElementById('btnReset');
+    if(!resetArmed){
+      resetArmed = true;
+      btnReset.textContent = 'もう一度押すとリセット';
+      resetTimer = setTimeout(function(){ resetArmed = false; btnReset.textContent = 'リセット'; }, 3000);
+    } else {
+      clearTimeout(resetTimer);
+      resetArmed = false;
+      btnReset.textContent = 'リセット';
+      state = defaultState();
+      selectedId = state.stages.length ? state.stages[0].id : null;
+      renderAll();
+      saveStateDebounced();
+    }
+  }
+
+  document.getElementById('btnSave').addEventListener('click', saveJSON);
+  document.getElementById('btnLoad').addEventListener('click', function(){ fileInput.click(); });
+  document.getElementById('btnView').addEventListener('click', showResults);
+  document.getElementById('btnReset').addEventListener('click', handleResetClick);
+  document.getElementById('closeResults').addEventListener('click', function(){ resultsPanel.hidden = true; });
+  fileInput.addEventListener('change', function(e){
+    if(e.target.files && e.target.files[0]) loadJSONFile(e.target.files[0]);
+    fileInput.value = '';
+  });
+
+  function init(){
+    function start(){
+      selectedId = state.stages.length ? state.stages[0].id : null;
+      renderAll();
+    }
+    try{
+      window.storage.get(STORAGE_KEY, false).then(function(res){
+        if(res && res.value){
+          try{ state = JSON.parse(res.value); }catch(err){ state = defaultState(); }
+        } else {
+          state = defaultState();
+        }
+        start();
+      }).catch(function(){ state = defaultState(); start(); });
+    }catch(e){
+      state = defaultState();
+      start();
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

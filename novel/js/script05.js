@@ -1,0 +1,89 @@
+const CHARACTERS = {
+  alice: {
+    name: 'アリス',
+    position: 'left',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_alice01.png',
+      normal2: 'image_alice02.png',
+      normal3: 'image_alice03.png',
+    },
+  },
+  flat: {
+    name: 'フラット',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_flat01.png',
+      normal2: 'image_flat02.png',
+      normal3: 'image_flat03.png',
+    },
+  },
+  lady: {
+    name: 'レディ・レディ',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_lady01.png',
+    },
+  }
+};
+
+const SCRIPT = [
+  { command: 'background', value: 'back01.png' },
+  { command: 'bgm', value: 'bgm01.mp3' },
+  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
+  { command: 'show', character: 'alice', portrait: 'normal1' },
+  { speaker: 'アリス', portrait: 'normal1', text: '自由って気持ちいいわね。' },
+  { command: 'show', character: 'lady', portrait: 'normal1' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: '女王アリはそうでもないわ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '自由じゃないの？' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: '巣からほとんど出ないもの。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'かわいそう。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でもみんなが世話をしてくれる。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'それはうらやましいわ。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でも毎日卵を産む。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'やっぱり大変そう。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でも長生きする。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'らやましいわ。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でも羽を失う。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '悲しいわ。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でも働かなくていい。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'うらやましいわ。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でも巣から出られない。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '悲しいわ。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でもみんなに守られる。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'うらやましいわ。' },
+  { speaker: 'レディ・レディ', portrait: 'normal1', text: 'でも・・・' },
+  { speaker: 'アリス', portrait: 'normal2', text: '羨むべきなか、心配するべきか、先に決めてちょうだい。' },
+  { command: 'fadeout' },
+  { command: 'hide_all' },
+  { command: 'hide', character: 'alice' },
+  { command: 'hide', character: 'lady' },
+  { command: 'dialog_hide' },
+  { command: 'background', value: 'back06.png', position: 'bottom' },
+  { command: 'se', value: 'gogogo.wav' },
+  { command: 'wait', duration: 2000 },
+  { command: 'fadein' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが5つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '私の知らない夕焼けが、丸くなって浮かんでいるみたい。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'ああいう赤は、いつも何かを覚えていて、何も話してくれないのよ' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'けれど不思議ね。近づきたいのか逃げたいのか、自分でもわからないわ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '答えを知っている本が、わざと最後のページだけ隠しているみたいだわ。' },
+  { command: 'dialog_hide' },
+  { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
+  { command: 'wait', duration: 2000 },
+  { command: 'bgm_fade', duration: 2000 },
+];
+
+NovelEngine.init({
+  characters:  CHARACTERS,
+  imagePath:   'images/',
+  bgmPath:     '../sounds/',
+  sePath:      'se/',
+  typingSpeed: 30,
+  clickSE:     'click.wav',
+  nextUrl:     '../index.html?select=1&storyStage=5',
+});
+
+NovelEngine.play(SCRIPT);

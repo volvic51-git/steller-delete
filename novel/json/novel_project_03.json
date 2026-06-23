@@ -1,0 +1,322 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "crow",
+      "name": "カラス",
+      "position": "right",
+      "defaultPortrait": "normal",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_crow01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "大丈夫だった？"
+    },
+    {
+      "type": "show",
+      "character": "crow",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "ありがとう、見ての通り無事よ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ここは密林なの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "ここの密林は妙なの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どこが妙なの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "木が木のふりをしているの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "木なんだから木のふりでいいじゃない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "それが妙なのよ。本物ほど偽物らしいものはないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "聞けば聞くほど妙ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "今朝は密林が空を歩いていたの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "密林は歩かないでしょう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "だから妙なの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "わからないこと全部に「妙」をつけているだけじゃない？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "そんな妙なことするかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "今まさにしているわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "ところで、密林と妙の違いは知ってる？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "知らないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "密林は入るもの、妙は出られなくなるものよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ずいぶん前から妙の中にいるみたいね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "カラス",
+      "portrait": "normal1",
+      "text": "でも妙はカラスの真似をしている。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "それは奇妙ね。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "crow"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back04.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが三つ目の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "もし私が誰かの夢なら、その人はずいぶん長い夢を見ているわね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "起きる気がないのかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "夢と幻の違いって、私にはわからないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "不思議の国じゃ「わからない」という答えが、一番わかっている気がするわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "早く不思議の国に帰りたいわ。"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "show",
+      "character": "flat",
+      "portrait": "normal3"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal3",
+      "text": "（アリス・・・）"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal3",
+      "text": "（不思議の国に帰る方法は・・・）"
+    },
+    {
+      "type": "hide",
+      "character": "flat"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

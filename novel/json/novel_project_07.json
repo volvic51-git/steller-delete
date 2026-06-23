@@ -1,0 +1,303 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "abis",
+      "name": "アビス",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_abis01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "海って不思議ね。"
+    },
+    {
+      "type": "show",
+      "character": "abis",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "ヒトデも不思議よ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どっちの話をしているの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "海のほう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ヒトデじゃなかったの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "ヒトデは海の考えごとみたいなものだから。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "考えごとには見えないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "見えたら考えごとじゃないもの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それもそうかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "ヒトデは目があるけれど、腕の先にあるの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "本当に？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "ええ。だから海の隅々まで見ようとして広がったのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "努力家さんね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "でも海は丸いでしょう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "多分ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "だから全部は見えないの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "努力が報われていないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "でもヒトデは怒らない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "賢いのね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アビス",
+      "portrait": "normal1",
+      "text": "忘れただけよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "それなら私にもできそうだわ。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "abis"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back08.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが7つ目の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "あんなに白く輝いていて、眩しくならないのかしら？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "不思議ね、雪みたいな色をしているのに、どこか鏡を見ている気分になるわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どれだけ見上げても私の顔は映らないのだけれど。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "もしかして忘れたことを映す鏡なのかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "そう考えると少し怖いけれど、興味もあるわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "怖いものほど美しいって決まってるもの。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

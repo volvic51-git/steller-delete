@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "lady",
+      "name": "レディ・レディ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_lady01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "自由って気持ちいいわね。"
+    },
+    {
+      "type": "show",
+      "character": "lady",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "女王アリはそうでもないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "自由じゃないの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "巣からほとんど出ないもの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "かわいそう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でもみんなが世話をしてくれる。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それはうらやましいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でも毎日卵を産む。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "やっぱり大変そう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でも長生きする。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "らやましいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でも羽を失う。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "悲しいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でも働かなくていい。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "うらやましいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でも巣から出られない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "悲しいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でもみんなに守られる。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "うらやましいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "レディ・レディ",
+      "portrait": "normal1",
+      "text": "でも・・・"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "羨むべきなか、心配するべきか、先に決めてちょうだい。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "lady"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back06.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが5つ目の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "私の知らない夕焼けが、丸くなって浮かんでいるみたい。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ああいう赤は、いつも何かを覚えていて、何も話してくれないのよ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "けれど不思議ね。近づきたいのか逃げたいのか、自分でもわからないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "答えを知っている本が、わざと最後のページだけ隠しているみたいだわ。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

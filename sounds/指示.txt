@@ -1,0 +1,6 @@
+\sounds
+
+SND_02_play.mp3		プレイ中BGM		ゲーム開始〜終了までループ
+EFE_02_flag.mp3		地雷除去		SE旗で地雷を正しく除去したとき
+SND_03_clear.mp3	クリアSE/BGM全地雷除去・クリアしたとき
+EFE_03_destroy.mp3	パネル消滅SE0	セルが消えるとき

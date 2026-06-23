@@ -1,0 +1,422 @@
+{
+  "version": 1,
+  "novelNo": 10,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice04.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "yomi",
+      "name": "ヨミ",
+      "position": "right",
+      "defaultPortrait": "normal",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_yomi01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back11.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "narration",
+      "text": "崩壊したフラットはブラックホールとなり、"
+    },
+    {
+      "type": "narration",
+      "text": "そのブラックホールも静かに収縮し、"
+    },
+    {
+      "type": "narration",
+      "text": "青く光る星屑を残して、"
+    },
+    {
+      "type": "narration",
+      "text": "やがて消滅した。"
+    },
+    {
+      "type": "narration",
+      "text": "―――静寂。"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "・・・ここは？"
+    },
+    {
+      "type": "show",
+      "character": "yomi",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "不思議の国。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "帰ってきたの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "いいえ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "じゃあ違うの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "多分違わない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "どっちなのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "不思議の国に地図を求めるほうが間違いよ。"
+    },
+    {
+      "type": "hide",
+      "character": "yomi"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "やぁ。"
+    },
+    {
+      "type": "wait",
+      "duration": "1000"
+    },
+    {
+      "type": "show",
+      "character": "flat",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "「やぁ」じゃないわよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "パーティーは終わっちゃったわよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "あれ、アリスだ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "「アリスだ。」じゃないわよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "消滅したかと思ったわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "消滅はしたよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "じゃあ、なんでいるのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal3",
+      "text": "・・・"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "道に迷ったからかな？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "納得した？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "全然。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "background",
+      "value": "back12.png",
+      "position": "bottom",
+      "positionMobile": "",
+      "posMobileX": "0",
+      "posMobileY": "100"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "じゃあ、そろそろ行こう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どこに？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "わからないよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "「わからない」に行くの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "わかってきたね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "もういいわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "結局、フラットは何者だったワケ？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "僕？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal3",
+      "text": "迷子だよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "なにそれ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal4",
+      "text": "フフッ。"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "flat"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "wait",
+      "duration": "5000"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "5000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    },
+    {
+      "type": "blackout"
+    },
+    {
+      "type": "background",
+      "value": "back13.png"
+    },
+    {
+      "type": "title_card",
+      "title": "STELLAR DELETE",
+      "text": "彼女たちの迷子は続く・・・。",
+      "duration": "3000"
+    },
+    {
+      "type": "wait",
+      "duration": "3000"
+    },
+    {
+      "type": "fg",
+      "value": "back14.jpg",
+      "fit": "contain"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "wait",
+      "duration": "3000"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    }
+  ]
+}

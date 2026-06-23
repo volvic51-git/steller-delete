@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellar Delete</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --deep-space:  #030818;
+    --glow-blue:   #1a6fff;
+    --bright-blue: #4a9eff;
+    --ice-white:   #e8f4ff;
+    --dim-blue:    #0d1f3c;
+    --accent:      #00c8ff;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--deep-space);
+    color: var(--ice-white);
+    font-family: 'Rajdhani', sans-serif;
+  }
+
+  /* ── 背景画像レイヤー ── */
+  #bg {
+    position: fixed; inset: 0; z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-image: url('title/bg_pc.jpg');
+  }
+  @media (max-aspect-ratio: 1/1) {
+    #bg { background-image: url('title/bg_sp.jpg'); }
+  }
+  #bg::after {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 68% 55%, rgba(26,111,255,.18) 0%, transparent 70%),
+      linear-gradient(to bottom, rgba(3,8,24,.35) 0%, rgba(3,8,24,.55) 100%);
+  }
+
+  /* ── パーティクルキャンバス ── */
+  #particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+  /* ══════════════════════════════════════
+     PC レイアウト（デフォルト）
+     中央揃え
+  ══════════════════════════════════════ */
+  #stage {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  /* ══════════════════════════════════════
+     スマホ レイアウト（縦長画面）
+     タイトルブロック全体を 1文字分（1em ≒ h1のfont-size）上へ
+     横軸センタリングは維持
+  ══════════════════════════════════════ */
+  @media (max-aspect-ratio: 1/1) {
+    #stage {
+      /* h1のfont-sizeはclamp(42px, 9vw, 110px)。
+         スマホでは9vwが効くので 1em ≈ 9vw 上方向に移動 */
+      margin-top: calc(-1 * clamp(42px, 9vw, 110px));
+    }
+  }
+
+  /* ── タイトルブロック ── */
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: transparent;
+    opacity: 0;
+    transform: translateY(16px);
+    animation:
+      fadeUp    1.6s 2.75s cubic-bezier(.22,1,.36,1) forwards,
+      titleRise 2.5s 4.35s cubic-bezier(.4,0,.2,1)   forwards;
+  }
+
+    /* ── タイトルロゴ ── */
+  .title-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: transparent;
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(42px, 9vw, 110px);
+    letter-spacing: .12em;
+    line-height: 1;
+    color: var(--ice-white);
+    background: transparent;
+    text-shadow:
+      0 0 8px rgba(74,158,255,.7),
+      0 0 20px rgba(26,111,255,.4);
+    position: relative;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  /* グリッチ装飾 */
+  h1::before, h1::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    font-family: inherit; font-weight: inherit;
+    font-size: inherit; letter-spacing: inherit;
+    color: var(--ice-white);
+    text-align: center;
+    opacity: 0;
+  }
+  h1::before {
+    color: #00f0ff;
+    clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+    animation: glitch-a 5s 5.5s infinite;
+  }
+  h1::after {
+    color: #ff2d78;
+    clip-path: polygon(0 60%, 100% 60%, 100% 78%, 0 78%);
+    animation: glitch-b 5s 5.5s infinite;
+  }
+
+  /* ══════════════════════════════════════
+     メニューボタン群
+  ══════════════════════════════════════ */
+  .menu-wrap {
+    margin-top: clamp(28px, 4.5vh, 50px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(10px, 1.8vh, 18px);
+    opacity: 0;
+    pointer-events: none;
+    animation: fadeUp 1.2s 3.35s forwards, enableMenuClicks 0s 4.55s forwards;
+  }
+
+  /* 共通ボタンスタイル */
+  .menu-btn {
+    position: relative;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(13px, 1.7vw, 17px);
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: var(--ice-white);
+    background: transparent;
+    border: none;
+    width: clamp(180px, 26vw, 280px);
+    padding: clamp(11px, 1.7vh, 16px) 0;
+    cursor: pointer;
+    outline: none;
+    text-align: center;
+    text-shadow: 0 0 12px rgba(74,158,255,.8);
+    transition: color .2s, transform .1s;
+  }
+  .menu-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    border: 1.5px solid var(--accent);
+    box-shadow:
+      0 0 8px rgba(0,200,255,.35) inset,
+      0 0 14px rgba(0,200,255,.2);
+    transition: box-shadow .25s, border-color .25s;
+  }
+  .menu-btn::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    background:
+      linear-gradient(var(--accent), var(--accent)) top left / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top left / 1.5px 10px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top right / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top right / 1.5px 10px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom left / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom left / 1.5px 10px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom right / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom right / 1.5px 10px no-repeat;
+    opacity: .6;
+    transition: opacity .25s;
+  }
+  .menu-btn:hover::before {
+    box-shadow:
+      0 0 20px rgba(0,200,255,.65) inset,
+      0 0 36px rgba(0,200,255,.45);
+    border-color: #7df0ff;
+  }
+  .menu-btn:hover::after { opacity: 1; }
+  .menu-btn:hover { color: #7df0ff; }
+  .menu-btn:active { transform: scale(.97); }
+
+  /* STARTだけ pulse ring */
+  .pulse-ring {
+    position: absolute; inset: -12px;
+    border: 1px solid var(--accent);
+    opacity: 0;
+    animation: pulseRing 3s 4.7s infinite;
+    pointer-events: none;
+  }
+
+  /* STORY アコーディオン */
+  .story-accordion-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: clamp(180px, 26vw, 280px);
+    gap: 0;
+  }
+  .story-accordion-wrap #story-btn {
+    width: 100%;
+    transition: color .2s, transform .1s, letter-spacing .2s;
+  }
+  .story-accordion-wrap #story-btn.open {
+    color: #7df0ff;
+    letter-spacing: .25em;
+  }
+  .story-accordion-wrap #story-btn.open::before {
+    box-shadow: 0 0 20px rgba(0,200,255,.65) inset, 0 0 36px rgba(0,200,255,.45);
+    border-color: #7df0ff;
+  }
+  .episode-list {
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .45s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .episode-list.open {
+    max-height: 800px;
+    opacity: 1;
+  }
+  .ep-btn {
+    position: relative;
+    width: 100%;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(10px,1.4vw,13px);
+    letter-spacing: .2em;
+    color: rgba(180,230,255,.85);
+    background: rgba(0,10,25,.6);
+    border: none;
+    border-top: 1px solid rgba(0,200,255,.12);
+    padding: clamp(8px,1.2vh,11px) 0;
+    cursor: pointer;
+    text-align: center;
+    transition: background .2s, color .2s;
+  }
+  .ep-btn:last-child { border-bottom: 1px solid rgba(0,200,255,.12); }
+  .ep-btn:hover { background: rgba(0,50,100,.7); color: #7df0ff; }
+  .ep-btn.locked {
+    color: rgba(180,200,230,.25);
+    pointer-events: none;
+    cursor: default;
+  }
+  .ep-btn .ep-label { font-family:'Orbitron',sans-serif; font-size:.9em; margin-right:.5em; }
+  .ep-divider {
+    height: 1px;
+    background: rgba(0,200,255,.2);
+    margin: 4px 0;
+  }
+
+  /* AUCTION — 構想中モード：グレーアウト、操作不可 */
+  #auction-btn {
+    color: rgba(232,244,255,.28);
+    cursor: default;
+    pointer-events: none;
+  }
+  #auction-btn::before {
+    border-color: rgba(0,200,255,.18);
+    box-shadow: none;
+  }
+  #auction-btn::after { opacity: .18; }
+
+  /* EXIT は少し控えめな色 */
+  #exit-btn { color: rgba(232,244,255,.6); }
+  #exit-btn::before {
+    border-color: rgba(0,200,255,.45);
+    box-shadow: none;
+  }
+  #exit-btn:hover { color: #ff6e8a; }
+  #exit-btn:hover::before {
+    border-color: #ff6e8a;
+    box-shadow:
+      0 0 14px rgba(255,60,100,.35) inset,
+      0 0 22px rgba(255,60,100,.25);
+  }
+  #exit-btn::after {
+    background:
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) top left / 10px 1.5px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) top left / 1.5px 10px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) top right / 10px 1.5px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) top right / 1.5px 10px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) bottom left / 10px 1.5px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) bottom left / 1.5px 10px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) bottom right / 10px 1.5px no-repeat,
+      linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) bottom right / 1.5px 10px no-repeat;
+    opacity: .5;
+  }
+
+  /* ── フッター ── */
+  .footer-info {
+    position: fixed;
+    bottom: clamp(14px, 3vh, 28px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    gap: 2.5em;
+    font-size: clamp(9px, 1.1vw, 11px);
+    letter-spacing: .25em;
+    color: rgba(232,244,255,.3);
+    white-space: nowrap;
+    opacity: 0;
+    animation: fadeUp 1.0s 3.8s forwards;
+  }
+
+  /* ── EXIT確認モーダル ── */
+  #exit-modal {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    align-items: center; justify-content: center;
+    background: rgba(3,8,24,.75);
+    backdrop-filter: blur(4px);
+  }
+  #exit-modal.show { display: flex; }
+  .modal-box {
+    border: 1.5px solid rgba(0,200,255,.5);
+    background: rgba(5,15,40,.92);
+    padding: clamp(28px,5vh,48px) clamp(32px,6vw,64px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(18px,3vh,28px);
+    box-shadow: 0 0 40px rgba(0,200,255,.2), 0 0 80px rgba(26,111,255,.1);
+    animation: fadeUp .25s forwards;
+  }
+  .modal-msg {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(14px,2vw,18px);
+    letter-spacing: .22em;
+    color: rgba(232,244,255,.85);
+    text-transform: uppercase;
+  }
+  .modal-btns { display: flex; gap: clamp(14px,3vw,28px); }
+  .modal-btn {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(12px,1.4vw,14px);
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    color: var(--ice-white);
+    padding: clamp(9px,1.4vh,13px) clamp(22px,4vw,40px);
+    min-width: clamp(120px, 14vw, 160px);
+    text-align: center;
+    cursor: pointer;
+    outline: none;
+    transition: background .2s, color .2s, border-color .2s;
+  }
+  .modal-btn:hover { background: rgba(0,200,255,.15); color: #7df0ff; border-color: #7df0ff; }
+  .modal-btn.danger { border-color: rgba(255,110,138,.6); color: rgba(232,244,255,.6); }
+  .modal-btn.danger:hover { background: rgba(255,60,100,.15); color: #ff6e8a; border-color: #ff6e8a; }
+
+  /* ── アニメーション ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes enableMenuClicks {
+    from { pointer-events: none; }
+    to   { pointer-events: auto; }
+  }
+  @keyframes glitch-a {
+    0%,95%,100% { opacity:0; transform:none; }
+    96% { opacity:.75; transform:translateX(-3px) skewX(-2deg); }
+    97% { opacity:.6;  transform:translateX(3px); }
+    98% { opacity:0; }
+  }
+  @keyframes glitch-b {
+    0%,96%,100% { opacity:0; transform:none; }
+    97%  { opacity:.65; transform:translateX(3px) skewX(2deg); }
+    98.5%{ opacity:.5;  transform:translateX(-2px); }
+    99%  { opacity:0; }
+  }
+  @keyframes titleRise {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-80px); }
+  }
+  @keyframes pulseRing {
+    0%   { opacity:.55; transform:scale(1); }
+    100% { opacity:0;   transform:scale(1.35); }
+  }
+
+  /* スマホ細調整 */
+  @media (max-width: 520px) {
+    .footer-info { gap: 1.4em; flex-wrap: wrap; justify-content: center; }
+    h1 { white-space: normal; text-align: center; }
+  }
+
+  /* ══════════════════════════════════════
+     CREDITモーダル（スターウォーズ風クロール）
+  ══════════════════════════════════════ */
+  #credit-modal {
+    display: none;
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(3,8,24,.55);
+    overflow: hidden;
+  }
+  #credit-modal.show { display: block; }
+
+  /* パース空間：消失点を画面中央やや上に */
+  #credit-stage {
+    position: absolute;
+    inset: 0;
+    perspective: 120px;
+    perspective-origin: 50% 35%;
+    overflow: hidden;
+  }
+
+  /* クロールラッパー：画面下端を基点にrotateX */
+  #credit-crawl-wrap {
+    position: absolute;
+    width: 90%;
+    left: 5%;
+    /* 画面下端に合わせる */
+    top: 0; bottom: 0;
+    transform-origin: 50% 100%;
+    transform: rotateX(55deg);
+  }
+
+  /* 実際にスクロールする要素：画面下から開始（行数が増えても常に下端からスタート） */
+  #credit-crawl {
+    position: absolute;
+    width: 100%;
+    top: 100%;           /* ラッパー（画面）の下端を基準にスタート */
+    text-align: center;
+    padding-bottom: 4vh;
+    animation: crawl 36s linear forwards;
+  }
+
+  @keyframes crawl {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-400vh); }
+  }
+
+  /* 横並びの1行 */
+  .credit-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(4px, 1vh, 10px);
+    margin-bottom: clamp(32px, 7vh, 64px);
+  }
+
+  .credit-role {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(16px, 2.4vw, 26px);
+    font-weight: 700;
+    letter-spacing: .3em;
+    /* オレンジ縁・文字透明 */
+    color: #ff8c00;
+    -webkit-text-stroke: 0;
+    text-stroke: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .credit-name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: clamp(32px, 7vw, 72px);
+    letter-spacing: .15em;
+    color: #ff8c00;
+    -webkit-text-stroke: 0;
+    text-stroke: 0;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* 上フェードマスク（1回転して消えるのを隠す） */
+  #credit-stage::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(3,8,24,.75) 60%, transparent 100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* CLOSEボタン */
+  #credit-close {
+    position: absolute;
+    bottom: clamp(18px, 4vh, 36px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(11px, 1.4vw, 13px);
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: rgba(255,140,0,.6);
+    background: transparent;
+    border: 1px solid rgba(255,140,0,.4);
+    padding: clamp(8px,1.2vh,12px) clamp(24px,4vw,40px);
+    cursor: pointer;
+    outline: none;
+    transition: color .2s, border-color .2s;
+  }
+  #credit-close:hover {
+    color: #ff8c00;
+    border-color: #ff8c00;
+  }
+
+
+  /* ══════════════════════════════════════
+     ステージ選択モーダル
+  ══════════════════════════════════════ */
+  #stage-modal {
+    display: none;
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(3,8,24,.82);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  #stage-modal.show { display: flex; }
+
+  /* タイトル */
+  .stage-modal-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(14px, 2.2vw, 22px);
+    font-weight: 700;
+    letter-spacing: .4em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: clamp(16px, 3vh, 28px);
+    text-shadow: 0 0 12px rgba(0,200,255,.5);
+  }
+
+  /* カルーセル外枠 */
+  .stage-carousel {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  /* 左右ナビボタン */
+  .stage-nav {
+    flex-shrink: 0;
+    width: clamp(36px, 5vw, 52px);
+    height: clamp(36px, 5vw, 52px);
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    background: rgba(0,200,255,.08);
+    color: var(--accent);
+    font-size: clamp(16px, 2vw, 22px);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, box-shadow .2s;
+    z-index: 2;
+    margin: 0 clamp(12px, 2.5vw, 28px);
+  }
+  .stage-nav:hover {
+    background: rgba(0,200,255,.22);
+    box-shadow: 0 0 16px rgba(0,200,255,.4);
+  }
+
+  /* カードビューポート */
+  .stage-cards-viewport {
+    position: relative;
+    width: clamp(300px, 82vw, 920px);
+    height: clamp(240px, 44vw, 480px);
+    overflow: hidden;
+  }
+
+  /* 個別カード：絶対配置 */
+  .stage-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    will-change: transform, opacity;
+    transition: transform .45s cubic-bezier(.4,0,.2,1), opacity .45s cubic-bezier(.4,0,.2,1);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .stage-card.pos-center {
+    width: clamp(160px, 28vw, 280px);
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    z-index: 3;
+    pointer-events: auto;
+  }
+  .stage-card.pos-prev {
+    width: clamp(100px, 16vw, 180px);
+    transform: translate(calc(-50% - clamp(140px, 24vw, 260px)), -50%) scale(0.65);
+    opacity: .4;
+    z-index: 2;
+    pointer-events: auto;
+  }
+  .stage-card.pos-next {
+    width: clamp(100px, 16vw, 180px);
+    transform: translate(calc(-50% + clamp(140px, 24vw, 260px)), -50%) scale(0.65);
+    opacity: .4;
+    z-index: 2;
+    pointer-events: auto;
+  }
+  .stage-card.pos-far-prev {
+    width: clamp(100px, 16vw, 180px);
+    transform: translate(calc(-50% - clamp(280px, 48vw, 520px)), -50%) scale(0.4);
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .stage-card.pos-far-next {
+    width: clamp(100px, 16vw, 180px);
+    transform: translate(calc(-50% + clamp(280px, 48vw, 520px)), -50%) scale(0.4);
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .stage-card.pos-prev:hover,
+  .stage-card.pos-next:hover { opacity: .6; }
+
+  /* 中央カードの説明文のみ表示、他は非表示 */
+  .stage-card:not(.pos-center) .stage-desc { display: none; }
+  .stage-card:not(.pos-center) .stage-name { font-size: clamp(9px, 1.2vw, 13px); }
+
+  /* 天体画像ラッパー */
+  .stage-img-wrap {
+    position: relative;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 天体画像 */
+  /* 未解放ステージ：「まだ観測されていない」表現 */
+  .stage-card.locked img {
+    filter: grayscale(100%) brightness(0.6);
+    border-color: rgba(100,120,160,.25);
+    box-shadow: none;
+  }
+  .stage-card.locked .stage-name,
+  .stage-card.locked .stage-desc { color: rgba(180,200,230,.45); }
+  .stage-unknown { opacity: .55; letter-spacing: .05em; }
+
+  /* 解放演出：グレーから復帰するアニメーション */
+  @keyframes stageUnlock {
+    0%   { filter: grayscale(100%) brightness(0.6); }
+    100% { filter: grayscale(0%) brightness(1); }
+  }
+  .stage-card.unlocking img {
+    animation: stageUnlock 0.8s ease-out forwards;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 30px rgba(0,200,255,.5) !important;
+  }
+
+  .stage-card img {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid rgba(0,200,255,.3);
+    box-shadow: 0 0 20px rgba(0,200,255,.15);
+    background: rgba(13,31,60,.8);
+    transition: border-color .3s, box-shadow .3s;
+    display: block;
+    /* スマホで長押し保存メニュー・選択ハイライトが出ないようガード */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: none;
+  }
+  .stage-card.pos-center img {
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(0,200,255,.4), 0 0 60px rgba(26,111,255,.2);
+  }
+
+  /* 画像上オーバーレイ（難易度・盤面） */
+  .stage-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .3em;
+    background: rgba(3,8,24,.55);
+    opacity: 0;
+    transition: opacity .25s;
+    pointer-events: none;
+  }
+  .stage-card.pos-center .stage-overlay {
+    opacity: 1;
+  }
+  .stage-overlay-diff {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: clamp(18px, 2.8vw, 26px);
+    letter-spacing: .25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(0,200,255,.6);
+  }
+  .stage-overlay-grid {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(20px, 3.2vw, 30px);
+    letter-spacing: .1em;
+    color: var(--ice-white);
+    text-shadow: 0 0 6px rgba(74,158,255,.5);
+    text-align: center;
+    line-height: 1.3;
+  }
+  .stage-overlay-grid .grid-total {
+    display: block;
+    font-size: 0.7em;
+    opacity: .75;
+    letter-spacing: .05em;
+  }
+  .stage-overlay-mines {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: clamp(16px, 2.2vw, 22px);
+    letter-spacing: .2em;
+    color: #ffffff;
+  }
+
+  /* ステージ番号 */
+  .stage-num {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(9px, 1.2vw, 12px);
+    font-weight: 600;
+    letter-spacing: .4em;
+    color: var(--accent);
+    margin-top: clamp(8px, 1.5vh, 14px);
+    text-transform: uppercase;
+  }
+
+  /* ステージ名 */
+  .stage-name {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(11px, 1.8vw, 18px);
+    letter-spacing: .1em;
+    color: var(--ice-white);
+    margin-top: .25em;
+    text-shadow: 0 0 8px rgba(74,158,255,.5);
+  }
+
+  /* 説明文（中央のみ表示） */
+  .stage-desc {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(10px, 1.3vw, 13px);
+    font-weight: 400;
+    color: rgba(232,244,255,.6);
+    line-height: 1.6;
+    letter-spacing: .05em;
+    margin-top: .6em;
+    max-width: clamp(160px, 24vw, 280px);
+    min-height: 3.5em;
+  }
+
+  /* ドットインジケーター */
+  .stage-dots {
+    display: flex;
+    gap: clamp(6px, 1vw, 10px);
+    margin-top: clamp(16px, 3vh, 26px);
+  }
+  .stage-dot {
+    width: clamp(6px, 1vw, 9px);
+    height: clamp(6px, 1vw, 9px);
+    border-radius: 50%;
+    background: rgba(0,200,255,.25);
+    border: 1px solid rgba(0,200,255,.4);
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .stage-dot.active {
+    background: var(--accent);
+    transform: scale(1.3);
+    box-shadow: 0 0 8px rgba(0,200,255,.6);
+  }
+
+  /* STARTボタン横並び行 */
+  .stage-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-top: clamp(14px, 2.5vh, 24px);
+  }
+
+  /* STARTボタン：未解放時はLOCKED表示 */
+  #stage-start-btn.locked {
+    opacity: .45;
+    pointer-events: none;
+    cursor: default;
+    border-color: rgba(100,120,160,.4);
+    color: rgba(180,200,230,.6);
+  }
+
+  /* STARTボタン（ステージ選択内） */
+  #stage-start-btn {
+    margin-top: 0;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(12px, 1.6vw, 16px);
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: var(--ice-white);
+    background: rgba(0,200,255,.12);
+    border: 1.5px solid var(--accent);
+    padding: clamp(10px,1.6vh,15px) clamp(36px,6vw,64px);
+    cursor: pointer;
+    outline: none;
+    transition: background .2s, box-shadow .2s, color .2s;
+    box-shadow: 0 0 12px rgba(0,200,255,.2);
+  }
+  #stage-start-btn:hover {
+    background: rgba(0,200,255,.28);
+    box-shadow: 0 0 28px rgba(0,200,255,.5);
+    color: #7df0ff;
+  }
+
+  /* 戻るボタン */
+  #stage-back-btn {
+    position: absolute;
+    bottom: clamp(16px, 3vh, 28px);
+    left: clamp(16px, 3vw, 32px);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(10px, 1.3vw, 13px);
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: rgba(232,244,255,.5);
+    background: transparent;
+    border: 1px solid rgba(0,200,255,.3);
+    padding: clamp(7px,1.1vh,11px) clamp(18px,3vw,30px);
+    cursor: pointer;
+    outline: none;
+    transition: color .2s, border-color .2s;
+  }
+  #stage-back-btn:hover { color: var(--ice-white); border-color: var(--accent); }
+
+  /* スマホ調整 */
+  @media (max-aspect-ratio: 1/1) {
+    .stage-cards-viewport { width: 96vw; height: clamp(220px, 60vw, 420px); }
+    .stage-card.pos-center { width: clamp(130px, 38vw, 220px); }
+    .stage-card.pos-prev,
+    .stage-card.pos-next   { width: clamp(80px, 22vw, 140px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- サウンド -->
+<audio id="snd-title"  src="sounds/SND_01_title.mp3"  loop preload="auto"></audio>
+<audio id="snd-stage"  src="sounds/SND_04_stage.mp3"  loop preload="auto"></audio>
+<audio id="efe-select" src="sounds/EFE_04_select.mp3"      preload="auto"></audio>
+
+<!-- 背景 -->
+<div id="bg"></div>
+
+<!-- パーティクル -->
+<canvas id="particles"></canvas>
+
+<!-- コンテンツ -->
+<div id="stage">
+  <div class="title-block">
+    <div class="title-wrap">
+      <h1 data-text="Stellar Delete">Stellar Delete</h1>
+    </div>
+  </div>
+
+  <div class="menu-wrap">
+
+    <div class="story-accordion-wrap" id="story-accordion-wrap">
+      <button class="menu-btn" id="story-btn">
+        STORY
+      </button>
+      <div id="episode-list" class="episode-list">
+        <!-- JS で生成 -->
+      </div>
+    </div>
+
+    <button class="menu-btn" id="simple-btn">
+      SIMPLE
+      <span class="pulse-ring"></span>
+    </button>
+
+    <button class="menu-btn" id="auction-btn" disabled aria-disabled="true">
+      AUCTION
+    </button>
+
+    <button class="menu-btn" id="guide-btn">
+      GUIDE
+    </button>
+
+    <button class="menu-btn" id="credit-btn">
+      CREDIT
+    </button>
+
+    <button class="menu-btn" id="exit-btn">
+      EXIT
+    </button>
+
+    <button class="menu-btn" id="save-reset-btn" style="font-size:.7em;letter-spacing:.18em;color:rgba(232,244,255,.32);border-color:rgba(0,200,255,.18);">
+      SAVE RESET
+    </button>
+
+  </div>
+</div>
+
+<!-- フッター -->
+<div class="footer-info">
+  <span>v3.0</span>
+  <span>© 2026 STELLAR DELETE</span>
+</div>
+
+
+<!-- ステージ選択モーダル -->
+<div id="stage-modal">
+  <div class="stage-modal-title">STAGE SELECT</div>
+
+  <div class="stage-carousel">
+    <div class="stage-cards-viewport" id="stage-cards-viewport">
+      <!-- JS で動的生成 -->
+    </div>
+  </div>
+
+  <div class="stage-dots" id="stage-dots"></div>
+
+  <div class="stage-action-row">
+    <button class="stage-nav" id="stage-prev">&#8249;</button>
+    <button id="stage-start-btn">START</button>
+    <button class="stage-nav" id="stage-next">&#8250;</button>
+  </div>
+
+  <button id="stage-back-btn">← BACK</button>
+</div>
+
+<!-- CREDITモーダル -->
+<div id="credit-modal">
+  <div id="credit-stage">
+    <div id="credit-crawl-wrap">
+      <div id="credit-crawl">
+        <!-- credits.json から動的生成 -->
+      </div>
+    </div>
+  </div>
+  <button id="credit-close">CLOSE</button>
+</div>
+
+<!-- EXIT確認モーダル -->
+<div id="exit-modal">
+  <div class="modal-box">
+    <div class="modal-msg">Exit the game?</div>
+    <div class="modal-btns">
+      <button class="modal-btn" id="exit-cancel">CANCEL</button>
+      <button class="modal-btn danger" id="exit-confirm">EXIT</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVE RESET確認モーダル -->
+<div id="save-reset-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;">
+  <div class="modal-box">
+    <div class="modal-msg" style="font-size:clamp(11px,2vw,14px);line-height:1.7;">進行データを<br>全て削除しますか？<br><span style="color:rgba(255,110,138,.7);font-size:.85em;">この操作は取り消せません</span></div>
+    <div class="modal-btns">
+      <button class="modal-btn" id="save-reset-cancel">CANCEL</button>
+      <button class="modal-btn danger" id="save-reset-confirm">RESET</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── パーティクル ── */
+(function(){
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W, H, pts = [];
+
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function Star(){ this.reset(); }
+  Star.prototype.reset = function(){
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.r = Math.random() * 1.1 + .2;
+    this.alpha = Math.random() * .6 + .15;
+    this.speed = Math.random() * .3 + .05;
+    this.twinkle = Math.random() * Math.PI * 2;
+    this.twinkleSpeed = (Math.random() * .02 + .005) * (Math.random()<.5?1:-1);
+  };
+  Star.prototype.draw = function(dt){
+    this.twinkle += this.twinkleSpeed;
+    const a = this.alpha + Math.sin(this.twinkle) * .25;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${Math.random()<.15?'100,220,255':'200,225,255'},${Math.max(0,a)})`;
+    ctx.fill();
+    this.y -= this.speed * dt * .016;
+    if(this.y < -2){ this.reset(); this.y = H; }
+  };
+
+  let shooting = null;
+  function spawnShoot(){
+    shooting = {
+      x: Math.random() * W * .7 + W * .15,
+      y: Math.random() * H * .3,
+      vx: (Math.random() * 3 + 2) * (Math.random()<.5?1:-1),
+      vy: Math.random() * 2 + 1,
+      life: 1, maxLife: 60 + Math.random()*40,
+      len: 90 + Math.random()*60
+    };
+  }
+  setInterval(spawnShoot, 5000 + Math.random()*3000);
+  setTimeout(spawnShoot, 1800);
+
+  const STAR_COUNT = Math.min(220, Math.floor(W * H / 6000));
+  for(let i=0; i<STAR_COUNT; i++) pts.push(new Star());
+
+  let last = performance.now();
+  function loop(now){
+    const dt = now - last; last = now;
+    ctx.clearRect(0,0,W,H);
+    for(const s of pts) s.draw(dt);
+
+    if(shooting){
+      const t = 1 - shooting.life / shooting.maxLife;
+      const x0 = shooting.x - shooting.vx * shooting.len * t;
+      const y0 = shooting.y - shooting.vy * shooting.len * t;
+      const g = ctx.createLinearGradient(x0,y0, shooting.x,shooting.y);
+      g.addColorStop(0,'rgba(0,200,255,0)');
+      g.addColorStop(1,`rgba(180,230,255,${.85*(1-t)})`);
+      ctx.beginPath();
+      ctx.moveTo(x0,y0);
+      ctx.lineTo(shooting.x,shooting.y);
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      shooting.x += shooting.vx * dt * .016;
+      shooting.y += shooting.vy * dt * .016;
+      shooting.life--;
+      if(shooting.life <= 0 ||
+         shooting.x < -50 || shooting.x > W+50 ||
+         shooting.y > H+50) shooting = null;
+    }
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+
+/* ============================================================
+   セーブデータ（localStorage）
+   unlockedStage   : 解放済みの最大ステージID（0=全未解放）
+   unlockedEpisode : 解放済みの最大エピソード番号（0=全未解放）
+   novel01読了→ステージ1解放 / ステージ1クリア→エピソード1(novel02)解放
+============================================================ */
+const SAVE_KEY = 'stellarDeleteSave';
+const defaultSaveData = { unlockedStage: 0, unlockedEpisode: 0 };
+
+function loadSaveData() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? Object.assign({}, defaultSaveData, JSON.parse(raw)) : Object.assign({}, defaultSaveData);
+  } catch(e) { return Object.assign({}, defaultSaveData); }
+}
+function saveGame(data) {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function unlockStage(stageId, saveData) {
+  if (stageId > saveData.unlockedStage) {
+    saveData.unlockedStage = stageId;
+    saveGame(saveData);
+  }
+}
+function unlockEpisode(ep, saveData) {
+  if (ep > saveData.unlockedEpisode) {
+    saveData.unlockedEpisode = ep;
+    saveGame(saveData);
+  }
+}
+
+const saveData = loadSaveData();
+
+/* ── サウンド制御 ── */
+const sndTitle  = document.getElementById('snd-title');
+const sndStage  = document.getElementById('snd-stage');
+const efeSelect = document.getElementById('efe-select');
+
+function playTitle() {
+  sndStage.pause(); sndStage.currentTime = 0;
+  sndTitle.volume = 0.7;
+  sndTitle.play().catch(() => {});
+}
+function playStage() {
+  sndTitle.pause(); sndTitle.currentTime = 0;
+  sndStage.volume = 0.7;
+  sndStage.play().catch(() => {});
+}
+function playSelect() {
+  efeSelect.currentTime = 0;
+  efeSelect.volume = 1.0;
+  efeSelect.play().catch(() => {});
+}
+
+// 最初のタップ/クリックでタイトルBGM開始（ブラウザ自動再生制限対策）
+function startTitleBGMOnFirstClick() {
+  playTitle();
+  document.removeEventListener('click', startTitleBGMOnFirstClick);
+}
+document.addEventListener('click', startTitleBGMOnFirstClick, { once: true });
+
+/* ── メニュー操作 ── */
+
+// ── ステージ選択 ──
+const stageModal    = document.getElementById('stage-modal');
+const stageViewport = document.getElementById('stage-cards-viewport');
+const stageDots     = document.getElementById('stage-dots');
+let stageData  = [];
+let currentIdx = 0;
+let isStoryFixedSelect = false;
+
+let isAnimating = false;
+
+function cardHtml(idx, pos) {
+  const s = stageData[idx];
+  const isLocked = s.id > (saveData.unlockedStage || 0);
+  const posClass = pos ? ' ' + pos : '';
+  const total = (s.grid_col && s.grid_row) ? s.grid_col * s.grid_row : null;
+  const gridStr  = (s.grid_col && s.grid_row)
+    ? isLocked
+      ? `<span class="stage-unknown">???</span>×<span class="stage-unknown">???</span>`
+      : `${s.grid_col}×${s.grid_row}<span class="grid-total">(${total ? total.toLocaleString() : ''})</span>`
+    : '';
+  const minesStr = s.mines != null
+    ? isLocked ? `星傷数 <span class="stage-unknown">??</span>` : `星傷数 ${s.mines.toLocaleString()}`
+    : '';
+  const descStr = isLocked
+    ? `STAGE ${String(s.id - 1).padStart(2,'0')} をクリアすると解放されます`
+    : (s.description || '');
+  return `<div class="stage-card${isLocked ? ' locked' : ''}${posClass}" data-idx="${idx}" data-id="${s.id}" data-locked="${isLocked}">
+    <div class="stage-img-wrap">
+      <img src="${s.image || ''}" alt="${isLocked ? '???' : (s.name || '')}" draggable="false"
+           onerror="this.style.background='rgba(13,31,60,.9)';this.removeAttribute('src')">
+      <div class="stage-overlay">
+        ${s.difficulty ? `<div class="stage-overlay-diff">${isLocked ? '???' : s.difficulty}</div>` : ''}
+        ${gridStr      ? `<div class="stage-overlay-grid">${gridStr}</div>`      : ''}
+        ${minesStr     ? `<div class="stage-overlay-mines">${minesStr}</div>`    : ''}
+      </div>
+    </div>
+    <div class="stage-num">STAGE ${String(s.id).padStart(2,'0')}</div>
+    <div class="stage-name">${isLocked ? '???' : (s.name || '')}</div>
+    <div class="stage-desc">${descStr}</div>
+  </div>`;
+}
+
+function mod(n, m) { return ((n % m) + m) % m; }
+
+// ── STORYモード：ステージ選択を1件に固定 ──
+function applyStoryFixedFilter(stageId) {
+  const target = stageData.find(s => String(s.id) === String(stageId));
+  if (target) stageData = [target];
+  currentIdx = 0;
+  isStoryFixedSelect = true;
+  document.getElementById('stage-prev').style.display = 'none';
+  document.getElementById('stage-next').style.display = 'none';
+  stageDots.style.display = 'none';
+}
+
+function resetStoryFixedFilter() {
+  isStoryFixedSelect = false;
+  document.getElementById('stage-prev').style.display = '';
+  document.getElementById('stage-next').style.display = '';
+  stageDots.style.display = '';
+}
+
+function buildStageCards() {
+  if (isStoryFixedSelect) {
+    // 固定ステージのみを中央表示。前後カードは出さない
+    stageViewport.innerHTML = cardHtml(0, 'pos-center');
+    updateStartBtn();
+    return;
+  }
+
+  const total = stageData.length;
+  const idxs = {
+    'pos-far-prev': mod(currentIdx - 2, total),
+    'pos-prev':     mod(currentIdx - 1, total),
+    'pos-center':   currentIdx,
+    'pos-next':     mod(currentIdx + 1, total),
+    'pos-far-next': mod(currentIdx + 2, total),
+  };
+
+  stageViewport.innerHTML = Object.entries(idxs)
+    .map(([pos, idx]) => cardHtml(idx, pos))
+    .join('');
+
+  updateDots();
+  bindCardClicks();
+  updateStartBtn();
+}
+
+function updateDots() {
+  stageDots.innerHTML = stageData.map((_, i) =>
+    `<span class="stage-dot ${i === currentIdx ? 'active' : ''}" data-i="${i}"></span>`
+  ).join('');
+  stageDots.querySelectorAll('.stage-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      if (isAnimating) return;
+      const target = parseInt(dot.dataset.i);
+      if (target === currentIdx) return;
+      currentIdx = target;
+      buildStageCards();
+    });
+  });
+}
+
+function bindCardClicks() {
+  stageViewport.querySelector('.stage-card.pos-prev')?.addEventListener('click', () => slide(-1));
+  stageViewport.querySelector('.stage-card.pos-next')?.addEventListener('click', () => slide(1));
+}
+
+function slide(dir) {
+  if (isAnimating || stageData.length === 0 || isStoryFixedSelect) return;
+  isAnimating = true;
+
+  const total = stageData.length;
+  const cards = stageViewport.querySelectorAll('.stage-card');
+
+  // 方向に応じてクラスをシフト
+  const order = dir === 1
+    ? ['pos-far-prev', 'pos-prev', 'pos-center', 'pos-next', 'pos-far-next']
+    : ['pos-far-next', 'pos-next', 'pos-center', 'pos-prev', 'pos-far-prev'];
+
+  // 新しく端に入るカードを追加
+  const newIdx = dir === 1
+    ? mod(currentIdx + 3, total)
+    : mod(currentIdx - 3, total);
+  const newPos = dir === 1 ? 'pos-far-next' : 'pos-far-prev';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = cardHtml(newIdx, newPos);
+  const newCard = tmp.firstElementChild;
+  // 即座に端外に配置してからアニメ開始
+  newCard.style.transition = 'none';
+  stageViewport.appendChild(newCard);
+  void newCard.offsetWidth; // reflow
+  newCard.style.transition = '';
+
+  // インデックスを更新
+  currentIdx = mod(currentIdx + dir, total);
+
+  // 各カードのクラスを移行先に変更
+  const shiftMap = dir === 1
+    ? { 'pos-far-prev': null, 'pos-prev': 'pos-far-prev', 'pos-center': 'pos-prev',
+        'pos-next': 'pos-center', 'pos-far-next': 'pos-next' }
+    : { 'pos-far-next': null, 'pos-next': 'pos-far-next', 'pos-center': 'pos-next',
+        'pos-prev': 'pos-center', 'pos-far-prev': 'pos-prev' };
+
+  const positions = ['pos-far-prev','pos-prev','pos-center','pos-next','pos-far-next'];
+  cards.forEach(card => {
+    const cur = positions.find(p => card.classList.contains(p));
+    if (!cur) return;
+    const next = shiftMap[cur];
+    card.classList.remove(cur);
+    if (next) {
+      card.classList.add(next);
+    } else {
+      // 端を過ぎたカードはフェードアウト後削除
+      card.style.opacity = '0';
+      card.style.pointerEvents = 'none';
+    }
+  });
+
+  // 新カードを正しい位置へ
+  newCard.classList.remove(newPos);
+  newCard.classList.add(dir === 1 ? 'pos-far-next' : 'pos-far-prev');
+
+  // トランジション完了後の後処理
+  setTimeout(() => {
+    buildStageCards();
+    isAnimating = false;
+  }, 460);
+
+  updateDots();
+}
+
+document.getElementById('stage-prev').addEventListener('click', () => slide(-1));
+document.getElementById('stage-next').addEventListener('click', () => slide(1));
+
+// ── タッチスワイプ ──
+let touchStartX = 0, touchStartY = 0;
+stageViewport.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+stageViewport.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+    slide(dx < 0 ? 1 : -1);
+  }
+}, { passive: true });
+
+// STARTボタンの状態を現在選択中ステージに合わせて更新
+function updateStartBtn() {
+  const btn = document.getElementById('stage-start-btn');
+  const s = stageData[currentIdx];
+  const isLocked = s && s.id > saveData.unlockedStage;
+  btn.textContent = isLocked ? 'LOCKED' : 'START';
+  btn.classList.toggle('locked', !!isLocked);
+}
+
+document.getElementById('stage-start-btn').addEventListener('click', () => {
+  if (_titleNavLocked) return;
+  _titleNavLocked = true;
+  playSelect();
+  const s = stageData[currentIdx];
+  const modeParam = isStoryFixedSelect ? '&mode=story' : '';
+  window.location.href = `sphere-minesweeper.html?stage=${s.id}${modeParam}`;
+});
+
+document.getElementById('stage-back-btn').addEventListener('click', () => {
+  playSelect();
+  stageModal.classList.remove('show');
+  playTitle();
+});
+
+// START ボタン → ステージ選択モーダルを開く
+// ?select=1 でアクセスした場合、ステージ選択を自動オープン
+// ?select=1&storyStage=N の場合、ステージNのみに固定したステージ選択を自動オープン（STORYモード用）
+(function(){
+  const p = new URLSearchParams(window.location.search);
+  if(p.get('select') !== '1') return;
+  // ステージ選択画面を直接開く（タイトル画面を経由しない）場合、
+  // 「最初のタップでタイトルBGM開始」のリスナーが残っていると、
+  // ステージ選択画面での最初のタップでBGMがタイトル曲に切り替わってしまうため無効化する
+  document.removeEventListener('click', startTitleBGMOnFirstClick);
+  const storyStageId = p.get('storyStage');
+  fetch('data/stages.json')
+    .then(r => r.json())
+    .then(data => {
+      stageData  = data;
+      currentIdx = 0;
+      resetStoryFixedFilter();
+      if(storyStageId){ applyStoryFixedFilter(storyStageId); }
+      buildStageCards();
+      stageModal.classList.add('show');
+      playStage();
+    })
+    .catch(() => {
+      stageViewport.innerHTML = '<div style="color:#e8f4ff;font-family:Orbitron,sans-serif;letter-spacing:.2em;">stages.json not found</div>';
+      stageModal.classList.add('show');
+    });
+})();
+
+let _titleNavLocked = false;
+
+document.getElementById('simple-btn').addEventListener('click', function(){
+  if (_titleNavLocked) return;
+  _titleNavLocked = true;
+  playSelect();
+  fetch('data/stages.json')
+    .then(r => r.json())
+    .then(data => {
+      stageData  = data;
+      currentIdx = 0;
+      resetStoryFixedFilter();
+      buildStageCards();
+      stageModal.classList.add('show');
+      playStage();
+      _titleNavLocked = false; // モーダル表示で完結する操作なので、ここで解除して再操作可能に
+    })
+    .catch(() => {
+      stageViewport.innerHTML = '<div style="color:#e8f4ff;font-family:Orbitron,sans-serif;letter-spacing:.2em;">stages.json not found</div>';
+      stageModal.classList.add('show');
+      _titleNavLocked = false;
+    });
+});
+
+// GUIDE — 操作マニュアルへ遷移
+document.getElementById('guide-btn').addEventListener('click', function(){
+  if (_titleNavLocked) return;
+  _titleNavLocked = true;
+  window.location.href = 'manual.html';
+});
+
+// ── STORY アコーディオン ──
+const EPISODES = [
+  // label, subtitle, novel, unlock判定
+  // EP0は常に表示（初回は通常進行、再読は?reread=1）
+  { label:'EP 0', sub:'OPENING',  novel:'novel/novel01.html', always:true  },
+  { label:'EP 1', sub:'',         novel:'novel/novel02.html', minEp:1 },
+  { label:'EP 2', sub:'',         novel:'novel/novel03.html', minEp:2 },
+  { label:'EP 3', sub:'',         novel:'novel/novel04.html', minEp:3 },
+  { label:'EP 4', sub:'',         novel:'novel/novel05.html', minEp:4 },
+  { label:'EP 5', sub:'',         novel:'novel/novel06.html', minEp:5 },
+  { label:'EP 6', sub:'',         novel:'novel/novel07.html', minEp:6 },
+  { label:'EP 7', sub:'',         novel:'novel/novel08.html', minEp:7 },
+  { label:'EP 8', sub:'',         novel:'novel/novel09.html', minEp:8 },
+  null, // 区切り線（ED手前）
+  { label:'ED',   sub:'ENDING',   novel:'novel/novel10.html', minEp:9 },
+];
+
+function buildEpisodeList() {
+  const list = document.getElementById('episode-list');
+  list.innerHTML = EPISODES.map(ep => {
+    if (!ep) return '<div class="ep-divider"></div>';
+    const unlocked = ep.always
+      ? true  // EP0は常時表示可（初回または再読どちらでも押せる）
+      : (saveData.unlockedEpisode || 0) >= ep.minEp;
+    // 全エピソードとも通常進行URL（?reread=1なし）。
+    // 解放済みのステージを再解放しないよう unlock処理側でガード済みなので問題なし。
+    // 再読後はnextUrl通りにステージ選択へ進む（タイトルへ戻るより自然なUXのため）。
+    const href = ep.novel;
+    const sub = ep.sub ? ` <span style="opacity:.55;font-size:.85em;letter-spacing:.1em">${ep.sub}</span>` : '';
+    return `<button class="ep-btn${unlocked ? '' : ' locked'}" data-href="${href}">
+      <span class="ep-label">${ep.label}</span>${sub}
+    </button>`;
+  }).join('');
+  list.querySelectorAll('.ep-btn:not(.locked)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (_titleNavLocked) return;
+      _titleNavLocked = true;
+      window.location.href = btn.dataset.href;
+    });
+  });
+}
+
+let _storyOpen = false;
+document.getElementById('story-btn').addEventListener('click', function(){
+  _storyOpen = !_storyOpen;
+  this.classList.toggle('open', _storyOpen);
+  document.getElementById('episode-list').classList.toggle('open', _storyOpen);
+  if (_storyOpen) buildEpisodeList(); // 毎回最新saveDataで再生成
+});
+
+// SAVE RESET
+const saveResetModal = document.getElementById('save-reset-modal');
+function openSaveResetModal(){ saveResetModal.style.display='flex'; }
+function closeSaveResetModal(){ saveResetModal.style.display='none'; }
+document.getElementById('save-reset-btn').addEventListener('click', openSaveResetModal);
+document.getElementById('save-reset-cancel').addEventListener('click', closeSaveResetModal);
+document.getElementById('save-reset-confirm').addEventListener('click', function(){
+  try{ localStorage.removeItem('stellarDeleteSave'); }catch(e){}
+  closeSaveResetModal();
+  location.reload();
+});
+
+// CREDIT
+const creditModal = document.getElementById('credit-modal');
+const creditCrawl = document.getElementById('credit-crawl');
+
+function buildCredits(data) {
+  creditCrawl.innerHTML = data.map(item => `
+    <div class="credit-block">
+      <span class="credit-role">${item.role}</span>
+      <span class="credit-name">${item.name}</span>
+    </div>
+  `).join('');
+}
+
+function startCrawl() {
+  creditCrawl.style.animation = 'none';
+  void creditCrawl.offsetHeight;
+  creditCrawl.style.animation = 'crawl 36s linear forwards';
+}
+
+document.getElementById('credit-btn').addEventListener('click', function(){
+  fetch('data/credits.json')
+    .then(r => r.json())
+    .then(data => {
+      buildCredits(data);
+      creditModal.classList.add('show');
+      startCrawl();
+    })
+    .catch(() => {
+      // フォールバック：JSONが読めない場合
+      creditCrawl.innerHTML = '<div class="credit-block"><span class="credit-name">credits.json not found</span></div>';
+      creditModal.classList.add('show');
+      startCrawl();
+    });
+});
+
+document.getElementById('credit-close').addEventListener('click', function(){
+  creditModal.classList.remove('show');
+});
+
+// EXIT — 確認モーダル表示
+const exitModal  = document.getElementById('exit-modal');
+document.getElementById('exit-btn').addEventListener('click', function(){
+  exitModal.classList.add('show');
+});
+document.getElementById('exit-cancel').addEventListener('click', function(){
+  exitModal.classList.remove('show');
+});
+document.getElementById('exit-confirm').addEventListener('click', function(){
+  /* ブラウザタブを閉じる（スタンドアロン PWA / Electron 等で有効） */
+  window.close();
+  /* window.close() が効かない場合（URLを直接開いたタブ等）のフォールバック：
+     ブラウザの仕様上スクリプトでは閉じられないため、案内画面を表示する */
+  setTimeout(function(){
+    document.body.innerHTML =
+      '<div style="position:fixed;inset:0;background:#000;color:#88ccff;' +
+      'display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;' +
+      'font-family:Orbitron,sans-serif;font-size:clamp(13px,3vw,16px);letter-spacing:.08em;' +
+      'text-align:center;padding:24px;">' +
+      '<div>このタブを閉じてください</div>' +
+      '<div style="font-size:.8em;color:rgba(136,204,255,.6);">Please close this tab</div>' +
+      '</div>';
+  }, 300);
+});
+</script>
+</body>
+</html>

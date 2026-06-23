@@ -1,0 +1,91 @@
+const CHARACTERS = {
+  alice: {
+    name: 'アリス',
+    position: 'left',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_alice01.png',
+      normal2: 'image_alice02.png',
+      normal3: 'image_alice03.png',
+    },
+  },
+  flat: {
+    name: 'フラット',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_flat01.png',
+      normal2: 'image_flat02.png',
+      normal3: 'image_flat03.png',
+    },
+  },
+  xeno: {
+    name: 'ゼノ',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_xeno01.png',
+    },
+  }
+};
+
+const SCRIPT = [
+  { command: 'background', value: 'back01.png' },
+  { command: 'bgm', value: 'bgm01.mp3' },
+  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
+  { command: 'show', character: 'alice', portrait: 'normal1' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'どうしてそんなに眠そうなの？' },
+  { command: 'show', character: 'xeno', portrait: 'normal1' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '地獄を数えていたから。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '羊じゃなくて？' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '羊は増えるでしょう。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '数えるものはだいたい増えないわ。' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '地獄は増えるかもしれない。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '増えたら困るのよ。' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '一つくらい増えても気づかないでしょう。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '見つかったの？' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '見つからなかった。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '増えてないじゃない。' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '見つからないものは、たいていよく隠れているの。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'かくれんぼじゃないのよ。' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '見つかるのは入口だけで十分だわ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '入りたくないわね。' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: 'でも眠い時は少し似ている。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '地獄に？' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: 'だから私は昨夜、地獄へ旅行していたのかもしれない。' },
+  { speaker: 'アリス', portrait: 'normal2', text: 'それで眠いの？' },
+  { speaker: 'ゼノ', portrait: 'normal1', text: '乗り換えが多かったから。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '地獄へ直通便はなさそうね。' },
+  { command: 'fadeout' },
+  { command: 'hide_all' },
+  { command: 'hide', character: 'alice' },
+  { command: 'hide', character: 'xeno' },
+  { command: 'dialog_hide' },
+  { command: 'background', value: 'back09.png', position: 'bottom' },
+  { command: 'se', value: 'gogogo.wav' },
+  { command: 'wait', duration: 2000 },
+  { command: 'fadein' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが最後の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'こうして目の前にすると少し落ち着かないわ、ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '終わりというものは、だいたい後ろにあると思っていたけれど、' },
+  { speaker: 'アリス', portrait: 'normal1', text: '最後の後ろには何かあるのかしらね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '何もないのかもしれないし、何もない場所の続きを誰かが置いていったのかもしれない。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'けれど本当に不思議なのは、最後の後ろに何があるかよりも、' },
+  { speaker: 'アリス', portrait: 'normal2', text: '私が「最後」を見つけたと思い込んでいることの方だわ。' },
+  { command: 'dialog_hide' },
+  { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
+  { command: 'wait', duration: 2000 },
+  { command: 'bgm_fade', duration: 2000 },
+];
+
+NovelEngine.init({
+  characters:  CHARACTERS,
+  imagePath:   'images/',
+  bgmPath:     '../sounds/',
+  sePath:      'se/',
+  typingSpeed: 30,
+  clickSE:     'click.wav',
+  nextUrl:     '../index.html?select=1&storyStage=8',
+});
+
+NovelEngine.play(SCRIPT);

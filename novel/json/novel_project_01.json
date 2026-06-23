@@ -1,0 +1,397 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_flat06.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "困ったわね。迷ってしまったわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それに・・・　ここはどこ？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "不思議の国じゃなさそうね。"
+    },
+    {
+      "type": "show",
+      "character": "flat",
+      "portrait": "normal2"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal2",
+      "text": "やあ！アリス！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "誰？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal3",
+      "text": "失敬な。\n僕は「誰？」なんて名前じゃないよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "僕はフラット。\nよろしく、アリス。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "よろしく、フラット。\nところで、ここはどこなの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "今のところは、まだここだよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それは見ればわかるわ。\n"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "よかった。見失っているかと思った。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "見失うほど広くないでしょう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "広さは関係ないよ。\n昨日なんてスプーンを見失った星があった。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "星がスプーンを？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "逆だったかもしれない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どっちでもいいわ。ここは何なの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "星牢の外側。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "じゃあ内側もあるのね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "もちろん。外側があるものは大体そうだ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "少し安心したわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "でも内側は外側より外側にある。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "今の安心を返して。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "難しいな。\n安心は一度使うと傷になるから。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "あなたの話、全部そうなの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "全部じゃないよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どれが違うの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "全部。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "そう・・・。\n（頭がおかしくなりそうよ。）"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "あなたとはにパーティーには行けそうにないわね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "だって話がちぐはぐなんだもの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "パーティー！いいね！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "じゃあこれから【星の花嫁】を助けるパーティーをしよう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "随分と物騒ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal4",
+      "text": "この、ピッケルと旗で、星の牢獄に捕らわれた【星の花嫁】を助けるだけさ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ずいぶんと乱暴な説明ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "導入パートなんでそんなもんさ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "あとでツジツマがあえば、誰も気になんかしないさ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "確かにね。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "flat"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back02.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "あれは？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "あれは鬼骨の星牢。あの中に花嫁が囚われている。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "それじゃあアリス！楽しんできて！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "フラットは行かないの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "僕はここにいないから、どこへも行けないんだ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "あら、そう。\nじゃあ楽しんでくるわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "normal1",
+      "text": "良いパーティーを！"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

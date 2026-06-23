@@ -1,0 +1,399 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        },
+        {
+          "key": "dest01",
+          "file": "image_flat04.png"
+        },
+        {
+          "key": "dest02",
+          "file": "image_flat05.png"
+        }
+      ]
+    },
+    {
+      "id": "yomi",
+      "name": "ヨミ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_yomi01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "あなたが最後の人なのね。"
+    },
+    {
+      "type": "show",
+      "character": "yomi",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "最後？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ええ。もうパーティーは終わりよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "そう。なら、私もようやく帰れる。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どこへ？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "不思議の国よ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "え？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "私の妹を知らない？\nすぐ首をはねたがる困った子。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "あなた、何者なの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "昔はスペードの女王と呼ばれていたわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "そんな人いたかしら。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "いなかったの。だから迷子になったのよ。"
+    },
+    {
+      "type": "hide",
+      "character": "yomi"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest01",
+      "text": "ア・・・リスあ・・・りが・・・とう・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "いままでどこにいたの？"
+    },
+    {
+      "type": "show",
+      "character": "flat",
+      "portrait": "dest01"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest01",
+      "text": "・・・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "ってフラット！？"
+    },
+    {
+      "type": "hide",
+      "character": "flat"
+    },
+    {
+      "type": "show",
+      "character": "yomi",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "ずいぶん傷だらけね。"
+    },
+    {
+      "type": "hide",
+      "character": "yomi"
+    },
+    {
+      "type": "show",
+      "character": "flat",
+      "portrait": "dest01"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "何があったの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest01",
+      "text": "星の傷を集めていたんだ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それは知ってるわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest01",
+      "text": "集める場所がなかったから。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest01",
+      "text": "だから僕が持っていた。"
+    },
+    {
+      "type": "hide",
+      "character": "flat"
+    },
+    {
+      "type": "show",
+      "character": "yomi",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ヨミ",
+      "portrait": "normal1",
+      "text": "全部？"
+    },
+    {
+      "type": "hide",
+      "character": "yomi"
+    },
+    {
+      "type": "show",
+      "character": "flat",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest01",
+      "text": "全部。"
+    },
+    {
+      "type": "wait",
+      "duration": "1000"
+    },
+    {
+      "type": "dialog",
+      "speaker": "フラット",
+      "portrait": "dest02",
+      "text": "これで・・・帰れるよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal3",
+      "text": "フラット！"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "flat"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "background",
+      "value": "back15.png"
+    },
+    {
+      "type": "wait",
+      "duration": "1000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "wait",
+      "duration": "1000"
+    },
+    {
+      "type": "narration",
+      "text": "フラットの身体が崩れ始める。\n光の粒が舞う。"
+    },
+    {
+      "type": "narration",
+      "text": "腕が崩れる。\n肩が崩れる。"
+    },
+    {
+      "type": "narration",
+      "text": "光が砕ける。\n星屑が飲み込まれる。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "background",
+      "value": "back10.png",
+      "position": "bottom"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "フラット・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "パーティーは帰るまでがパーティーって、誰か教えてくれなかったの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "それとも、最後の向こう側に「帰りのドア」があるのかしらね。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": true
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

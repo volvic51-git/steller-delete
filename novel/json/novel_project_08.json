@@ -1,0 +1,303 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "alice",
+      "name": "アリス",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice03.png"
+        }
+      ]
+    },
+    {
+      "id": "flat",
+      "name": "フラット",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_flat01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_flat02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_flat03.png"
+        }
+      ]
+    },
+    {
+      "id": "xeno",
+      "name": "ゼノ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_xeno01.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back01.png"
+    },
+    {
+      "type": "bgm",
+      "value": "bgm01.mp3"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "size": "1.5rem",
+      "color": "",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.0rem"
+    },
+    {
+      "type": "show",
+      "character": "alice",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "どうしてそんなに眠そうなの？"
+    },
+    {
+      "type": "show",
+      "character": "xeno",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "地獄を数えていたから。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "羊じゃなくて？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "羊は増えるでしょう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "数えるものはだいたい増えないわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "地獄は増えるかもしれない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "増えたら困るのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "一つくらい増えても気づかないでしょう。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "見つかったの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "見つからなかった。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "増えてないじゃない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "見つからないものは、たいていよく隠れているの。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "かくれんぼじゃないのよ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "見つかるのは入口だけで十分だわ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "入りたくないわね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "でも眠い時は少し似ている。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "地獄に？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "だから私は昨夜、地獄へ旅行していたのかもしれない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "それで眠いの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ゼノ",
+      "portrait": "normal1",
+      "text": "乗り換えが多かったから。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "地獄へ直通便はなさそうね。"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice"
+    },
+    {
+      "type": "hide",
+      "character": "xeno"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back09.png",
+      "position": "bottom"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "これが最後の星牢ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "こうして目の前にすると少し落ち着かないわ、ね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "終わりというものは、だいたい後ろにあると思っていたけれど、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "最後の後ろには何かあるのかしらね。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "何もないのかもしれないし、何もない場所の続きを誰かが置いていったのかもしれない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal1",
+      "text": "けれど本当に不思議なのは、最後の後ろに何があるかよりも、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal2",
+      "text": "私が「最後」を見つけたと思い込んでいることの方だわ。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "bg_scroll",
+      "direction": "down",
+      "speed": "200",
+      "loop": false
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

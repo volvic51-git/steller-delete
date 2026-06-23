@@ -1,0 +1,91 @@
+const CHARACTERS = {
+  alice: {
+    name: 'アリス',
+    position: 'left',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_alice01.png',
+      normal2: 'image_alice02.png',
+      normal3: 'image_alice03.png',
+    },
+  },
+  flat: {
+    name: 'フラット',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_flat01.png',
+      normal2: 'image_flat02.png',
+      normal3: 'image_flat03.png',
+    },
+  },
+  abis: {
+    name: 'アビス',
+    position: 'right',
+    defaultPortrait: 'normal1',
+    portraits: {
+      normal1: 'image_abis01.png',
+    },
+  }
+};
+
+const SCRIPT = [
+  { command: 'background', value: 'back01.png' },
+  { command: 'bgm', value: 'bgm01.mp3' },
+  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
+  { command: 'show', character: 'alice', portrait: 'normal1' },
+  { speaker: 'アリス', portrait: 'normal1', text: '海って不思議ね。' },
+  { command: 'show', character: 'abis', portrait: 'normal1' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'ヒトデも不思議よ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'どっちの話をしているの？' },
+  { speaker: 'アビス', portrait: 'normal1', text: '海のほう。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'ヒトデじゃなかったの？' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'ヒトデは海の考えごとみたいなものだから。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '考えごとには見えないわ。' },
+  { speaker: 'アビス', portrait: 'normal1', text: '見えたら考えごとじゃないもの。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'それもそうかしら。' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'ヒトデは目があるけれど、腕の先にあるの。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '本当に？' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'ええ。だから海の隅々まで見ようとして広がったのよ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '努力家さんね。' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'でも海は丸いでしょう。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '多分ね。' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'だから全部は見えないの。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '努力が報われていないわ。' },
+  { speaker: 'アビス', portrait: 'normal1', text: 'でもヒトデは怒らない。' },
+  { speaker: 'アリス', portrait: 'normal1', text: '賢いのね。' },
+  { speaker: 'アビス', portrait: 'normal1', text: '忘れただけよ。' },
+  { speaker: 'アリス', portrait: 'normal2', text: 'それなら私にもできそうだわ。' },
+  { command: 'fadeout' },
+  { command: 'hide_all' },
+  { command: 'hide', character: 'alice' },
+  { command: 'hide', character: 'abis' },
+  { command: 'dialog_hide' },
+  { command: 'background', value: 'back08.png', position: 'bottom' },
+  { command: 'se', value: 'gogogo.wav' },
+  { command: 'wait', duration: 2000 },
+  { command: 'fadein' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが7つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'あんなに白く輝いていて、眩しくならないのかしら？' },
+  { speaker: 'アリス', portrait: 'normal1', text: '不思議ね、雪みたいな色をしているのに、どこか鏡を見ている気分になるわ。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'どれだけ見上げても私の顔は映らないのだけれど。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'もしかして忘れたことを映す鏡なのかしら。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'そう考えると少し怖いけれど、興味もあるわ。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '怖いものほど美しいって決まってるもの。' },
+  { command: 'dialog_hide' },
+  { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
+  { command: 'wait', duration: 2000 },
+  { command: 'bgm_fade', duration: 2000 },
+];
+
+NovelEngine.init({
+  characters:  CHARACTERS,
+  imagePath:   'images/',
+  bgmPath:     '../sounds/',
+  sePath:      'se/',
+  typingSpeed: 30,
+  clickSE:     'click.wav',
+  nextUrl:     '../index.html?select=1&storyStage=7',
+});
+
+NovelEngine.play(SCRIPT);

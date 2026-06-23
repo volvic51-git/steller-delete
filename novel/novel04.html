@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Stellar Delete — Stage 3 クリア後</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1p:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div id="game-container">
+    <div id="fade-overlay"></div>
+    <div id="background-layer">
+      <div id="background-img"></div>
+    </div>
+    <div id="character-layer"></div>
+    <div id="ui-layer">
+      <div id="dialog-window" class="hidden">
+        <div id="name-plate">
+          <div id="name-plate-bar"></div>
+          <span id="speaker-name"></span>
+        </div>
+        <div id="dialog-text"></div>
+        <div id="next-indicator">
+          <span class="arrow-icon">&#x25BC;</span>
+        </div>
+      </div>
+      <div id="start-screen">
+        <div id="start-content">
+          <h1 id="game-title">Stellar<span>Delete</span></h1>
+          <p id="game-subtitle">Stage 3 クリア後</p>
+          <div id="start-pulse"></div>
+        </div>
+      </div>
+      <div id="end-screen" class="hidden">
+        <div id="end-content">
+          <p id="end-text">— END —</p>
+          <button id="restart-btn">&#x3082;&#x3046;&#x4E00;&#x5EA6;&#x898B;&#x308B;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var ts = Date.now();
+      function loadScript(src, cb) {
+        var s = document.createElement('script');
+        s.src = src + '?v=' + ts;
+        s.onload = cb || function(){};
+        document.head.appendChild(s);
+      }
+      loadScript('js/novel.js', function() {
+        loadScript('js/script04.js');
+      });
+    })();
+  </script>
+
+</body>
+</html>
