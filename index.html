@@ -31,10 +31,10 @@
     position: fixed; inset: 0; z-index: 0;
     background-size: cover;
     background-position: center;
-    background-image: url('images/img_title.jpg');
+    background-image: url('assets/images/img_title.jpg');
   }
   @media (max-aspect-ratio: 1/1) {
-    #bg { background-image: url('images/img_title.jpg'); }
+    #bg { background-image: url('assets/images/img_title.jpg'); }
   }
   #bg::after {
     content: '';
@@ -885,9 +885,9 @@
 <body>
 
 <!-- サウンド -->
-<audio id="snd-title"  src="sounds/SND_01_title.mp3"  loop preload="auto"></audio>
-<audio id="snd-stage"  src="sounds/SND_04_stage.mp3"  loop preload="auto"></audio>
-<audio id="efe-select" src="sounds/EFE_04_select.mp3"      preload="auto"></audio>
+<audio id="snd-title"  src="assets/audio/SND_01_title.mp3"  loop preload="auto"></audio>
+<audio id="snd-stage"  src="assets/audio/SND_04_stage.mp3"  loop preload="auto"></audio>
+<audio id="efe-select" src="assets/audio/EFE_04_select.mp3"      preload="auto"></audio>
 
 <!-- 背景 -->
 <div id="bg"></div>

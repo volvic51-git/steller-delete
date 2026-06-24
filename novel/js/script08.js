@@ -81,7 +81,7 @@ const SCRIPT = [
 NovelEngine.init({
   characters:  CHARACTERS,
   imagePath:   'images/',
-  bgmPath:     '../sounds/',
+  bgmPath:     '../assets/audio/',
   sePath:      'se/',
   typingSpeed: 30,
   clickSE:     'click.wav',

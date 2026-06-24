@@ -36,7 +36,7 @@ const NovelEngine = (() => {
     _config = Object.assign({
       characters:  {},
       imagePath:   'images/',
-      bgmPath:     '../sounds/',
+      bgmPath:     '../assets/audio/',
       sePath:      'se/',
       typingSpeed: 30,
       clickSE:     '',

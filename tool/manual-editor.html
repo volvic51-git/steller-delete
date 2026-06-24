@@ -122,7 +122,7 @@ body{display:flex;flex-direction:column;}
 <div id="toolbar">
   <h1>📘 manual.html エディタ</h1>
   <label class="fbtn">📷 画像読込<input type="file" id="fileImg" accept="image/*"></label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#8a93a6;white-space:nowrap;">画像パス<input type="text" id="imgPathInput" value="images/img_manual.jpg" title="manual.htmlから見た画像の相対パス（書き出し時に使用）" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #2a3344;background:#151b27;color:#8adcff;width:190px;"></label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#8a93a6;white-space:nowrap;">画像パス<input type="text" id="imgPathInput" value="assets/images/img_manual.jpg" title="manual.htmlから見た画像の相対パス（書き出し時に使用）" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid #2a3344;background:#151b27;color:#8adcff;width:190px;"></label>
   <button id="btn-preview">▶ プレビュー</button>
   <div class="spacer"></div>
   <button id="btn-save">プロジェクト保存</button>
@@ -180,7 +180,7 @@ var steps = [];
 // step: { x,y,w,h (自然サイズ%), shape:'round'|'circle', title:'', desc:'' }
 var selIdx = -1;
 var imgSrc  = '';   // base64 data URI（エディタ表示用）
-var imgPath = 'images/img_manual.jpg'; // 書き出し時に manual.html へ埋め込むパス
+var imgPath = 'assets/images/img_manual.jpg'; // 書き出し時に manual.html へ埋め込むパス
 var imgNW  = 0;
 var imgNH  = 0;
 
@@ -717,7 +717,7 @@ var completeSc  = document.getElementById('complete-screen');
 if(IMG_SRC) img.src = IMG_SRC;
 
 /* BGM（ブラウザの自動再生制限のため、最初のタップで開始） */
-var _bgm = new Audio('../sounds/SND_02_play.mp3');
+var _bgm = new Audio('../assets/audio/SND_02_play.mp3');
 _bgm.loop = true; _bgm.volume = 0.55;
 document.addEventListener('click', function _startBgm(){
   _bgm.play().catch(function(){});
