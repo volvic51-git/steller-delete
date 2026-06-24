@@ -558,7 +558,7 @@ function sdNextUrl(n) {
 }
 
 function generateScriptJsForStellarDelete(n) {
-  var code = generateScriptJs('images/');
+  var code = generateScriptJs('../assets/images/');
   var url = sdNextUrl(n);
   var unlockLine = n < 10 ? '\n  unlockStageOnComplete: ' + n + ',' : '';
   var replaced = code.replace(
@@ -1012,12 +1012,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.getElementById('btn-export-js').addEventListener('click', function() {
-    dlFile(generateScriptJs('images/'), 'script.js', 'text/javascript');
+    dlFile(generateScriptJs('../assets/images/'), 'script.js', 'text/javascript');
     showStatus('status-js', '✓ script.js をダウンロードしました');
   });
 
   document.getElementById('btn-preview-js').addEventListener('click', function() {
-    var code = generateScriptJs('images/');
+    var code = generateScriptJs('../assets/images/');
     var box = document.getElementById('preview-box');
     var area = document.getElementById('preview-area');
     area.value = code;

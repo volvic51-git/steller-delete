@@ -106,7 +106,7 @@ const SCRIPT = [
 
 NovelEngine.init({
   characters:  CHARACTERS,
-  imagePath:   'images/',
+  imagePath:   '../assets/images/',
   bgmPath:     '../assets/audio/',
   sePath:      'se/',
   typingSpeed: 30,
