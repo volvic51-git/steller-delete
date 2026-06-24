@@ -31,7 +31,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back11.png' },
+  { command: 'background', value: 'back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { speaker: '', portrait: '', text: '崩壊したフラットはブラックホールとなり、' },

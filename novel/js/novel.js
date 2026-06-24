@@ -57,6 +57,8 @@ const NovelEngine = (() => {
     _buildCharacterElements();
     _buildAutoToggle();
     _bindEvents();
+    const endScreen = $id('end-screen');
+    if(endScreen) endScreen.classList.add('hidden');
     $id('start-screen').style.display = 'flex';
     console.log('[NovelEngine] 初期化完了。キャラクター数:', Object.keys(_config.characters).length);
   }
@@ -150,7 +152,9 @@ const NovelEngine = (() => {
     if (!container) return;
 
     // 画面全体クリックで進行
-    container.addEventListener('click', _onContainerClick);
+    // document レベルで受けることで、Android Chrome の pointer-events:none 親要素による
+    // バブリング不具合を回避する。restart-btn / auto-toggle-btn は stopPropagation 済み。
+    document.addEventListener('click', _onContainerClick);
 
     // キーボード
     document.addEventListener('keydown', function(e) {
@@ -176,6 +180,10 @@ const NovelEngine = (() => {
   function _onContainerClick() {
     const endScreen = $id('end-screen');
     if (endScreen && !endScreen.classList.contains('hidden')) return;
+
+    // 暗転・明転中はクリックを無視（背景が一瞬見えてしまうのを防止）
+    const fadeOverlay = $id('fade-overlay');
+    if (fadeOverlay && fadeOverlay.classList.contains('fading-out')) return;
 
     if (!_started) {
       _handleStart();
@@ -229,7 +237,8 @@ const NovelEngine = (() => {
   ============================================ */
   function _handleStart() {
     if (_started) return;
-    _started = true;
+    _started  = true;
+    _isWaiting = true; // フェード中の連打でステップがズレないようブロック
 
     const startScreen = $id('start-screen');
     startScreen.style.transition = 'opacity 0.5s';
@@ -240,8 +249,9 @@ const NovelEngine = (() => {
       if (bgImg) bgImg.classList.add('default-bg');
       const autoBtn = $id('auto-toggle-btn');
       if (autoBtn) autoBtn.style.display = '';
+      _isWaiting = false;
       _processStep();
-    }, 500);
+    }, 1000);
   }
 
   /* ============================================

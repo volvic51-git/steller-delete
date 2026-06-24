@@ -23,7 +23,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back01.png' },
+  { command: 'background', value: 'back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { command: 'show', character: 'alice', portrait: 'normal1' },
@@ -75,7 +75,7 @@ const SCRIPT = [
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
   { speaker: 'アリス', portrait: 'normal1', text: 'あれは？' },
-  { speaker: 'フラット', portrait: 'normal1', text: 'あれは鬼骨の星牢。あの中に花嫁が囚われている。' },
+  { speaker: 'フラット', portrait: 'normal1', text: 'あれが星牢。あの中に花嫁が囚われている。' },
   { speaker: 'フラット', portrait: 'normal1', text: 'それじゃあアリス！楽しんできて！' },
   { speaker: 'アリス', portrait: 'normal1', text: 'フラットは行かないの？' },
   { speaker: 'フラット', portrait: 'normal1', text: '僕はここにいないから、どこへも行けないんだ。' },

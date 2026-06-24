@@ -31,10 +31,10 @@
     position: fixed; inset: 0; z-index: 0;
     background-size: cover;
     background-position: center;
-    background-image: url('title/bg_pc.jpg');
+    background-image: url('images/img_title.jpg');
   }
   @media (max-aspect-ratio: 1/1) {
-    #bg { background-image: url('title/bg_sp.jpg'); }
+    #bg { background-image: url('images/img_title.jpg'); }
   }
   #bg::after {
     content: '';
@@ -1178,8 +1178,8 @@ function cardHtml(idx, pos) {
     : (s.description || '');
   return `<div class="stage-card${isLocked ? ' locked' : ''}${posClass}" data-idx="${idx}" data-id="${s.id}" data-locked="${isLocked}">
     <div class="stage-img-wrap">
-      <img src="${s.image || ''}" alt="${isLocked ? '???' : (s.name || '')}" draggable="false"
-           onerror="this.style.background='rgba(13,31,60,.9)';this.removeAttribute('src')">
+      <img src="${s.image || ''}" alt="" draggable="false"
+           onerror="this.onerror=null;this.style.background='rgba(13,31,60,.9)'">
       <div class="stage-overlay">
         ${s.difficulty ? `<div class="stage-overlay-diff">${isLocked ? '???' : s.difficulty}</div>` : ''}
         ${gridStr      ? `<div class="stage-overlay-grid">${gridStr}</div>`      : ''}

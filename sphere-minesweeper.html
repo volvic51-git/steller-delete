@@ -618,7 +618,7 @@
       <div id="rescue-stats"></div>
     </div>
     <div id="rescue-action-row">
-      <button id="rescue-btn-novel"  class="rescue-action-btn" onclick="window.location.href=window._novelAfterClear" style="display:none;">✦ NEXT ✦</button>
+      <button id="rescue-btn-novel"  class="rescue-action-btn" onclick="window.location.href=(window._novelAfterClear||'index.html')" style="display:none;">✦ NEXT ✦</button>
       <button id="rescue-btn-select" class="rescue-action-btn" onclick="window.location.href='index.html?select=1'" style="display:none;">✦ STAGE ✦</button>
       <button id="rescue-btn-retry"  class="rescue-action-btn" onclick="document.getElementById('rescue-screen').classList.remove('active');restartGame();" style="display:none;">✦ RETRY ✦</button>
       <button id="rescue-btn-title"  class="rescue-action-btn" onclick="window.location.href='index.html'" style="display:none;">✦ TITLE ✦</button>
@@ -898,7 +898,7 @@ function updateRescueButtons(){
   }
   if(btnRetry) btnRetry.style.display = 'none';
 
-  if(isStoryMode && window._novelAfterClear){
+  if(isStoryMode){
     // STORY：NEXT（次のノベルへ）＋ TITLE
     if(btnNovel)  btnNovel.style.display  = '';
     if(btnSelect) btnSelect.style.display = 'none';
@@ -3727,7 +3727,7 @@ if(window.visualViewport){
       const canvasContainer = document.getElementById('canvas-container');
       if(canvasContainer){
         if(stage.background){
-          canvasContainer.style.backgroundImage  = `url('images/stage-bg/${stage.background}')`;
+          canvasContainer.style.backgroundImage  = `url('images/${stage.background}')`;
           canvasContainer.style.backgroundSize     = 'cover';
           canvasContainer.style.backgroundPosition = 'center';
         } else {

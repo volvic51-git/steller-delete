@@ -18,7 +18,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel02.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 2,
@@ -39,7 +39,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel03.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 3,
@@ -60,7 +60,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel04.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 4,
@@ -81,7 +81,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel05.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 5,
@@ -102,7 +102,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel06.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 6,
@@ -123,7 +123,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel07.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 7,
@@ -144,7 +144,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel08.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 8,
@@ -165,7 +165,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel09.html",
     "bgm": "",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 9,
@@ -186,6 +186,6 @@
     "exMode": false,
     "novelAfterClear": "novel/novel10.html",
     "bgm": "SND_05_flat.mp3",
-    "background": "sample.png"
+    "background": "img_bg01.jpg"
   }
 ]
