@@ -68,7 +68,7 @@ const SCRIPT = [
   { speaker: 'アリス', portrait: 'normal2', text: '全然。' },
   { command: 'fadeout' },
   { command: 'wait', duration: 1000 },
-  { command: 'background', value: 'back12.png', position: 'bottom' },
+  { command: 'background', value: 'back12.jpg', position: 'bottom' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { speaker: 'フラット', portrait: 'normal1', text: 'じゃあ、そろそろ行こう。' },

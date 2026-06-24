@@ -49,7 +49,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "back01.png"
+      "value": "back01.jpg"
     },
     {
       "type": "bgm",
@@ -320,12 +320,8 @@
     },
     {
       "type": "background",
-      "value": "back02.png",
+      "value": "back02.jpg",
       "position": "bottom"
-    },
-    {
-      "type": "se",
-      "value": "gogogo.wav"
     },
     {
       "type": "wait",
@@ -344,7 +340,7 @@
       "type": "dialog",
       "speaker": "フラット",
       "portrait": "normal1",
-      "text": "あれは鬼骨の星牢。あの中に花嫁が囚われている。"
+      "text": "あれが星牢。あの中に花嫁が囚われている。"
     },
     {
       "type": "dialog",
@@ -393,5 +389,6 @@
       "type": "bgm_fade",
       "duration": "2000"
     }
-  ]
+  ],
+  "novelNo": 1
 }

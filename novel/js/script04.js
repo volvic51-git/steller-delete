@@ -54,7 +54,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'darty' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back05.png', position: 'bottom' },
+  { command: 'background', value: 'back05.jpg', position: 'bottom' },
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },

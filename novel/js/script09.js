@@ -32,7 +32,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back01.png' },
+  { command: 'background', value: 'back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { command: 'show', character: 'alice', portrait: 'normal1' },
@@ -83,7 +83,7 @@ const SCRIPT = [
   { command: 'hide', character: 'flat' },
   { command: 'dialog_hide' },
   { command: 'hide_all' },
-  { command: 'background', value: 'back15.png' },
+  { command: 'background', value: 'back15.jpg' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { command: 'wait', duration: 1000 },
@@ -92,7 +92,7 @@ const SCRIPT = [
   { speaker: '', portrait: '', text: '光が砕ける。\n星屑が飲み込まれる。' },
   { command: 'fadeout' },
   { command: 'wait', duration: 1000 },
-  { command: 'background', value: 'back10.png', position: 'bottom' },
+  { command: 'background', value: 'back10.jpg', position: 'bottom' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { speaker: 'アリス', portrait: 'normal2', text: 'フラット・・・。' },

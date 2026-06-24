@@ -30,7 +30,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back01.png' },
+  { command: 'background', value: 'back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { command: 'show', character: 'alice', portrait: 'normal1' },
@@ -65,7 +65,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'iroha' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back07.png', position: 'bottom' },
+  { command: 'background', value: 'back07.jpg', position: 'bottom' },
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },

@@ -2,7 +2,7 @@
   {
     "id": 1,
     "name": "鬼骨の星牢",
-    "description": "深淵に眠る骨の星。静寂の中に罠が潜む。",
+    "description": "深淵に眠る骨の星。",
     "image": "stages/st01.png",
     "locked": false,
     "difficulty": "初級",
@@ -13,7 +13,7 @@
   {
     "id": 2,
     "name": "密林の星牢",
-    "description": "緑に覆われた迷宮の星。視界を遮る草木の罠。",
+    "description": "緑に覆われた迷宮の星。",
     "image": "stages/st02.png",
     "locked": false,
     "difficulty": "中級",
@@ -24,7 +24,7 @@
   {
     "id": 3,
     "name": "幻夢の星牢",
-    "description": "夢と現実の狭間に浮かぶ星。惑わされるな。",
+    "description": "夢と現実の狭間に浮かぶ星。",
     "image": "stages/st03.png",
     "locked": false,
     "difficulty": "上級",
@@ -35,7 +35,7 @@
   {
     "id": 4,
     "name": "砂神の星牢",
-    "description": "砂嵐が支配する灼熱の星。神の怒りに触れるな。",
+    "description": "砂嵐が支配する灼熱の星。",
     "image": "stages/st04.png",
     "locked": false,
     "difficulty": "星雲級",
@@ -46,7 +46,7 @@
   {
     "id": 5,
     "name": "暗闇の星牢",
-    "description": "光すら届かない暗黒の星。感覚だけを頼りに進め。",
+    "description": "光すら届かない暗黒の星。",
     "image": "stages/st05.png",
     "locked": false,
     "difficulty": "銀河級",
@@ -57,7 +57,7 @@
   {
     "id": 6,
     "name": "魔海の星牢",
-    "description": "呪われた海に沈む星。波間に無数の罠が潜む。",
+    "description": "呪われた海に沈む星。",
     "image": "stages/st06.png",
     "locked": false,
     "difficulty": "銀河団級",
@@ -68,7 +68,7 @@
   {
     "id": 7,
     "name": "白銀の星牢",
-    "description": "永遠の氷雪に閉ざされた星。白の迷宮を突破せよ。",
+    "description": "永遠の氷雪に閉ざされた星。",
     "image": "stages/st07.png",
     "locked": false,
     "difficulty": "超銀河団級",
@@ -79,7 +79,7 @@
   {
     "id": 8,
     "name": "冥府の星牢",
-    "description": "宇宙の果て、観測すら不可能な終焉の星。",
+    "description": "光さえ届かない終焉の星。",
     "image": "stages/st08.png",
     "locked": false,
     "difficulty": "観測不可能級",
@@ -90,7 +90,7 @@
   {
     "id": 9,
     "name": "消滅の果て",
-    "description": "消滅した星屑は、消滅を繰り返し、やがて果てる。",
+    "description": "消滅した星屑は、どこへ行くのか",
     "image": "stages/st09.png",
     "locked": false,
     "difficulty": "消滅級",

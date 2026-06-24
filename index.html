@@ -1178,8 +1178,8 @@ function cardHtml(idx, pos) {
     : (s.description || '');
   return `<div class="stage-card${isLocked ? ' locked' : ''}${posClass}" data-idx="${idx}" data-id="${s.id}" data-locked="${isLocked}">
     <div class="stage-img-wrap">
-      <img src="${s.image || ''}" alt="" draggable="false"
-           onerror="this.onerror=null;this.style.background='rgba(13,31,60,.9)'">
+      <img src="${s.image || ''}" data-src="${s.image || ''}" alt="" draggable="false"
+           onerror="if(!this.dataset.r){this.dataset.r=1;this.src=this.dataset.src;}else{this.onerror=null;this.style.background='rgba(13,31,60,.9)';}">
       <div class="stage-overlay">
         ${s.difficulty ? `<div class="stage-overlay-diff">${isLocked ? '???' : s.difficulty}</div>` : ''}
         ${gridStr      ? `<div class="stage-overlay-grid">${gridStr}</div>`      : ''}
@@ -1366,6 +1366,8 @@ document.getElementById('stage-back-btn').addEventListener('click', () => {
 // START ボタン → ステージ選択モーダルを開く
 // ?select=1 でアクセスした場合、ステージ選択を自動オープン
 // ?select=1&storyStage=N の場合、ステージNのみに固定したステージ選択を自動オープン（STORYモード用）
+let _titleNavLocked = false;
+
 (function(){
   const p = new URLSearchParams(window.location.search);
   if(p.get('select') !== '1') return;
@@ -1373,6 +1375,8 @@ document.getElementById('stage-back-btn').addEventListener('click', () => {
   // 「最初のタップでタイトルBGM開始」のリスナーが残っていると、
   // ステージ選択画面での最初のタップでBGMがタイトル曲に切り替わってしまうため無効化する
   document.removeEventListener('click', startTitleBGMOnFirstClick);
+  // フェッチ中は simple-btn からの二重起動（ゴーストタップ）を防ぐ
+  _titleNavLocked = true;
   const storyStageId = p.get('storyStage');
   fetch('data/stages.json')
     .then(r => r.json())
@@ -1384,14 +1388,14 @@ document.getElementById('stage-back-btn').addEventListener('click', () => {
       buildStageCards();
       stageModal.classList.add('show');
       playStage();
+      _titleNavLocked = false;
     })
     .catch(() => {
       stageViewport.innerHTML = '<div style="color:#e8f4ff;font-family:Orbitron,sans-serif;letter-spacing:.2em;">stages.json not found</div>';
       stageModal.classList.add('show');
+      _titleNavLocked = false;
     });
 })();
-
-let _titleNavLocked = false;
 
 document.getElementById('simple-btn').addEventListener('click', function(){
   if (_titleNavLocked) return;

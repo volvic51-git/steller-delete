@@ -65,7 +65,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "back01.png"
+      "value": "back01.jpg"
     },
     {
       "type": "bgm",
@@ -178,9 +178,21 @@
       "text": "いままでどこにいたの？"
     },
     {
+      "type": "bgm_fade",
+      "duration": 1000
+    },
+    {
       "type": "show",
       "character": "flat",
       "portrait": "dest01"
+    },
+    {
+      "type": "wait",
+      "duration": 1000
+    },
+    {
+      "type": "bgm",
+      "value": "SND_05_flat.mp3"
     },
     {
       "type": "dialog",
@@ -316,7 +328,7 @@
     },
     {
       "type": "background",
-      "value": "back15.png"
+      "value": "back15.jpg"
     },
     {
       "type": "wait",
@@ -350,7 +362,7 @@
     },
     {
       "type": "background",
-      "value": "back10.png",
+      "value": "back10.jpg",
       "position": "bottom"
     },
     {
@@ -370,7 +382,7 @@
       "type": "dialog",
       "speaker": "アリス",
       "portrait": "normal1",
-      "text": "パーティーは帰るまでがパーティーって、誰か教えてくれなかったの？"
+      "text": "帰るまでがパーティーって、誰か教えてくれなかったの？"
     },
     {
       "type": "dialog",
@@ -395,5 +407,6 @@
       "type": "bgm_fade",
       "duration": "2000"
     }
-  ]
+  ],
+  "novelNo": 9
 }

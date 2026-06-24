@@ -22,6 +22,7 @@ const NovelEngine = (() => {
   let _titleCardVisible = false; // タイトルカードが画面に出ている間ずっとtrue（待機中も含む）
   let _titleCardActive  = false; // 待機が終わり、クリックで閉じられる状態になったらtrue
   let _titleCardTimer   = null;
+  let _isFading         = false; // fadeout/fadein のトランジション中（600ms）だけtrue
 
   /* ============================================
      DOM参照（遅延取得）
@@ -81,8 +82,9 @@ const NovelEngine = (() => {
       'letter-spacing:0.15em', 'padding:6px 16px',
       'border-radius:2px', 'transition:all 0.2s',
     ].join(';');
-    btn.addEventListener('click', function(e) {
+    function _toggleAuto(e) {
       e.stopPropagation();
+      if (e.type === 'touchend') e.preventDefault();
       _autoPlay = !_autoPlay;
       _updateAutoToggleVisual();
       if (_autoPlay && _started && !_isTyping && !_isWaiting) {
@@ -90,7 +92,9 @@ const NovelEngine = (() => {
       } else {
         _clearAutoTimer();
       }
-    });
+    }
+    btn.addEventListener('click', _toggleAuto);
+    btn.addEventListener('touchend', _toggleAuto, { passive: false });
     uiLayer.appendChild(btn);
     _updateAutoToggleVisual();
   }
@@ -151,10 +155,17 @@ const NovelEngine = (() => {
     const container = $id('game-container');
     if (!container) return;
 
-    // 画面全体クリックで進行
-    // document レベルで受けることで、Android Chrome の pointer-events:none 親要素による
-    // バブリング不具合を回避する。restart-btn / auto-toggle-btn は stopPropagation 済み。
+    // 画面全体クリックで進行 (PC)
     document.addEventListener('click', _onContainerClick);
+
+    // モバイル: touchend を game-container に登録し、ナビゲーション直後に click が
+    // 発火しない Android Chrome の問題を回避する。
+    // e.preventDefault() で後続の click 二重発火を抑制。
+    // restart-btn / auto-toggle-btn は touchend でも stopPropagation+preventDefault 済み。
+    container.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      _onContainerClick();
+    }, { passive: false });
 
     // キーボード
     document.addEventListener('keydown', function(e) {
@@ -167,10 +178,13 @@ const NovelEngine = (() => {
     // リスタートボタン
     const restartBtn = $id('restart-btn');
     if (restartBtn) {
-      restartBtn.addEventListener('click', function(e) {
+      function _onRestartTap(e) {
         e.stopPropagation();
+        if (e.type === 'touchend') e.preventDefault();
         _restart();
-      });
+      }
+      restartBtn.addEventListener('click', _onRestartTap);
+      restartBtn.addEventListener('touchend', _onRestartTap, { passive: false });
     }
   }
 
@@ -181,9 +195,9 @@ const NovelEngine = (() => {
     const endScreen = $id('end-screen');
     if (endScreen && !endScreen.classList.contains('hidden')) return;
 
-    // 暗転・明転中はクリックを無視（背景が一瞬見えてしまうのを防止）
-    const fadeOverlay = $id('fade-overlay');
-    if (fadeOverlay && fadeOverlay.classList.contains('fading-out')) return;
+    // フェードトランジション中（600ms）はクリックを無視（背景が一瞬見えるのを防止）
+    // blackout/whiteout は fading-out クラスを残したままにするため、クラスではなくフラグで判定
+    if (_isFading) return;
 
     if (!_started) {
       _handleStart();
@@ -863,14 +877,17 @@ const NovelEngine = (() => {
   function _fadeOut(cb) {
     const ov = $id('fade-overlay');
     ov.classList.add('fading-out');
-    setTimeout(function() { if (cb) cb(); }, 600);
+    _isFading = true;
+    setTimeout(function() { _isFading = false; if (cb) cb(); }, 600);
   }
 
   function _fadeIn(cb) {
     const ov = $id('fade-overlay');
     ov.classList.remove('fading-out');
     ov.classList.add('fading-in');
+    _isFading = true;
     setTimeout(function() {
+      _isFading = false;
       ov.classList.remove('fading-in');
       if (cb) cb();
     }, 600);

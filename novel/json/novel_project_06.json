@@ -57,7 +57,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "back01.png"
+      "value": "back01.jpg"
     },
     {
       "type": "bgm",
@@ -250,7 +250,7 @@
     },
     {
       "type": "background",
-      "value": "back07.png",
+      "value": "back07.jpg",
       "position": "bottom"
     },
     {
@@ -311,5 +311,6 @@
       "type": "bgm_fade",
       "duration": "2000"
     }
-  ]
+  ],
+  "novelNo": 6
 }

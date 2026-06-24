@@ -62,7 +62,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "back11.png"
+      "value": "back01.jpg"
     },
     {
       "type": "bgm",
@@ -260,7 +260,7 @@
     },
     {
       "type": "background",
-      "value": "back12.png",
+      "value": "back12.jpg",
       "position": "bottom",
       "positionMobile": "",
       "posMobileX": "0",

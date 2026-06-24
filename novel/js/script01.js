@@ -71,7 +71,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'flat' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back02.png', position: 'bottom' },
+  { command: 'background', value: 'back02.jpg', position: 'bottom' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
   { speaker: 'アリス', portrait: 'normal1', text: 'あれは？' },
