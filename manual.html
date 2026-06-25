@@ -13,7 +13,7 @@
   #screenshot-wrap{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     background:#05060c; transform-origin:50% 50%;
-    transition:transform 5.5s cubic-bezier(.4,0,.2,1); will-change:transform;
+    transition:transform 1.0s cubic-bezier(.4,0,.2,1); will-change:transform;
   }
   #manualScreenshot{ display:block; pointer-events:none; max-width:100%; max-height:100%; width:auto; height:auto; }
   #spotlight{
@@ -21,8 +21,8 @@
     box-shadow:0 0 0 9999px rgba(0,0,0,0.75);
     border:2px solid rgba(0,200,255,0.9); outline:2px solid rgba(0,200,255,0.25); outline-offset:6px;
     pointer-events:none;
-    transition:top 4.5s cubic-bezier(.4,0,.2,1), left 4.5s cubic-bezier(.4,0,.2,1),
-               width 4.5s cubic-bezier(.4,0,.2,1), height 4.5s cubic-bezier(.4,0,.2,1), border-radius 4.5s;
+    transition:top 1.0s cubic-bezier(.4,0,.2,1), left 1.0s cubic-bezier(.4,0,.2,1),
+               width 1.0s cubic-bezier(.4,0,.2,1), height 1.0s cubic-bezier(.4,0,.2,1), border-radius 1.0s;
     animation:spotPulse 1.8s ease-in-out infinite;
   }
   @keyframes spotPulse{
