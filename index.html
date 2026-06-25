@@ -1175,7 +1175,7 @@ function cardHtml(idx, pos) {
     ? isLocked ? `星傷数 <span class="stage-unknown">??</span>` : `星傷数 ${s.mines.toLocaleString()}`
     : '';
   const descStr = isLocked
-    ? `STAGE ${String(s.id - 1).padStart(2,'0')} をクリアすると解放されます`
+    ? `EP.${s.id - 1} を読み終わると解放されます`
     : (s.description || '');
   return `<div class="stage-card${isLocked ? ' locked' : ''}${posClass}" data-idx="${idx}" data-id="${s.id}" data-locked="${isLocked}">
     <div class="stage-img-wrap">
