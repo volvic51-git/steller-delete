@@ -30,10 +30,16 @@
     50%{     box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 20px 4px rgba(0,200,255,.5); }
   }
   #panel{
-    position:absolute; left:0; right:0; bottom:0; z-index:30;
+    position:absolute; left:0; right:0; bottom:0; top:auto; z-index:30;
     background:linear-gradient(180deg, rgba(5,8,20,0) 0%, rgba(5,8,22,.93) 18%, rgba(5,8,22,.98) 100%);
     padding:20px 20px calc(18px + env(safe-area-inset-bottom,0px));
     border-top:1px solid rgba(0,200,255,.2);
+  }
+  #panel.panel-top{
+    bottom:auto; top:0;
+    background:linear-gradient(0deg, rgba(5,8,20,0) 0%, rgba(5,8,22,.93) 18%, rgba(5,8,22,.98) 100%);
+    border-top:none; border-bottom:1px solid rgba(0,200,255,.2);
+    padding:calc(18px + env(safe-area-inset-top,0px)) 20px 20px;
   }
   #step-indicator{ font-size:11px; letter-spacing:.15em; color:#5fa8d6; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
   #step-dots{ display:flex; gap:4px; }
@@ -110,6 +116,7 @@ if(!STEPS.length){
 var img         = document.getElementById('manualScreenshot');
 var wrap        = document.getElementById('screenshot-wrap');
 var spotlight   = document.getElementById('spotlight');
+var panel       = document.getElementById('panel');
 var panelTitle  = document.getElementById('panel-title');
 var panelDesc   = document.getElementById('panel-desc');
 var stepNumEl   = document.getElementById('step-num');
@@ -170,6 +177,7 @@ function render(){
   spotlight.style.width =sw_v+'px';        spotlight.style.height=sh_v+'px';
   spotlight.style.borderRadius=(step.shape==='circle')?'50%':'14px';
   panelTitle.textContent=step.title||''; panelDesc.textContent=step.desc||'';
+  panel.classList.toggle('panel-top', cy > wrap.clientHeight * 0.5);
   stepNumEl.textContent=idx+1;
   Array.prototype.forEach.call(stepDotsEl.children,function(d,i){ d.classList.toggle('active',i===idx); });
   btnPrev.disabled=(idx===0);
