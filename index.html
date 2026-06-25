@@ -257,9 +257,9 @@
     background: rgba(0,10,25,.6);
     border: none;
     border-top: 1px solid rgba(0,200,255,.12);
-    padding: clamp(8px,1.2vh,11px) 0;
+    padding: clamp(8px,1.2vh,11px) 1.5em;
     cursor: pointer;
-    text-align: center;
+    text-align: right;
     transition: background .2s, color .2s;
   }
   .ep-btn:last-child { border-bottom: 1px solid rgba(0,200,255,.12); }
@@ -269,7 +269,7 @@
     pointer-events: none;
     cursor: default;
   }
-  .ep-btn .ep-label { font-family:'Orbitron',sans-serif; font-size:.9em; margin-right:.5em; }
+  .ep-btn .ep-label { font-family:'Orbitron',sans-serif; font-size:.9em; display:inline-block; width:3.5em; }
   .ep-divider {
     height: 1px;
     background: rgba(0,200,255,.2);
@@ -1431,17 +1431,17 @@ document.getElementById('guide-btn').addEventListener('click', function(){
 const EPISODES = [
   // label, subtitle, novel, unlock判定
   // EP0は常に表示（初回は通常進行、再読は?reread=1）
-  { label:'EP 0', sub:'OPENING',  novel:'novel/novel01.html', always:true  },
-  { label:'EP 1', sub:'',         novel:'novel/novel02.html', minEp:1 },
-  { label:'EP 2', sub:'',         novel:'novel/novel03.html', minEp:2 },
-  { label:'EP 3', sub:'',         novel:'novel/novel04.html', minEp:3 },
-  { label:'EP 4', sub:'',         novel:'novel/novel05.html', minEp:4 },
-  { label:'EP 5', sub:'',         novel:'novel/novel06.html', minEp:5 },
-  { label:'EP 6', sub:'',         novel:'novel/novel07.html', minEp:6 },
-  { label:'EP 7', sub:'',         novel:'novel/novel08.html', minEp:7 },
-  { label:'EP 8', sub:'',         novel:'novel/novel09.html', minEp:8 },
+  { label:'EP.0', sub:'FLAT',        novel:'novel/novel01.html', always:true  },
+  { label:'EP.1', sub:'RUGE',        novel:'novel/novel02.html', minEp:1 },
+  { label:'EP.2', sub:'KARASU',      novel:'novel/novel03.html', minEp:2 },
+  { label:'EP.3', sub:'DARTY',       novel:'novel/novel04.html', minEp:3 },
+  { label:'EP.4', sub:'LADY-LADY',   novel:'novel/novel05.html', minEp:4 },
+  { label:'EP.5', sub:'IROHA',       novel:'novel/novel06.html', minEp:5 },
+  { label:'EP.6', sub:'ABIS',        novel:'novel/novel07.html', minEp:6 },
+  { label:'EP.7', sub:'XENO',        novel:'novel/novel08.html', minEp:7 },
+  { label:'EP.8', sub:'YOMI AND...', novel:'novel/novel09.html', minEp:8 },
   null, // 区切り線（ED手前）
-  { label:'ED',   sub:'ENDING',   novel:'novel/novel10.html', minEp:9 },
+  { label:'EP.9', sub:'ENDING?',     novel:'novel/novel10.html', minEp:9 },
 ];
 
 function buildEpisodeList() {
@@ -1455,7 +1455,7 @@ function buildEpisodeList() {
     // 解放済みのステージを再解放しないよう unlock処理側でガード済みなので問題なし。
     // 再読後はnextUrl通りにステージ選択へ進む（タイトルへ戻るより自然なUXのため）。
     const href = ep.novel;
-    const sub = ep.sub ? ` <span style="opacity:.55;font-size:.85em;letter-spacing:.1em">${ep.sub}</span>` : '';
+    const sub = ep.sub ? ` <span>${ep.sub}</span>` : '';
     return `<button class="ep-btn${unlocked ? '' : ' locked'}" data-href="${href}">
       <span class="ep-label">${ep.label}</span>${sub}
     </button>`;
