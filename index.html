@@ -401,8 +401,9 @@
     99%  { opacity:0; }
   }
   @keyframes titleRise {
-    from { transform: translateY(0); }
-    to   { transform: translateY(-80px); }
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(-80px); }
+    100% { transform: translateY(0); }
   }
   @keyframes pulseRing {
     0%   { opacity:.55; transform:scale(1); }
