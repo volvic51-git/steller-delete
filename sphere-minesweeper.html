@@ -616,6 +616,7 @@
       <div id="rescue-title">???</div>
       <div id="rescue-rarity">★★★</div>
       <div id="rescue-desc">球体の外殻を崩壊させ、閉じ込められたキャラクターを救出した。</div>
+      <div id="rescue-time" style="font-family:'Orbitron',sans-serif;font-size:clamp(24px,6vw,38px);color:#00ff88;letter-spacing:.12em;margin:8px 0 4px;text-shadow:0 0 20px rgba(0,255,136,0.8);"></div>
       <div id="rescue-stats"></div>
     </div>
     <div id="rescue-action-row">
@@ -869,8 +870,8 @@ function showRescueScreen(){
   document.getElementById('rescue-title').textContent  = currentCharacter.name;
   document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
-  document.getElementById('rescue-stats').textContent  =
-    `TIME: ${formatTime(elapsed)}  |  HINTS: ${hintCount}`;
+  document.getElementById('rescue-time').textContent  = formatTime(elapsed);
+  document.getElementById('rescue-stats').textContent = `HINTS: ${hintCount}`;
   updateRescueButtons();
   greyOutFloatButtons();
 
