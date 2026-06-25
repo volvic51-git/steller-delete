@@ -145,6 +145,7 @@ function getImgRect(){
 }
 
 var currentScale = 1;
+// ズーム後に (cx,cy) が画面上で落ち着く座標を返す
 function applyZoom(step, cx, cy){
   var r=getImgRect();
   var sw=(step.w/100)*r.w, sh=(step.h/100)*r.h;
@@ -152,15 +153,16 @@ function applyZoom(step, cx, cy){
   var visH = wrap.clientHeight - panelH;
   var sc=Math.min((wrap.clientWidth*.6)/sw,(visH*.6)/sh,2.8);
   sc=Math.max(sc,1); currentScale=sc;
-  // スポットライト中心がパネルを除いた可視領域の中央に来るよう origin を計算
   var targetX = wrap.clientWidth / 2;
-  var targetY = panelH + visH / 2;
+  var targetY = visH / 2;  // パネル上の可視領域中央（panelはwrap外の固定要素）
   var ox = sc===1 ? cx : (targetX - cx*sc)/(1-sc);
   var oy = sc===1 ? cy : (targetY - cy*sc)/(1-sc);
   var oxPct=(ox/wrap.clientWidth*100).toFixed(3);
   var oyPct=(oy/wrap.clientHeight*100).toFixed(3);
   wrap.style.transformOrigin=oxPct+'% '+oyPct+'%';
   wrap.style.transform='scale('+sc.toFixed(4)+')';
+  // ズーム後の画面座標を返す
+  return { screenX: targetX, screenY: targetY };
 }
 
 var idx=0;
@@ -170,10 +172,10 @@ function render(){
   var sx=r.x+(step.x/100)*r.w, sy=r.y+(step.y/100)*r.h;
   var sw=(step.w/100)*r.w,      sh=(step.h/100)*r.h;
   var cx=sx+sw/2, cy=sy+sh/2;
-  applyZoom(step,cx,cy);
+  var zoomed=applyZoom(step,cx,cy);
   var sc=currentScale;
   var sw_v=sw*sc, sh_v=sh*sc;
-  spotlight.style.left  =(cx-sw_v/2)+'px'; spotlight.style.top   =(cy-sh_v/2)+'px';
+  spotlight.style.left  =(zoomed.screenX-sw_v/2)+'px'; spotlight.style.top   =(zoomed.screenY-sh_v/2)+'px';
   spotlight.style.width =sw_v+'px';        spotlight.style.height=sh_v+'px';
   spotlight.style.borderRadius=(step.shape==='circle')?'50%':'14px';
   panelTitle.textContent=step.title||''; panelDesc.textContent=step.desc||'';
