@@ -21,8 +21,8 @@
     box-shadow:0 0 0 9999px rgba(0,0,0,0.75);
     border:2px solid rgba(0,200,255,0.9); outline:2px solid rgba(0,200,255,0.25); outline-offset:6px;
     pointer-events:none;
-    transition:top .45s cubic-bezier(.4,0,.2,1), left .45s cubic-bezier(.4,0,.2,1),
-               width .45s cubic-bezier(.4,0,.2,1), height .45s cubic-bezier(.4,0,.2,1), border-radius .45s;
+    transition:top .9s cubic-bezier(.4,0,.2,1), left .9s cubic-bezier(.4,0,.2,1),
+               width .9s cubic-bezier(.4,0,.2,1), height .9s cubic-bezier(.4,0,.2,1), border-radius .9s;
     animation:spotPulse 1.8s ease-in-out infinite;
   }
   @keyframes spotPulse{
@@ -168,21 +168,25 @@ function applyZoom(step, cx, cy){
 var idx=0;
 function render(){
   var step=STEPS[idx];
-  var r=getImgRect();
-  var sx=r.x+(step.x/100)*r.w, sy=r.y+(step.y/100)*r.h;
-  var sw=(step.w/100)*r.w,      sh=(step.h/100)*r.h;
-  var cx=sx+sw/2, cy=sy+sh/2;
-  var zoomed=applyZoom(step,cx,cy);
-  var sc=currentScale;
-  var sw_v=sw*sc, sh_v=sh*sc;
-  spotlight.style.left  =(zoomed.screenX-sw_v/2)+'px'; spotlight.style.top   =(zoomed.screenY-sh_v/2)+'px';
-  spotlight.style.width =sw_v+'px';        spotlight.style.height=sh_v+'px';
-  spotlight.style.borderRadius=(step.shape==='circle')?'50%':'14px';
+  // テキストを先に設定してパネル高さを確定させる
   panelTitle.textContent=step.title||''; panelDesc.textContent=step.desc||'';
   stepNumEl.textContent=idx+1;
   Array.prototype.forEach.call(stepDotsEl.children,function(d,i){ d.classList.toggle('active',i===idx); });
   btnPrev.disabled=(idx===0);
   btnNext.textContent=(idx===STEPS.length-1)?'完了 →':'次へ →';
+  // レイアウト確定後にズーム計算
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    var r=getImgRect();
+    var sx=r.x+(step.x/100)*r.w, sy=r.y+(step.y/100)*r.h;
+    var sw=(step.w/100)*r.w,      sh=(step.h/100)*r.h;
+    var cx=sx+sw/2, cy=sy+sh/2;
+    var zoomed=applyZoom(step,cx,cy);
+    var sc=currentScale;
+    var sw_v=sw*sc, sh_v=sh*sc;
+    spotlight.style.left  =(zoomed.screenX-sw_v/2)+'px'; spotlight.style.top=(zoomed.screenY-sh_v/2)+'px';
+    spotlight.style.width =sw_v+'px'; spotlight.style.height=sh_v+'px';
+    spotlight.style.borderRadius=(step.shape==='circle')?'50%':'14px';
+  }); });
 }
 
 function next(){ if(idx<STEPS.length-1){idx++;render();}else{wrap.style.transform='scale(1)';completeSc.hidden=false;} }
