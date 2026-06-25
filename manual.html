@@ -13,7 +13,7 @@
   #screenshot-wrap{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     background:#05060c; transform-origin:50% 50%;
-    transition:transform 0.55s cubic-bezier(.4,0,.2,1); will-change:transform;
+    transition:transform 1.1s cubic-bezier(.4,0,.2,1); will-change:transform;
   }
   #manualScreenshot{ display:block; pointer-events:none; max-width:100%; max-height:100%; width:auto; height:auto; }
   #spotlight{
@@ -210,8 +210,8 @@ document.addEventListener('keydown',function(e){
 var rt=null;
 window.addEventListener('resize',function(){ clearTimeout(rt); rt=setTimeout(render,80); });
 
-if(img.complete&&img.naturalWidth){ render(); }
-else{ img.addEventListener('load',render); img.addEventListener('error',function(){ render(); }); }
+if(img.complete&&img.naturalWidth){ requestAnimationFrame(render); }
+else{ img.addEventListener('load',function(){ requestAnimationFrame(render); }); img.addEventListener('error',function(){ requestAnimationFrame(render); }); }
 })();
 </script>
 </body>
