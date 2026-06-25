@@ -3835,7 +3835,8 @@ document.addEventListener('pointerdown', function(){ startBGM(); }, { once: true
 animate();
 
 // ===================== BACK BUTTON GUARD =====================
-// ダミー履歴を積んでおき、ブラウザバックを popstate で横取りする
+// ダミー履歴を2つ積んでおき、連打されてもすり抜けないようにする
+history.pushState({ backGuard: true }, '');
 history.pushState({ backGuard: true }, '');
 window.addEventListener('popstate', function(e){
   if(gameState === 'win'){
