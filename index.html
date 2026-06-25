@@ -1556,9 +1556,27 @@ document.getElementById('exit-confirm').addEventListener('click', function(){
 
 // ===================== BACK BUTTON GUARD =====================
 history.pushState({ backGuard: true }, '');
+history.pushState({ backGuard: true }, '');
 window.addEventListener('popstate', function(){
   history.pushState({ backGuard: true }, '');
+  document.getElementById('back-guard-dialog').style.display = 'flex';
+});
+document.getElementById('back-guard-yes').addEventListener('click', function(){
+  window.location.replace('index.html');
+});
+document.getElementById('back-guard-no').addEventListener('click', function(){
+  document.getElementById('back-guard-dialog').style.display = 'none';
 });
 </script>
+
+<div id="back-guard-dialog" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+  <div style="background:rgba(0,5,20,0.95);border:2px solid rgba(0,200,255,0.5);border-radius:6px;padding:28px 32px;text-align:center;font-family:'Share Tech Mono',monospace;color:#fff;max-width:280px;">
+    <p style="margin-bottom:20px;line-height:1.7;font-size:14px;">タイトルに戻りますか？</p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button id="back-guard-yes" style="background:rgba(0,50,100,0.9);border:1px solid rgba(0,200,255,0.6);color:#00ccff;padding:8px 20px;cursor:pointer;font-size:13px;border-radius:3px;">はい</button>
+      <button id="back-guard-no"  style="background:rgba(30,10,0,0.9);border:1px solid rgba(255,150,0,0.5);color:#ffaa00;padding:8px 20px;cursor:pointer;font-size:13px;border-radius:3px;">いいえ</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
