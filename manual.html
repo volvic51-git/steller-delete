@@ -30,16 +30,10 @@
     50%{     box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 20px 4px rgba(0,200,255,.5); }
   }
   #panel{
-    position:absolute; left:0; right:0; bottom:0; top:auto; z-index:30;
+    position:absolute; left:0; right:0; bottom:0; z-index:30;
     background:linear-gradient(180deg, rgba(5,8,20,0) 0%, rgba(5,8,22,.93) 18%, rgba(5,8,22,.98) 100%);
     padding:20px 20px calc(18px + env(safe-area-inset-bottom,0px));
     border-top:1px solid rgba(0,200,255,.2);
-  }
-  #panel.panel-top{
-    bottom:auto; top:0;
-    background:linear-gradient(0deg, rgba(5,8,20,0) 0%, rgba(5,8,22,.93) 18%, rgba(5,8,22,.98) 100%);
-    border-top:none; border-bottom:1px solid rgba(0,200,255,.2);
-    padding:calc(18px + env(safe-area-inset-top,0px)) 20px 20px;
   }
   #step-indicator{ font-size:11px; letter-spacing:.15em; color:#5fa8d6; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
   #step-dots{ display:flex; gap:4px; }
@@ -116,7 +110,6 @@ if(!STEPS.length){
 var img         = document.getElementById('manualScreenshot');
 var wrap        = document.getElementById('screenshot-wrap');
 var spotlight   = document.getElementById('spotlight');
-var panel       = document.getElementById('panel');
 var panelTitle  = document.getElementById('panel-title');
 var panelDesc   = document.getElementById('panel-desc');
 var stepNumEl   = document.getElementById('step-num');
@@ -153,12 +146,19 @@ function getImgRect(){
 
 var currentScale = 1;
 function applyZoom(step, cx, cy){
-  var oxPct=(cx/wrap.clientWidth*100).toFixed(3);
-  var oyPct=(cy/wrap.clientHeight*100).toFixed(3);
   var r=getImgRect();
   var sw=(step.w/100)*r.w, sh=(step.h/100)*r.h;
-  var sc=Math.min((wrap.clientWidth*.6)/sw,(wrap.clientHeight*.6)/sh,2.8);
+  var panelH = panel.offsetHeight;
+  var visH = wrap.clientHeight - panelH;
+  var sc=Math.min((wrap.clientWidth*.6)/sw,(visH*.6)/sh,2.8);
   sc=Math.max(sc,1); currentScale=sc;
+  // スポットライト中心がパネルを除いた可視領域の中央に来るよう origin を計算
+  var targetX = wrap.clientWidth / 2;
+  var targetY = panelH + visH / 2;
+  var ox = sc===1 ? cx : (targetX - cx*sc)/(1-sc);
+  var oy = sc===1 ? cy : (targetY - cy*sc)/(1-sc);
+  var oxPct=(ox/wrap.clientWidth*100).toFixed(3);
+  var oyPct=(oy/wrap.clientHeight*100).toFixed(3);
   wrap.style.transformOrigin=oxPct+'% '+oyPct+'%';
   wrap.style.transform='scale('+sc.toFixed(4)+')';
 }
@@ -177,7 +177,6 @@ function render(){
   spotlight.style.width =sw_v+'px';        spotlight.style.height=sh_v+'px';
   spotlight.style.borderRadius=(step.shape==='circle')?'50%':'14px';
   panelTitle.textContent=step.title||''; panelDesc.textContent=step.desc||'';
-  panel.classList.toggle('panel-top', cy > wrap.clientHeight * 0.5);
   stepNumEl.textContent=idx+1;
   Array.prototype.forEach.call(stepDotsEl.children,function(d,i){ d.classList.toggle('active',i===idx); });
   btnPrev.disabled=(idx===0);
