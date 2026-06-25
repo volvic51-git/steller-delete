@@ -1553,6 +1553,12 @@ document.getElementById('exit-confirm').addEventListener('click', function(){
       '</div>';
   }, 300);
 });
+
+// ===================== BACK BUTTON GUARD =====================
+history.pushState({ backGuard: true }, '');
+window.addEventListener('popstate', function(){
+  history.pushState({ backGuard: true }, '');
+});
 </script>
 </body>
 </html>

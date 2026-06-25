@@ -3834,6 +3834,20 @@ if(!new URLSearchParams(window.location.search).get('stage')){
 document.addEventListener('pointerdown', function(){ startBGM(); }, { once: true });
 
 animate();
+
+// ===================== BACK BUTTON GUARD =====================
+// ダミー履歴を積んでおき、ブラウザバックを popstate で横取りする
+history.pushState({ backGuard: true }, '');
+window.addEventListener('popstate', function(e){
+  if(gameState === 'win'){
+    // クリア画面では素直に遷移させる
+    window.location.href = 'index.html';
+    return;
+  }
+  // ダミー履歴を再度積んで「戻れない」状態を維持しつつ確認ダイアログを出す
+  history.pushState({ backGuard: true }, '');
+  showConfirmDialog('title');
+});
 </script>
 </body>
 </html>
