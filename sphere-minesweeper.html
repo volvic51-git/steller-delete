@@ -737,12 +737,14 @@ const SND = {
   bell1:   new Audio('assets/audio/EFE_06_bell1.mp3'),
   bell2:   new Audio('assets/audio/EFE_07_bell2.mp3'),
   bell3:   new Audio('assets/audio/EFE_08_bell3.mp3'),
+  damage:  new Audio('assets/audio/EFE_09_damage.mp3'),
 };
 SND.bgm.loop=true; SND.bgm.volume=0.55;
 SND.clear.loop=false; SND.clear.volume=0.8;
 SND.flag.volume=0.75; SND.destroy.volume=0.4; SND.popen.volume=0.6;
 SND.beep.volume=0.5;
 SND.bell1.volume=0.6; SND.bell2.volume=0.65; SND.bell3.volume=0.7;
+SND.damage.volume=0.8;
 
 // 効果音は複数重ねられるようにクローン再生
 function playSE(key){
@@ -3227,6 +3229,7 @@ function consumeNormalGauge(amount){
   updateHintGauge();
   const statHints = document.getElementById('stat-hints');
   if(statHints) statHints.textContent = hintCount;
+  SND.damage.currentTime=0; SND.damage.play().catch(()=>{});
   if(hintCount > maxHints){
     return true; // ゲージ切れ→ゲームオーバー
   }
