@@ -2644,12 +2644,12 @@ canvas.addEventListener('wheel', e=>{
 });
 
 // ===================== INPUT — TOUCH =====================
-let pinchDist0=null, touchMoved=false;
+let pinchDist0=null, touchMoved=false, touchStartX=0, touchStartY=0;
 canvas.addEventListener('touchstart', e=>{
   if(gamePaused) return;
   e.preventDefault(); autoRotating=false;
   resetAutoSearchTimer();
-  if(e.touches.length===1){ isDragging=true; touchMoved=false; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; velX=0; velY=0; }
+  if(e.touches.length===1){ isDragging=true; touchMoved=false; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; touchStartX=e.touches[0].clientX; touchStartY=e.touches[0].clientY; velX=0; velY=0; }
   else if(e.touches.length===2){ isDragging=false; pinchDist0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
 },{passive:false});
 
@@ -2657,7 +2657,8 @@ canvas.addEventListener('touchmove', e=>{
   e.preventDefault();
   if(e.touches.length===1&&isDragging){
     const dx=e.touches[0].clientX-lastX, dy=e.touches[0].clientY-lastY;
-    if(Math.abs(dx)>3||Math.abs(dy)>3) touchMoved=true;
+    const totalDx=e.touches[0].clientX-touchStartX, totalDy=e.touches[0].clientY-touchStartY;
+    if(Math.hypot(totalDx,totalDy)>12) touchMoved=true;
     lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; velX=dx; velY=dy;
     boardGroup.rotation.y+=dx*0.005; boardGroup.rotation.x+=dy*0.005;
   } else if(e.touches.length===2&&pinchDist0!==null){
