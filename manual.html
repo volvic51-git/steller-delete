@@ -59,7 +59,7 @@
 <body>
 
 <!-- ===== データ領域（ブラウザは実行しない、書き出し時にエディタが置換） ===== -->
-<script type="application/json" id="manual-data">{"steps":[{"x":22.24,"y":15.64,"w":55.22,"h":68.72,"shape":"round","title":"ゲーム画面","desc":""},{"x":23.07,"y":15.98,"w":28.52,"h":8.33,"shape":"round","title":"進行度","desc":""},{"x":54.41,"y":15.75,"w":6.3,"h":4.34,"shape":"round","title":"設定","desc":""},{"x":60.55,"y":15.98,"w":6.14,"h":4.22,"shape":"round","title":"音楽OFF/ON","desc":""},{"x":71.33,"y":15.75,"w":4.98,"h":3.42,"shape":"round","title":"経過時間","desc":""},{"x":65.69,"y":22.14,"w":10.45,"h":7.08,"shape":"round","title":"モード切替(RU)","desc":""},{"x":24.06,"y":73.63,"w":10.12,"h":6.51,"shape":"round","title":"モード切替(LB)","desc":""},{"x":66.35,"y":64.61,"w":9.45,"h":7.76,"shape":"round","title":"ヒント","desc":""},{"x":66.68,"y":72.6,"w":9.12,"h":7.31,"shape":"round","title":"サーチ","desc":""},{"x":57.06,"y":72.37,"w":8.29,"h":7.88,"shape":"round","title":"誤操作防止","desc":""},{"x":47.11,"y":72.37,"w":8.79,"h":5.94,"shape":"round","title":"フォーカス","desc":""}],"imgSrc":"assets/images/img_manual.jpg"}</script>
+<script type="application/json" id="manual-data">{"steps":[{"x":22.24,"y":15.64,"w":55.22,"h":68.72,"shape":"round","title":"基本ルール","desc":"基本はよくあるマインスイーパーですが、以下が異なります。\n\n1. 数字が「0」のセルは消滅します。\n2. 傷(地雷)に旗を立てるとそのセルは消滅します。\n3. 傷では無いセルに旗を立てるとミスになります。\n4. 「全てのセル」が消滅したらクリアです。"},{"x":23.07,"y":15.98,"w":28.52,"h":8.33,"shape":"round","title":"進行度","desc":"ゲームの進行度です。"},{"x":54.41,"y":15.75,"w":6.3,"h":4.34,"shape":"round","title":"設定","desc":"各種画面に戻ります。"},{"x":60.55,"y":15.98,"w":6.14,"h":4.22,"shape":"round","title":"ミュート","desc":"音楽のON/OFFが切り替わります。"},{"x":71.33,"y":15.75,"w":4.98,"h":3.42,"shape":"round","title":"経過時間","desc":"経過時間を表示します。"},{"x":65.69,"y":22.14,"w":10.45,"h":7.08,"shape":"round","title":"モード切替(RU)","desc":"スマホのタップ(マウスの左クリック)の、掘削と旗立てが切り替わります。\n右上、左下と同じ機能です。"},{"x":24.06,"y":73.63,"w":10.12,"h":6.51,"shape":"round","title":"モード切替(LB)","desc":"スマホのタップ(マウスの左クリック)の、掘削と旗立てが切り替わります。\n右上、左下と同じ機能です。"},{"x":66.35,"y":64.61,"w":9.45,"h":7.76,"shape":"round","title":"ヒント","desc":"ヒントが表示されます。\n使用するとゲージを1消費します。\nミスをするとヒントゲージが1～2減少します。ヒントゲージが「0未満」になるとゲームオーバーです。一部モードでは使用できません。"},{"x":66.68,"y":72.6,"w":9.12,"h":7.31,"shape":"round","title":"サーチ","desc":"安全なセルをサーチします。\n論理的に安全に掘削も旗立てもできない場合に使用できます。\n一部モードでは常時使用できますが、論理的に安全に掘削が旗立てが可能なセルがあった場合はゲームオーバーになります。"},{"x":57.06,"y":72.37,"w":8.29,"h":7.88,"shape":"round","title":"誤操作防止","desc":"数字のセルに1つも隣接していないセルを掘削も旗立てもできなくなります。\n残りの傷(地雷)数から推測する盤面ではOFFにして下さい。"},{"x":47.11,"y":72.37,"w":8.79,"h":5.94,"shape":"round","title":"フォーカス","desc":"一番近い数字のセルにカメラが移動します。"}],"imgSrc":"images/img_manual.jpg"}</script>
 
 <div id="manual-root">
   <div id="screenshot-wrap">
@@ -122,7 +122,7 @@ var completeSc  = document.getElementById('complete-screen');
 if(IMG_SRC) img.src = IMG_SRC;
 
 /* BGM（ブラウザの自動再生制限のため、最初のタップで開始） */
-var _bgm = new Audio('assets/audio/SND_02_play.mp3');
+var _bgm = new Audio('../assets/audio/SND_02_play.mp3');
 _bgm.loop = true; _bgm.volume = 0.55;
 document.addEventListener('click', function _startBgm(){
   _bgm.play().catch(function(){});
