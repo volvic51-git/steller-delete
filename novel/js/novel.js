@@ -1057,7 +1057,7 @@ const NovelEngine = (() => {
           } catch(_e) {}
         }
 
-        window.location.href = _isReread ? '../index.html' : _config.nextUrl;
+        window.location.replace(_isReread ? '../index.html' : _config.nextUrl);
         return;
       }
       $id('end-screen').classList.remove('hidden');

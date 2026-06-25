@@ -68,7 +68,7 @@ window.addEventListener('popstate', function(){
   document.getElementById('back-guard-dialog').style.display = 'flex';
 });
 document.getElementById('back-guard-yes').addEventListener('click', function(){
-  window.location.href = '../index.html';
+  window.location.replace('../index.html');
 });
 document.getElementById('back-guard-no').addEventListener('click', function(){
   document.getElementById('back-guard-dialog').style.display = 'none';
