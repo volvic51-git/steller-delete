@@ -1266,10 +1266,10 @@ function updateStageBestTime() {
     const records = JSON.parse(localStorage.getItem(key) || '[]');
     if (records.length > 0) {
       const best = records[0].time;
-      const tenths = Math.round(best * 10);
-      const intPart = Math.floor(tenths / 10);
-      const fracPart = tenths % 10;
-      el.textContent = 'BEST  ' + intPart.toLocaleString() + '.' + fracPart + ' SEC';
+      const ms = Math.round(best * 1000);
+      const intPart = Math.floor(ms / 1000);
+      const fracPart = String(ms % 1000).padStart(3, '0');
+      el.textContent = 'BEST  ' + intPart + '.' + fracPart + ' SEC';
     } else {
       el.textContent = '';
     }

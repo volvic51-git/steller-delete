@@ -879,9 +879,9 @@ function showRescueScreen(){
   document.getElementById('rescue-title').textContent  = currentCharacter.name;
   document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
-  // 精密クリアタイム（コンマ1秒）
+  // 精密クリアタイム（コンマ3桁）
   const clearTimeSec = window._timerStartMs
-    ? Math.round((performance.now() - window._timerStartMs) * 10) / 10
+    ? Math.round(performance.now() - window._timerStartMs) / 1000
     : elapsed;
   document.getElementById('rescue-time').textContent = formatRankingTime(clearTimeSec);
 
@@ -2928,10 +2928,10 @@ function addRankingRecord(stageId, timeSec){
 }
 
 function formatRankingTime(sec){
-  const tenths = Math.round(sec * 10);
-  const intPart = Math.floor(tenths / 10);
-  const fracPart = tenths % 10;
-  return intPart.toLocaleString() + '.' + fracPart + '秒';
+  const ms = Math.round(sec * 1000);
+  const intPart = Math.floor(ms / 1000);
+  const fracPart = String(ms % 1000).padStart(3, '0');
+  return intPart + '.' + fracPart + '秒';
 }
 
 function toggleStMode(){
