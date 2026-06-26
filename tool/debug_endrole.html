@@ -274,6 +274,104 @@
     text-shadow: 0 0 14px rgba(0,230,255,0.9);
   }
   #skip-btn.hidden { display: none; }
+
+  /* デバッグパネル CSS（非表示）
+  #debug-panel { display: none; }
+  #debug-toggle { display: none; }
+  */
+
+  /* ══════════════════════════════════════
+     デバッグパネル
+  ══════════════════════════════════════ */
+  #debug-panel {
+    position: fixed;
+    top: 12px; right: 12px;
+    z-index: 500;
+    background: rgba(0,0,0,0.82);
+    border: 1px solid rgba(0,200,255,0.4);
+    padding: 10px 14px 12px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    color: rgba(0,200,255,0.9);
+    letter-spacing: 0.05em;
+    min-width: 240px;
+    user-select: none;
+  }
+  #debug-panel h3 {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: rgba(0,200,255,0.5);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .dbg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+  .dbg-label {
+    width: 110px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.55);
+    flex-shrink: 0;
+  }
+  .dbg-row input[type=range] {
+    flex: 1;
+    accent-color: #00c8ff;
+    cursor: pointer;
+  }
+  .dbg-row select {
+    flex: 1;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(0,200,255,0.35);
+    color: #00e8ff;
+    font-size: 9px;
+    padding: 2px 4px;
+    cursor: pointer;
+  }
+  .dbg-val {
+    width: 46px;
+    text-align: right;
+    font-size: 11px;
+    color: #00e8ff;
+    flex-shrink: 0;
+  }
+  #debug-copy {
+    margin-top: 10px;
+    width: 100%;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    background: rgba(0,200,255,0.12);
+    border: 1px solid rgba(0,200,255,0.5);
+    color: #00c8ff;
+    padding: 6px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #debug-copy:hover { background: rgba(0,200,255,0.28); }
+  #debug-copy.copied {
+    color: #00ffaa;
+    border-color: #00ffaa;
+    background: rgba(0,255,170,0.12);
+  }
+  #debug-toggle {
+    position: fixed;
+    top: 12px; right: 12px;
+    z-index: 501;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(0,200,255,0.35);
+    color: rgba(0,200,255,0.6);
+    padding: 5px 10px;
+    cursor: pointer;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -298,13 +396,95 @@
 </div>
 
 <div id="loading">
-  <div class="loading-text" style="visibility:hidden;">LOADING...</div>
+  <div class="loading-text">LOADING...</div>
 </div>
 
 <!-- スキップボタン -->
 <button id="skip-btn">SKIP ▶▶</button>
 
 <audio id="ed-audio" src="assets/audio/insideTSD.mp3" preload="auto"></audio>
+
+<!-- デバッグパネル -->
+<button id="debug-toggle">DEBUG</button>
+<div id="debug-panel">
+  <h3>Debug Panel</h3>
+
+  <div class="dbg-row">
+    <span class="dbg-label">PERSPECTIVE</span>
+    <input type="range" id="dbg-perspective" min="100" max="1200" step="10" value="240">
+    <span class="dbg-val" id="val-perspective">240px</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">ROTATE X</span>
+    <input type="range" id="dbg-rotatex" min="0" max="80" step="1" value="52">
+    <span class="dbg-val" id="val-rotatex">52deg</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">WIDTH %</span>
+    <input type="range" id="dbg-width" min="20" max="100" step="1" value="100">
+    <span class="dbg-val" id="val-width">100%</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">FADE TOP %</span>
+    <input type="range" id="dbg-fade" min="0" max="90" step="1" value="50">
+    <span class="dbg-val" id="val-fade">50%</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">FONT SIZE px</span>
+    <input type="range" id="dbg-font" min="10" max="120" step="1" value="54">
+    <span class="dbg-val" id="val-font">54px</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">START POS %</span>
+    <input type="range" id="dbg-startpos" min="0" max="150" step="1" value="44">
+    <span class="dbg-val" id="val-startpos">44%</span>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">ORIGIN Y %</span>
+    <input type="range" id="dbg-originy" min="0" max="100" step="1" value="21">
+    <span class="dbg-val" id="val-originy">21%</span>
+  </div>
+
+  <!-- フォント選択 -->
+  <div class="dbg-row">
+    <span class="dbg-label">FONT JA</span>
+    <select id="dbg-font-ja">
+      <option value="'Kaisei Decol', serif">Kaisei Decol</option>
+      <option value="'Shippori Mincho', serif">Shippori Mincho</option>
+      <option value="'Zen Old Mincho', serif">Zen Old Mincho</option>
+      <option value="'Noto Serif JP', serif">Noto Serif JP</option>
+      <option value="'Zen Maru Gothic', sans-serif">Zen Maru Gothic</option>
+      <option value="'Dela Gothic One', sans-serif">Dela Gothic One</option>
+      <option value="'BIZ UDPGothic', sans-serif">BIZ UDPGothic</option>
+      <option value="'M PLUS 1p', sans-serif">M PLUS 1p</option>
+      <option value="'Noto Sans JP', sans-serif" selected>Noto Sans JP</option>
+    </select>
+  </div>
+  <div class="dbg-row">
+    <span class="dbg-label">FONT EN</span>
+    <select id="dbg-font-en">
+      <option value="'Orbitron', sans-serif">Orbitron</option>
+      <option value="'Exo 2', sans-serif">Exo 2</option>
+      <option value="'Rajdhani', sans-serif">Rajdhani</option>
+      <option value="'Black Ops One', sans-serif">Black Ops One</option>
+      <option value="'Russo One', sans-serif">Russo One</option>
+      <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
+      <option value="'Barlow Condensed', sans-serif">Barlow Condensed</option>
+      <option value="'Oswald', sans-serif" selected>Oswald</option>
+    </select>
+  </div>
+
+  <button id="debug-copy">📋 Copy Values</button>
+  <button id="debug-pause" style="margin-top:6px;width:100%;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.25em;text-transform:uppercase;background:rgba(255,100,100,0.12);border:1px solid rgba(255,100,100,0.5);color:rgba(255,150,150,0.9);padding:6px 0;cursor:pointer;transition:background .2s;">⏸ PAUSE</button>
+
+  <div style="display:flex;gap:6px;margin-top:6px;">
+    <button id="debug-export" style="flex:1;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;background:rgba(0,200,255,0.10);border:1px solid rgba(0,200,255,0.4);color:rgba(0,200,255,0.85);padding:6px 0;cursor:pointer;transition:background .2s;">⬇ Export</button>
+    <label id="debug-import-label" style="flex:1;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;background:rgba(0,200,255,0.10);border:1px solid rgba(0,200,255,0.4);color:rgba(0,200,255,0.85);padding:6px 0;cursor:pointer;transition:background .2s;">
+      ⬆ Import
+      <input type="file" id="debug-import" accept=".json" style="display:none;">
+    </label>
+  </div>
+</div>
 
 <script>
 /* ══════════════════════════════════════ パーティクル */
@@ -359,13 +539,198 @@
   })(performance.now());
 })();
 
+/* ══════════════════════════════════════ デバッグパネル */
+(function(){
+  const stageEl  = document.getElementById('ed-stage');
+  const outerEl  = document.getElementById('crawl-outer');
+  const panel    = document.getElementById('debug-panel');
+  const toggle   = document.getElementById('debug-toggle');
+  const copyBtn  = document.getElementById('debug-copy');
+
+  let debugStyle = document.createElement('style');
+  document.head.appendChild(debugStyle);
+
+  const state = {
+    perspective: 240,
+    rotateX:     52,
+    width:       100,
+    fade:        50,
+    font:        54,
+    startpos:    44,
+    originy:     21,
+    fontJa:      "'Noto Sans JP', sans-serif",
+    fontEn:      "'Oswald', sans-serif",
+  };
+
+  function applyFonts(){
+    debugStyle.textContent = `
+      #ed-stage::before { height: ${state.fade}% !important; }
+      :root {
+        --font-ja: ${state.fontJa};
+        --font-en: ${state.fontEn};
+      }
+    `;
+  }
+
+  function applyVisual(){
+    stageEl.style.perspective       = state.perspective + 'px';
+    stageEl.style.perspectiveOrigin = `50% ${state.originy}%`;
+    outerEl.style.transform         = `translateX(-50%) rotateX(${state.rotateX}deg)`;
+    outerEl.style.transformOrigin   = `50% ${state.originy}%`;
+    outerEl.style.width             = state.width + '%';
+    document.querySelectorAll('.lyric-line').forEach(el => {
+      el.style.fontSize = state.font + 'px';
+    });
+    document.querySelectorAll('.lyric-star').forEach(el => {
+      el.style.fontSize = (state.font * 2) + 'px';
+    });
+    applyFonts();
+  }
+
+  function bindVisual(id, key, suffix, valId){
+    const slider = document.getElementById(id);
+    const valEl  = document.getElementById(valId);
+    if(!slider) return;
+    slider.addEventListener('input', () => {
+      state[key] = parseFloat(slider.value);
+      valEl.textContent = slider.value + suffix;
+      applyVisual();
+    });
+  }
+
+  function bindStartPos(){
+    const slider = document.getElementById('dbg-startpos');
+    const valEl  = document.getElementById('val-startpos');
+    if(!slider) return;
+    slider.addEventListener('input', () => {
+      state.startpos = parseFloat(slider.value);
+      valEl.textContent = slider.value + '%';
+      if(window._lyricsRebuild) window._lyricsRebuild(state.startpos);
+    });
+  }
+
+  // フォント選択
+  document.getElementById('dbg-font-ja').addEventListener('change', function(){
+    state.fontJa = this.value;
+    applyFonts();
+  });
+  document.getElementById('dbg-font-en').addEventListener('change', function(){
+    state.fontEn = this.value;
+    applyFonts();
+  });
+
+  bindVisual('dbg-perspective', 'perspective', 'px',  'val-perspective');
+  bindVisual('dbg-rotatex',     'rotateX',     'deg', 'val-rotatex');
+  bindVisual('dbg-width',       'width',       '%',   'val-width');
+  bindVisual('dbg-fade',        'fade',        '%',   'val-fade');
+  bindVisual('dbg-font',        'font',        'px',  'val-font');
+  bindVisual('dbg-originy',     'originy',     '%',   'val-originy');
+  bindStartPos();
+
+  // コピーボタン
+  copyBtn.addEventListener('click', () => {
+    const txt =
+`perspective: ${state.perspective}px
+rotateX: ${state.rotateX}deg
+width: ${state.width}%
+fade-top: ${state.fade}%
+font-size: ${state.font}px
+start-pos: ${state.startpos}%
+origin-y: ${state.originy}%
+font-ja: ${state.fontJa}
+font-en: ${state.fontEn}`;
+    navigator.clipboard.writeText(txt).then(() => {
+      copyBtn.textContent = '✓ Copied!';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = '📋 Copy Values';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    });
+  });
+
+  // パネル開閉
+  toggle.addEventListener('click', () => {
+    panel.style.display = 'block';
+    toggle.style.display = 'none';
+  });
+  panel.addEventListener('dblclick', () => {
+    panel.style.display = 'none';
+    toggle.style.display = 'block';
+  });
+
+  // 一時停止ボタン
+  document.getElementById('debug-pause').addEventListener('click', function(){
+    if(!window._lyricsPause) return;
+    const p = window._lyricsPause();
+    this.textContent = p ? '▶ RESUME' : '⏸ PAUSE';
+    this.style.background  = p ? 'rgba(100,255,150,0.12)' : 'rgba(255,100,100,0.12)';
+    this.style.borderColor = p ? 'rgba(100,255,150,0.5)'  : 'rgba(255,100,100,0.5)';
+    this.style.color       = p ? 'rgba(150,255,180,0.9)'  : 'rgba(255,150,150,0.9)';
+  });
+
+  // スライダーをstateに同期
+  function syncSlidersFromState(){
+    const map = {
+      'dbg-perspective': ['perspective','val-perspective','px'],
+      'dbg-rotatex':     ['rotateX',    'val-rotatex',    'deg'],
+      'dbg-width':       ['width',       'val-width',      '%'],
+      'dbg-fade':        ['fade',        'val-fade',       '%'],
+      'dbg-font':        ['font',        'val-font',       'px'],
+      'dbg-startpos':    ['startpos',    'val-startpos',   '%'],
+      'dbg-originy':     ['originy',     'val-originy',    '%'],
+    };
+    for(const [id, [key, valId, suffix]] of Object.entries(map)){
+      const el = document.getElementById(id);
+      const vl = document.getElementById(valId);
+      if(el) el.value = state[key];
+      if(vl) vl.textContent = state[key] + suffix;
+    }
+    const ja = document.getElementById('dbg-font-ja');
+    const en = document.getElementById('dbg-font-en');
+    if(ja) ja.value = state.fontJa;
+    if(en) en.value = state.fontEn;
+  }
+
+  // Export
+  document.getElementById('debug-export').addEventListener('click', () => {
+    const json = JSON.stringify(state, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'endrole_settings.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Import
+  document.getElementById('debug-import').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const loaded = JSON.parse(ev.target.result);
+        const keys = ['perspective','rotateX','width','fade','font','originy','startpos','fontJa','fontEn'];
+        for(const k of keys){
+          if(loaded[k] !== undefined) state[k] = loaded[k];
+        }
+        syncSlidersFromState();
+        applyVisual();
+        if(window._lyricsRebuild) window._lyricsRebuild(state.startpos);
+      } catch(err) { alert('JSONの読み込みに失敗しました'); }
+      this.value = '';
+    };
+    reader.readAsText(file);
+  });
+})();
+
 /* ══════════════════════════════════════ 歌詞エンドロール */
 (function(){
   const BLOCK_GAP  = 0.8;
   const BASE_SPEED = 80;   // px/秒
   const BOOST_MAX  = 5.0;
   const BOOST_K    = 3.0;
-  const OUTRO_WAIT = 0;
+  const OUTRO_WAIT = 3000;
 
   const outerEl   = document.getElementById('crawl-outer'); // scrollTop を動かす
   const crawlEl   = document.getElementById('crawl');
@@ -613,32 +978,47 @@
       });
     }, 3500);
 
-    // フェーズ3：タイプライター終了(3500+1360ms) + 2秒後に自動でback14へ
-    const TEXT_LEN    = 17; // 「彼女たちの迷子は終わらない・・・。」の文字数
-    const AUTO_DELAY  = 3500 + TEXT_LEN * 80 + 2000; // ~6860ms
+    // フェーズ3：5秒後から入力待ち（何か押すとback14.jpg）
+    let phase = 1; // 1=テキスト表示中, 2=back14表示中
+    let inputReady = false;
 
-    setTimeout(() => {
-      // テキストをフェードアウト
-      outroSub.style.transition   = 'opacity 0.8s ease';
-      outroTitle.style.transition = 'opacity 0.8s ease';
-      outroNovel.style.transition = 'opacity 0.8s ease';
-      outroSub.style.opacity      = '0';
-      outroTitle.style.opacity    = '0';
-      outroNovel.style.opacity    = '0';
+    setTimeout(() => { inputReady = true; }, 5000);
 
-      // back14.jpg フェードイン
-      setTimeout(() => {
-        document.getElementById('ed-stage').style.display = 'none';
-        outroEl.style.display = 'none';
-        bgEnd.classList.add('visible');
-        // 5秒後にindex.htmlへ自動遷移
+    function onInput(){
+      if(!inputReady) return;
+
+      if(phase === 1){
+        phase = 2;
+        inputReady = false;
+
+        // テキストをフェードアウト
+        outroSub.style.transition   = 'opacity 0.8s ease';
+        outroTitle.style.transition = 'opacity 0.8s ease';
+        outroNovel.style.transition = 'opacity 0.8s ease';
+        outroSub.style.opacity      = '0';
+        outroTitle.style.opacity    = '0';
+        outroNovel.style.opacity    = '0';
+
+        // back14.jpg フェードイン
         setTimeout(() => {
-          audio.pause();
-          window.location.href = 'index.html';
-        }, 5000);
-      }, 800);
-    }, AUTO_DELAY);
+          document.getElementById('ed-stage').style.display = 'none';
+          outroEl.style.display = 'none';
+          bgEnd.classList.add('visible');
+          // 5秒後から次の入力待ち
+          setTimeout(() => { inputReady = true; }, 5000);
+        }, 800);
 
+      } else if(phase === 2){
+        // index.htmlへ
+        document.removeEventListener('keydown', onInput);
+        document.removeEventListener('click',   onInput);
+        audio.pause();
+        window.location.href = 'index.html';
+      }
+    }
+
+    document.addEventListener('keydown', onInput);
+    document.addEventListener('click',   onInput);
   }
 
   /* 起動 */
