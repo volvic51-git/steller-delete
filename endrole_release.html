@@ -296,7 +296,7 @@
 </div>
 
 <div id="loading">
-  <div class="loading-text">LOADING...</div>
+  <div class="loading-text" style="visibility:hidden;">LOADING...</div>
 </div>
 
 <!-- スキップボタン -->
@@ -363,7 +363,7 @@
   const BASE_SPEED = 80;   // px/秒
   const BOOST_MAX  = 5.0;
   const BOOST_K    = 3.0;
-  const OUTRO_WAIT = 3000;
+  const OUTRO_WAIT = 0;
 
   const outerEl   = document.getElementById('crawl-outer'); // scrollTop を動かす
   const crawlEl   = document.getElementById('crawl');
@@ -611,47 +611,32 @@
       });
     }, 3500);
 
-    // フェーズ3：5秒後から入力待ち（何か押すとback14.jpg）
-    let phase = 1; // 1=テキスト表示中, 2=back14表示中
-    let inputReady = false;
+    // フェーズ3：タイプライター終了(3500+1360ms) + 2秒後に自動でback14へ
+    const TEXT_LEN    = 17; // 「彼女たちの迷子は終わらない・・・。」の文字数
+    const AUTO_DELAY  = 3500 + TEXT_LEN * 80 + 2000; // ~6860ms
 
-    setTimeout(() => { inputReady = true; }, 5000);
+    setTimeout(() => {
+      // テキストをフェードアウト
+      outroSub.style.transition   = 'opacity 0.8s ease';
+      outroTitle.style.transition = 'opacity 0.8s ease';
+      outroNovel.style.transition = 'opacity 0.8s ease';
+      outroSub.style.opacity      = '0';
+      outroTitle.style.opacity    = '0';
+      outroNovel.style.opacity    = '0';
 
-    function onInput(){
-      if(!inputReady) return;
-
-      if(phase === 1){
-        phase = 2;
-        inputReady = false;
-
-        // テキストをフェードアウト
-        outroSub.style.transition   = 'opacity 0.8s ease';
-        outroTitle.style.transition = 'opacity 0.8s ease';
-        outroNovel.style.transition = 'opacity 0.8s ease';
-        outroSub.style.opacity      = '0';
-        outroTitle.style.opacity    = '0';
-        outroNovel.style.opacity    = '0';
-
-        // back14.jpg フェードイン
+      // back14.jpg フェードイン
+      setTimeout(() => {
+        document.getElementById('ed-stage').style.display = 'none';
+        outroEl.style.display = 'none';
+        bgEnd.classList.add('visible');
+        // 5秒後にindex.htmlへ自動遷移
         setTimeout(() => {
-          document.getElementById('ed-stage').style.display = 'none';
-          outroEl.style.display = 'none';
-          bgEnd.classList.add('visible');
-          // 5秒後から次の入力待ち
-          setTimeout(() => { inputReady = true; }, 5000);
-        }, 800);
+          audio.pause();
+          window.location.href = 'index.html';
+        }, 5000);
+      }, 800);
+    }, AUTO_DELAY);
 
-      } else if(phase === 2){
-        // index.htmlへ
-        document.removeEventListener('keydown', onInput);
-        document.removeEventListener('click',   onInput);
-        audio.pause();
-        window.location.href = 'index.html';
-      }
-    }
-
-    document.addEventListener('keydown', onInput);
-    document.addEventListener('click',   onInput);
   }
 
   /* 起動 */
