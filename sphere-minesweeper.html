@@ -3406,6 +3406,9 @@ function toggleAudio(){
 
 // ===================== RESTART =====================
 function restartGame(){
+  // サーチボタン状態をsearchEnabledに同期
+  _searchAvailable = false;
+  updateSearchButton();
   // 周回モード：リスタート時は1周目に戻す
   currentLoop = 1;
   if(loopMode){
