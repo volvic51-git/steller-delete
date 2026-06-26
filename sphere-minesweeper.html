@@ -417,7 +417,7 @@
     <div class="debug-tile">
       <div class="lbl">サーチ機能</div>
       <button id="search-enabled-btn" onclick="toggleSearchEnabled()"
-        style="background:rgba(0,40,60,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">サーチ ON</button>
+        style="background:rgba(30,30,30,0.8);border:1px solid rgba(120,120,120,0.4);color:#666666;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">サーチ OFF</button>
     </div>
 
     <div class="debug-tile">
@@ -723,7 +723,7 @@ function getLoopTimeLimitFor(loopNum){
   return window._customTimeLimit || TIME_LIMITS[currentDiff] || 300;
 }
 let debugMode = false;
-let searchEnabled = true;
+let searchEnabled = false;
 let hintTarget = null;
 let gameOverMistakeCell = null;
 let gameOverMistakeAnimTime = 0;
