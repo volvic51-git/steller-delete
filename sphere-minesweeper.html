@@ -2185,8 +2185,7 @@ function triggerLoopReplay(){
   gameState = 'idle';
   clearInterval(timerInterval);
   greyOutFloatButtons(); // 演出中はサーチ等を非アクティブに（次周の盤面が出たらrestoreFloatButtons()で復帰）
-  // 2周目開始時：勢いで旗を立てないようピッケルモードに強制切り替え
-  setMode('dig');
+  // モードは継続（強制切り替えなし）
 
   // バー背面レイヤーに「今の周の色」を焼き付け
   const backEl = document.getElementById('expose-bar-back');
