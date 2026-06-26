@@ -92,7 +92,7 @@ const SCRIPT = [
   { speaker: '', portrait: '', text: '光が砕ける。\n星屑が飲み込まれる。' },
   { command: 'fadeout' },
   { command: 'wait', duration: 1000 },
-  { command: 'background', value: 'back10.jpg', position: 'bottom' },
+  { command: 'background', value: 'back10.jpg', position: 'bottom', positionMobile: '30% 0%' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { speaker: 'アリス', portrait: 'normal2', text: 'フラット・・・。' },
@@ -111,6 +111,7 @@ NovelEngine.init({
   sePath:      'se/',
   typingSpeed: 30,
   clickSE:     'click.wav',
+  unlockStageOnComplete: 9,
   nextUrl:     '../index.html?select=1&storyStage=9',
 });
 

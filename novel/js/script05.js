@@ -61,7 +61,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'lady' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back06.jpg', position: 'bottom' },
+  { command: 'background', value: 'back06.jpg', position: 'bottom', positionMobile: '30% 0%' },
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
@@ -69,7 +69,7 @@ const SCRIPT = [
   { speaker: 'アリス', portrait: 'normal1', text: '私の知らない夕焼けが、丸くなって浮かんでいるみたい。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'ああいう赤は、いつも何かを覚えていて、何も話してくれないのよ' },
   { speaker: 'アリス', portrait: 'normal1', text: 'けれど不思議ね。近づきたいのか逃げたいのか、自分でもわからないわ。' },
-  { speaker: 'アリス', portrait: 'normal1', text: '答えを知っている本が、わざと最後のページだけ隠しているみたいだわ。' },
+  { speaker: 'アリス', portrait: 'normal2', text: '答えを知っている本が、わざと最後のページだけ隠しているみたいだわ。' },
   { command: 'dialog_hide' },
   { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
   { command: 'wait', duration: 2000 },
@@ -83,6 +83,7 @@ NovelEngine.init({
   sePath:      'se/',
   typingSpeed: 30,
   clickSE:     'click.wav',
+  unlockStageOnComplete: 5,
   nextUrl:     '../index.html?select=1&storyStage=5',
 });
 

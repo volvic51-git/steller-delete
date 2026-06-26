@@ -61,7 +61,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'xeno' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back09.jpg', position: 'bottom' },
+  { command: 'background', value: 'back09.jpg', position: 'bottom', positionMobile: '30% 0%' },
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
@@ -85,6 +85,7 @@ NovelEngine.init({
   sePath:      'se/',
   typingSpeed: 30,
   clickSE:     'click.wav',
+  unlockStageOnComplete: 8,
   nextUrl:     '../index.html?select=1&storyStage=8',
 });
 

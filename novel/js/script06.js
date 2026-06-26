@@ -80,6 +80,7 @@ const SCRIPT = [
   { speaker: 'フラット', portrait: 'normal3', text: '（花嫁たちは助けられたいわけじゃない・・・）' },
   { speaker: 'フラット', portrait: 'normal3', text: '（旗は印じゃない・・・約束なんだ。）' },
   { speaker: 'アリス', portrait: 'normal1', text: '（ツジツマが合うまで・・・あと少し・・・）' },
+  { command: 'hide', character: 'flat' },
   { command: 'dialog_hide' },
   { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
   { command: 'wait', duration: 2000 },
