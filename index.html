@@ -425,41 +425,39 @@
     background: rgba(3,8,24,.55);
     overflow: hidden;
   }
-  #credit-modal.show { display: block; }
+  #credit-modal.show { display: block; opacity: 1; transition: opacity 1.5s ease; }
+  #credit-modal.fade-out { opacity: 0; pointer-events: none; }
 
   /* パース空間：消失点を画面中央やや上に */
   #credit-stage {
     position: absolute;
     inset: 0;
-    perspective: 120px;
-    perspective-origin: 50% 35%;
+    perspective: 240px;
+    perspective-origin: 50% 21%;
     overflow: hidden;
   }
 
-  /* クロールラッパー：画面下端を基点にrotateX */
+  /* クロールラッパー：画面下端を基点にrotateX・scrollTopで駆動 */
   #credit-crawl-wrap {
     position: absolute;
-    width: 90%;
-    left: 5%;
-    /* 画面下端に合わせる */
-    top: 0; bottom: 0;
-    transform-origin: 50% 100%;
-    transform: rotateX(55deg);
-  }
-
-  /* 実際にスクロールする要素：画面下から開始（行数が増えても常に下端からスタート） */
-  #credit-crawl {
-    position: absolute;
     width: 100%;
-    top: 100%;           /* ラッパー（画面）の下端を基準にスタート */
-    text-align: center;
-    padding-bottom: 4vh;
-    animation: crawl 36s linear forwards;
+    left: 50%;
+    top: 0; bottom: 0;
+    transform-origin: 50% 21%;
+    transform: translateX(-50%) rotateX(52deg);
+    overflow: hidden;
   }
 
-  @keyframes crawl {
-    from { transform: translateY(0); }
-    to   { transform: translateY(-400vh); }
+  /* コンテンツ：padding-topをJSで画面高さに設定して下端スタート */
+  #credit-crawl {
+    width: 100%;
+    text-align: center;
+    padding-bottom: 8vh;
+  }
+
+  /* スマホ縦画面：幅を90%に */
+  @media (max-width: 600px) and (orientation: portrait) {
+    #credit-crawl-wrap { width: 90%; }
   }
 
   /* 横並びの1行 */
@@ -474,10 +472,9 @@
 
   .credit-role {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(16px, 2.4vw, 26px);
+    font-size: clamp(11px, 1.8vw, 18px);
     font-weight: 700;
     letter-spacing: .3em;
-    /* オレンジ縁・文字透明 */
     color: #ff8c00;
     -webkit-text-stroke: 0;
     text-stroke: 0;
@@ -488,22 +485,39 @@
   .credit-name {
     font-family: 'Orbitron', sans-serif;
     font-weight: 900;
-    font-size: clamp(32px, 7vw, 72px);
+    font-size: clamp(20px, 4.5vw, 48px);
     letter-spacing: .15em;
     color: #ff8c00;
     -webkit-text-stroke: 0;
     text-stroke: 0;
     text-transform: uppercase;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 80%;
+    line-height: 1.3;
   }
 
-  /* 上フェードマスク（1回転して消えるのを隠す） */
+  /* 上フェードマスク */
   #credit-stage::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 35%;
-    background: linear-gradient(to bottom, rgba(3,8,24,.75) 60%, transparent 100%);
+    height: 50%;
+    background: linear-gradient(to bottom,
+      rgba(3,8,24,1.0)  0%,
+      rgba(3,8,24,0.85) 45%,
+      transparent       100%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* 下フェードマスク */
+  #credit-stage::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 12%;
+    background: linear-gradient(to top, rgba(3,8,24,0.9) 0%, transparent 100%);
     z-index: 2;
     pointer-events: none;
   }
@@ -1491,23 +1505,73 @@ document.getElementById('save-reset-confirm').addEventListener('click', function
 });
 
 // CREDIT
-const creditModal = document.getElementById('credit-modal');
-const creditCrawl = document.getElementById('credit-crawl');
+const creditModal    = document.getElementById('credit-modal');
+const creditCrawl    = document.getElementById('credit-crawl');
+const creditWrap     = document.getElementById('credit-crawl-wrap');
+const CREDIT_SPEED   = 60; // px/秒
+
+let creditScrollY  = 0;
+let creditLastTime = null;
+let creditRAF      = null;
+let creditRunning  = false;
 
 function buildCredits(data) {
   creditCrawl.innerHTML = data.map(item => `
     <div class="credit-block">
       <span class="credit-role">${item.role}</span>
-      <span class="credit-name">${item.name}</span>
+      <span class="credit-name">${item.name.replace(/▲/g, '<br>')}</span>
     </div>
   `).join('');
 }
 
 function startCrawl() {
-  creditCrawl.style.animation = 'none';
-  void creditCrawl.offsetHeight;
-  creditCrawl.style.animation = 'crawl 36s linear forwards';
+  creditCrawl.style.paddingTop    = (window.innerHeight * 0.6) + 'px';
+  creditCrawl.style.paddingBottom = window.innerHeight + 'px';
+  creditScrollY  = 0;
+  creditWrap.scrollTop = 0;
+  creditLastTime = null;
+  creditRunning  = true;
+  if (creditRAF) cancelAnimationFrame(creditRAF);
+  creditRAF = requestAnimationFrame(tickCrawl);
 }
+
+function tickCrawl(now) {
+  if (!creditRunning) return;
+  if (creditLastTime !== null) {
+    const dt = (now - creditLastTime) / 1000;
+    creditScrollY += CREDIT_SPEED * dt;
+    creditWrap.scrollTop = creditScrollY;
+    const maxScroll = creditWrap.scrollHeight - creditWrap.offsetHeight;
+    if (creditScrollY >= maxScroll) {
+      creditRunning = false;
+      // フェードアウトして自動クローズ
+      setTimeout(() => {
+        creditModal.classList.add('fade-out');
+        setTimeout(() => {
+          creditModal.classList.remove('show', 'fade-out');
+        }, 2000);
+      }, 3000);
+      return;
+    }
+  }
+  creditLastTime = now;
+  creditRAF = requestAnimationFrame(tickCrawl);
+}
+
+// リサイズ：scrollTop を比率で再マッピング
+window.addEventListener('resize', () => {
+  if (!creditModal.classList.contains('show')) return;
+  const maxBefore = creditWrap.scrollHeight - creditWrap.offsetHeight;
+  const ratio = maxBefore > 0 ? creditScrollY / maxBefore : 0;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      creditCrawl.style.paddingTop = (window.innerHeight * 0.6) + 'px';
+      const maxAfter = creditWrap.scrollHeight - creditWrap.offsetHeight;
+      creditScrollY = ratio * maxAfter;
+      creditWrap.scrollTop = creditScrollY;
+    });
+  });
+});
 
 document.getElementById('credit-btn').addEventListener('click', function(){
   fetch('data/credits.json')
@@ -1518,7 +1582,6 @@ document.getElementById('credit-btn').addEventListener('click', function(){
       startCrawl();
     })
     .catch(() => {
-      // フォールバック：JSONが読めない場合
       creditCrawl.innerHTML = '<div class="credit-block"><span class="credit-name">credits.json not found</span></div>';
       creditModal.classList.add('show');
       startCrawl();
@@ -1526,6 +1589,8 @@ document.getElementById('credit-btn').addEventListener('click', function(){
 });
 
 document.getElementById('credit-close').addEventListener('click', function(){
+  creditRunning = false;
+  if (creditRAF) cancelAnimationFrame(creditRAF);
   creditModal.classList.remove('show');
 });
 

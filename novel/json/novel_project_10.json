@@ -62,7 +62,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "back01.jpg"
+      "value": "back17.jpg"
     },
     {
       "type": "bgm",
@@ -361,62 +361,15 @@
       "type": "dialog_hide"
     },
     {
-      "type": "wait",
-      "duration": "5000"
-    },
-    {
-      "type": "bg_scroll",
-      "direction": "down",
-      "speed": "200",
-      "loop": false
-    },
-    {
-      "type": "wait",
-      "duration": "5000"
-    },
-    {
       "type": "bgm_fade",
       "duration": "2000"
-    },
-    {
-      "type": "blackout"
-    },
-    {
-      "type": "background",
-      "value": "back13.png"
-    },
-    {
-      "type": "title_card",
-      "title": "STELLAR DELETE",
-      "text": "彼女たちの迷子は続く・・・。",
-      "duration": "3000"
-    },
-    {
-      "type": "wait",
-      "duration": "3000"
-    },
-    {
-      "type": "fg",
-      "value": "back14.jpg",
-      "fit": "contain"
-    },
-    {
-      "type": "wait",
-      "duration": 1000
-    },
-    {
-      "type": "fadein"
-    },
-    {
-      "type": "wait",
-      "duration": "3000"
     },
     {
       "type": "fadeout"
     },
     {
       "type": "wait",
-      "duration": 1000
+      "duration": "5000"
     }
   ]
 }

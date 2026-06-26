@@ -31,7 +31,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back01.jpg' },
+  { command: 'background', value: 'back17.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { speaker: '', portrait: '', text: '崩壊したフラットはブラックホールとなり、' },
@@ -88,19 +88,9 @@ const SCRIPT = [
   { command: 'hide', character: 'flat' },
   { command: 'dialog_hide' },
   { command: 'wait', duration: 5000 },
-  { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
-  { command: 'wait', duration: 5000 },
-  { command: 'bgm_fade', duration: 2000 },
-  { command: 'blackout' },
-  { command: 'background', value: 'back13.png' },
-  { command: 'title_card', title: 'STELLAR DELETE', text: '彼女たちの迷子は続く・・・。', duration: 3000 },
-  { command: 'wait', duration: 3000 },
-  { command: 'fg', value: 'back14.jpg', fit: 'contain' },
-  { command: 'wait', duration: 1000 },
-  { command: 'fadein' },
-  { command: 'wait', duration: 3000 },
   { command: 'fadeout' },
-  { command: 'wait', duration: 1000 },
+  { command: 'hide_all' },
+  { command: 'bgm_fade', duration: 2000 },
 ];
 
 NovelEngine.init({
@@ -110,7 +100,7 @@ NovelEngine.init({
   sePath:      'se/',
   typingSpeed: 30,
   clickSE:     'click.wav',
-  nextUrl:     '../index.html',
+  nextUrl:     '../endrole_release.html',
 });
 
 NovelEngine.play(SCRIPT);

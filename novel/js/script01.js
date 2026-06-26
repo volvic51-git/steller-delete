@@ -71,7 +71,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'flat' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back02.jpg', position: 'bottom' },
+  { command: 'background', value: 'back02.jpg', position: 'bottom', positionMobile: 'left bottom' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
   { speaker: 'アリス', portrait: 'normal1', text: 'あれは？' },
@@ -94,7 +94,7 @@ NovelEngine.init({
   sePath:      'se/',
   typingSpeed: 30,
   clickSE:     'click.wav',
-  unlockStageOnComplete: 1, // novel01読了でステージ1を解放
+  unlockStageOnComplete: 1,
   nextUrl:     '../index.html?select=1&storyStage=1',
 });
 

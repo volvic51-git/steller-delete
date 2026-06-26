@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "novelNo": 1,
   "characters": [
     {
       "id": "alice",
@@ -321,7 +322,8 @@
     {
       "type": "background",
       "value": "back02.jpg",
-      "position": "bottom"
+      "position": "bottom",
+      "positionMobile": "left bottom"
     },
     {
       "type": "wait",
@@ -389,6 +391,5 @@
       "type": "bgm_fade",
       "duration": "2000"
     }
-  ],
-  "novelNo": 1
+  ]
 }
