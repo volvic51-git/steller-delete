@@ -1,5 +1,5 @@
-# Stellar Delete — 仕様書 V1.0
-> 作成日: 2026-06-26　対象ブランチ: master
+# Stellar Delete — 仕様書 V1.1
+> 作成日: 2026-06-26　最終更新: 2026-06-26　対象ブランチ: master
 
 ---
 
@@ -368,8 +368,34 @@ NovelEngine.init({
 ## 13. 既知の設計上の決定事項
 
 - **サーチ機能（JUDGE）はデフォルトOFF**: デバッグ用途のため。ユーザーには非公開。
-- **デバッグメニューは非表示**: PAUSEメニューの 🐞 DEBUG ボタンを `display:none`。ロジックは残存。
+- **デバッグメニューは表示中（V1.0では非表示 → V1.1で開発用に再表示）**: PAUSEメニューの 🐞 DEBUG ボタン。
 - **周回モードでのモード継続**: 次周回開始時に掘削/旗モードを強制変更しない。
 - **タイムランキングは周回モードで記録しない**: `loopMode=true` のときランキング処理をスキップ。
 - **STARTボタンの二重ロック確認**: スライドアニメ中でもOFF（`updateStartBtn`即時呼び出し）＋クリックハンドラー内でも `isLocked` 確認。
 - **CREDITはCSS animationではなくRAFでscrollTop駆動**: リサイズ対応と正確なタイミング制御のため。
+- **周回制限時間は回復しない**: 周をまたいでも `remainingTime` を引き継ぐ。`_timerStartMs` を消費済み時間分ずらして整合させる。
+- **周回遷移時のゴーストメッシュ除去**: `triggerLoopReplay` で次周初期化前に `cell.animating` 状態のメッシュを `scene` から強制削除。放置すると `scale=0.001` の極小メッシュが □ として残る。
+
+---
+
+## 14. RESCUEバー仕様（周回モード）
+
+`#expose-bar-inner`（充填部）と `#expose-bar-back`（未充填部）の色を `updateLoopBarColors()` で制御。
+
+```js
+const LOOP_BAR_COLORS = ['#2962FF','#4F8DFF','#3ED6D6','#46D97A','#A9E34B','#FFD84D','#FF8B5A','#FF5E7E'];
+// index 0 = 1番（最終周）、index 7 = 8番（最初の周）
+```
+
+- fillIndex (0始まり) = `loopCount - currentLoop`
+- backIndex = fillIndex + 1（1周目のみ `transparent`）
+
+**3周の例:**
+
+| 周 | 充填色（fill） | 未充填色（back） |
+|---|---|---|
+| 1周目 | `#3ED6D6`（3番） | transparent |
+| 2周目 | `#4F8DFF`（2番） | `#3ED6D6`（3番） |
+| 3周目 | `#2962FF`（1番） | `#4F8DFF`（2番） |
+
+非周回モードでは `#1E5EFF` 固定（CSS デフォルト値）。

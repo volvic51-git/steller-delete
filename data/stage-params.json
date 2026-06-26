@@ -180,7 +180,7 @@
     "grid_row": 7,
     "total": 84,
     "timeLimitMode": true,
-    "timeLimit": 30,
+    "timeLimit": 90,
     "loopMode": true,
     "loopCount": 3,
     "exMode": false,
