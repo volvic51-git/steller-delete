@@ -1326,6 +1326,7 @@ function slide(dir) {
 
   // インデックスを更新
   currentIdx = mod(currentIdx + dir, total);
+  updateStartBtn();
 
   // 各カードのクラスを移行先に変更
   const shiftMap = dir === 1
@@ -1390,9 +1391,10 @@ function updateStartBtn() {
 
 document.getElementById('stage-start-btn').addEventListener('click', () => {
   if (_titleNavLocked) return;
+  const s = stageData[currentIdx];
+  if (!s || s.id > saveData.unlockedStage) return;
   _titleNavLocked = true;
   playSelect();
-  const s = stageData[currentIdx];
   const modeParam = isStoryFixedSelect ? '&mode=story' : '';
   window.location.href = `sphere-minesweeper.html?stage=${s.id}${modeParam}`;
 });
