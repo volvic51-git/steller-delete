@@ -2212,20 +2212,31 @@ function triggerLoopReplay(){
   greyOutFloatButtons(); // 演出中はサーチ等を非アクティブに（次周の盤面が出たらrestoreFloatButtons()で復帰）
   // モードは継続（強制切り替えなし）
 
+  // 完了したバーを 100%→0% に減少（ドレイン）させて空にする演出。
+  // 減少中は back を透明にしておき「空になっていく」ように見せる。
+  const innerEl = document.getElementById('expose-bar-inner');
+  const outerEl = document.getElementById('expose-bar-outer');
+  const backEl  = document.getElementById('expose-bar-back');
+  if(outerEl){ outerEl.style.animation = ''; outerEl.style.opacity = '1'; }
+  if(backEl){ backEl.style.transition = 'none'; backEl.style.background = 'transparent'; }
+  if(innerEl){
+    innerEl.style.transition = 'width 0.7s ease';
+    innerEl.style.width = '0%'; // ここから減少アニメが始まる
+  }
+
   currentLoop++;
 
   // 次周のテーマカラーを設定
   const nextColor = loopColors[(currentLoop-1) % loopColors.length];
   if(nextColor) window._boardTheme = nextColor;
 
-  // 進行バーを0%にリセット（周回バー色を更新）
-  const innerEl = document.getElementById('expose-bar-inner');
-  if(innerEl){
-    innerEl.style.transition = 'none';
-    innerEl.style.width = '0%';
-    requestAnimationFrame(()=>{ innerEl.style.transition = 'width 0.4s ease'; });
-  }
-  updateLoopBarColors();
+  // 750ms後（減少完了後）：次周の色を適用。back は 0.4s でなめらかに現れる。
+  setTimeout(()=>{
+    if(backEl) backEl.style.transition = 'background 0.4s ease';
+    updateLoopBarColors(); // inner=次周色, back=次周の未到達色（width0%なのでinnerは見えない）
+    if(innerEl) innerEl.style.transition = 'width 0.4s ease';
+  }, 750);
+
   const pctEl = document.getElementById('expose-pct');
   if(pctEl) pctEl.textContent = '0%';
   vanishedNonMine = 0;
@@ -2262,7 +2273,7 @@ function triggerLoopReplay(){
 
     // 2周目以降：最初の1マスを自動で開く（1周目は従来通りプレイヤーの操作待ち）
     if(currentLoop > 1){
-      setTimeout(()=>{ handleCellAction(0,0,'dig'); }, 500);
+      setTimeout(()=>{ handleCellAction(0,0,'dig'); }, 600);
     }
   }, 250);
 }
@@ -2970,10 +2981,9 @@ function updateLoopBarColors(){
     return;
   }
   const fillIdx = loopCount - currentLoop; // 0始まり
-  const backIdx = fillIdx + 1;
   innerEl.style.background = LOOP_BAR_COLORS[Math.min(fillIdx, LOOP_BAR_COLORS.length - 1)];
-  backEl.style.background  = currentLoop === 1 ? 'transparent'
-    : LOOP_BAR_COLORS[Math.min(backIdx, LOOP_BAR_COLORS.length - 1)];
+  // 溜まっていない部分(back)は常に透明（各周は空のバーから次周色で溜まる）
+  backEl.style.background  = 'transparent';
 }
 
 function toggleLoopMode(){

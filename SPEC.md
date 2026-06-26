@@ -388,14 +388,26 @@ const LOOP_BAR_COLORS = ['#2962FF','#4F8DFF','#3ED6D6','#46D97A','#A9E34B','#FFD
 ```
 
 - fillIndex (0始まり) = `loopCount - currentLoop`
-- backIndex = fillIndex + 1（1周目のみ `transparent`）
+- **未充填部（back）は常に `transparent`**（各周は空のバーから次周色で溜まる仕様）
 
 **3周の例:**
 
 | 周 | 充填色（fill） | 未充填色（back） |
 |---|---|---|
 | 1周目 | `#3ED6D6`（3番） | transparent |
-| 2周目 | `#4F8DFF`（2番） | `#3ED6D6`（3番） |
-| 3周目 | `#2962FF`（1番） | `#4F8DFF`（2番） |
+| 2周目 | `#4F8DFF`（2番） | transparent |
+| 3周目 | `#2962FF`（1番） | transparent |
 
 非周回モードでは `#1E5EFF` 固定（CSS デフォルト値）。
+
+### 周クリア時のバー減少（ドレイン）演出
+
+`triggerLoopReplay()` 冒頭で、満タンのバーを **width 100%→0% に 0.7秒かけて減少**させて空にする。
+
+```js
+if(backEl){ backEl.style.transition='none'; backEl.style.background='transparent'; } // 減少中は空に見せる
+if(innerEl){ innerEl.style.transition='width 0.7s ease'; innerEl.style.width='0%'; }
+// 750ms後：updateLoopBarColors() で次周色を適用、inner transition を 0.4s に戻す
+```
+
+**重要（過去の落とし穴）:** 当初 opacity フェード（CSS transition / `@keyframes` / RAF）で実装したが「フェードしても見た目が変わらない」問題が発生。原因は **opacity フェード自体は正常に効いていた**（ログで computed opacity が 1→0 を確認）が、**back に前周色が即座にフル幅で入るため、フェード前後でバーの見た目がほぼ同じ**だったこと。解決策は ① back を常時透明化 ② opacity ではなく **width 減少**で「空になっていく」演出に変更。opacity 系のコード・`@keyframes barFadeOut/In` はすべて撤去済み。
