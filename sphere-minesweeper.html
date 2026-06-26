@@ -622,7 +622,8 @@
       <div id="rescue-title">???</div>
       <div id="rescue-rarity">★★★</div>
       <div id="rescue-desc">球体の外殻を崩壊させ、閉じ込められたキャラクターを救出した。</div>
-      <div id="rescue-time" style="font-family:'Orbitron',sans-serif;font-size:clamp(24px,6vw,38px);color:#00ff88;letter-spacing:.12em;margin:8px 0 4px;text-shadow:0 0 20px rgba(0,255,136,0.8);"></div>
+      <div id="rescue-time" style="font-family:'Orbitron',sans-serif;font-size:clamp(24px,6vw,38px);color:#00ff88;letter-spacing:.12em;margin:8px 0 2px;text-shadow:0 0 20px rgba(0,255,136,0.8);"></div>
+      <div id="rescue-rank" style="font-family:'Orbitron',sans-serif;font-size:clamp(11px,2.5vw,15px);letter-spacing:.2em;margin-bottom:4px;min-height:1.4em;"></div>
       <div id="rescue-stats"></div>
     </div>
     <div id="rescue-action-row">
@@ -878,7 +879,28 @@ function showRescueScreen(){
   document.getElementById('rescue-title').textContent  = currentCharacter.name;
   document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
-  document.getElementById('rescue-time').textContent  = formatTime(elapsed);
+  // 精密クリアタイム（コンマ1秒）
+  const clearTimeSec = window._timerStartMs
+    ? Math.round((performance.now() - window._timerStartMs) * 10) / 10
+    : elapsed;
+  document.getElementById('rescue-time').textContent = formatRankingTime(clearTimeSec);
+
+  // ランキング保存・順位表示
+  const stageId = new URLSearchParams(window.location.search).get('stage');
+  const rankEl  = document.getElementById('rescue-rank');
+  if(stageId && !loopMode){
+    const rank = addRankingRecord(stageId, clearTimeSec);
+    if(rank === 1){
+      rankEl.innerHTML = '<span style="color:#ffd700;">👑 NEW RECORD!　BEST1 達成！</span>';
+    } else if(rank !== null){
+      rankEl.innerHTML = `<span style="color:#00ffcc;">BEST${rank} 更新！</span>`;
+    } else {
+      rankEl.textContent = '';
+    }
+  } else {
+    rankEl.textContent = '';
+  }
+
   document.getElementById('rescue-stats').textContent = `HINTS: ${hintCount}`;
   updateRescueButtons();
   greyOutFloatButtons();
@@ -2876,8 +2898,40 @@ function toggleExMode(){
 }
 
 function debugResetSave(){
-  try{ localStorage.removeItem('stellarDeleteSave'); }catch(e){}
+  try{
+    localStorage.removeItem('stellarDeleteSave');
+    Object.keys(localStorage).filter(k=>k.startsWith('stellarDeleteRanking_')).forEach(k=>localStorage.removeItem(k));
+  }catch(e){}
   window.location.href = 'index.html';
+}
+
+// ===================== RANKING =====================
+function _rankingKey(stageId){ return 'stellarDeleteRanking_stage_' + stageId; }
+
+function loadRanking(stageId){
+  try{ return JSON.parse(localStorage.getItem(_rankingKey(stageId)) || '[]'); }catch(e){ return []; }
+}
+
+function addRankingRecord(stageId, timeSec){
+  const now = new Date();
+  const date = now.getFullYear() + '/' +
+    String(now.getMonth()+1).padStart(2,'0') + '/' +
+    String(now.getDate()).padStart(2,'0');
+  const rec = { time: timeSec, date };
+  const records = loadRanking(stageId);
+  records.push(rec);
+  records.sort((a,b) => a.time - b.time);
+  records.splice(10);
+  try{ localStorage.setItem(_rankingKey(stageId), JSON.stringify(records)); }catch(e){}
+  const rank = records.indexOf(rec) + 1;
+  return rank > 0 ? rank : null;
+}
+
+function formatRankingTime(sec){
+  const tenths = Math.round(sec * 10);
+  const intPart = Math.floor(tenths / 10);
+  const fracPart = tenths % 10;
+  return intPart.toLocaleString() + '.' + fracPart + '秒';
 }
 
 function toggleStMode(){

@@ -968,6 +968,7 @@
 <!-- ステージ選択モーダル -->
 <div id="stage-modal">
   <div class="stage-modal-title">STAGE SELECT</div>
+  <div id="stage-best-time" style="font-family:'Orbitron',sans-serif;font-size:clamp(11px,1.8vw,14px);color:#00ffcc;letter-spacing:.2em;text-align:center;min-height:1.6em;margin-bottom:4px;"></div>
 
   <div class="stage-carousel">
     <div class="stage-cards-viewport" id="stage-cards-viewport">
@@ -1252,6 +1253,27 @@ function buildStageCards() {
   updateDots();
   bindCardClicks();
   updateStartBtn();
+  updateStageBestTime();
+}
+
+function updateStageBestTime() {
+  const el = document.getElementById('stage-best-time');
+  if (!el) return;
+  const s = stageData[currentIdx];
+  if (!s) { el.textContent = ''; return; }
+  try {
+    const key = 'stellarDeleteRanking_stage_' + s.id;
+    const records = JSON.parse(localStorage.getItem(key) || '[]');
+    if (records.length > 0) {
+      const best = records[0].time;
+      const tenths = Math.round(best * 10);
+      const intPart = Math.floor(tenths / 10);
+      const fracPart = tenths % 10;
+      el.textContent = 'BEST  ' + intPart.toLocaleString() + '.' + fracPart + ' SEC';
+    } else {
+      el.textContent = '';
+    }
+  } catch(e) { el.textContent = ''; }
 }
 
 function updateDots() {
@@ -1500,6 +1522,9 @@ document.getElementById('save-reset-btn').addEventListener('click', openSaveRese
 document.getElementById('save-reset-cancel').addEventListener('click', closeSaveResetModal);
 document.getElementById('save-reset-confirm').addEventListener('click', function(){
   try{ localStorage.removeItem('stellarDeleteSave'); }catch(e){}
+  try{
+    Object.keys(localStorage).filter(k => k.startsWith('stellarDeleteRanking_')).forEach(k => localStorage.removeItem(k));
+  }catch(e){}
   closeSaveResetModal();
   location.reload();
 });
