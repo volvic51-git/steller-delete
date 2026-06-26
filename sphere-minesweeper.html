@@ -415,6 +415,12 @@
     </div>
 
     <div class="debug-tile">
+      <div class="lbl">サーチ機能</div>
+      <button id="search-enabled-btn" onclick="toggleSearchEnabled()"
+        style="background:rgba(0,40,60,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;transition:all 0.2s;">サーチ ON</button>
+    </div>
+
+    <div class="debug-tile">
       <div class="lbl">セーブデータ削除</div>
       <button onclick="debugResetSave()"
         style="background:rgba(60,0,0,0.8);border:1px solid rgba(255,80,80,0.5);color:#ff8888;padding:5px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">SAVE RESET</button>
@@ -717,6 +723,7 @@ function getLoopTimeLimitFor(loopNum){
   return window._customTimeLimit || TIME_LIMITS[currentDiff] || 300;
 }
 let debugMode = false;
+let searchEnabled = true;
 let hintTarget = null;
 let gameOverMistakeCell = null;
 let gameOverMistakeAnimTime = 0;
@@ -1456,6 +1463,7 @@ function initRadarCanvas(){
 
 // ゲーム状態変化時（掘削・旗・消滅・リスタート後）に呼ぶ
 function refreshSearchAvailability(){
+  if(!searchEnabled){ _searchAvailable=false; updateSearchButton(); return; }
   if(gameState !== 'playing'){ _searchAvailable=false; updateSearchButton(); return; }
   if(_radarActive||_searchCooldown>0){ _searchAvailable=false; updateSearchButton(); return; }
   let anyOpen=false;
@@ -2881,6 +2889,18 @@ function toggleStMode(){
     btn.style.background  = stMode ? 'rgba(60,0,60,0.8)'    : 'rgba(0,40,20,0.8)';
     btn.style.borderColor = stMode ? 'rgba(255,50,255,0.5)' : 'rgba(0,200,100,0.5)';
     btn.style.color       = stMode ? '#ff55ff'              : '#00cc66';
+  }
+  refreshSearchAvailability();
+}
+
+function toggleSearchEnabled(){
+  searchEnabled = !searchEnabled;
+  const btn = document.getElementById('search-enabled-btn');
+  if(btn){
+    btn.textContent = searchEnabled ? 'サーチ ON' : 'サーチ OFF';
+    btn.style.background  = searchEnabled ? 'rgba(0,40,60,0.8)'   : 'rgba(30,30,30,0.8)';
+    btn.style.borderColor = searchEnabled ? 'rgba(0,200,255,0.5)' : 'rgba(120,120,120,0.4)';
+    btn.style.color       = searchEnabled ? '#00ccff'             : '#666666';
   }
   refreshSearchAvailability();
 }
