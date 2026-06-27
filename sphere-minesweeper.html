@@ -650,10 +650,10 @@
 ">
   <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#00ffff;margin-bottom:18px;">CONFIG</h2>
   <button onclick="confirmSettingsAction('restart')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">RESTART</button>
-  <button onclick="openHelpModal()" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">HELP</button>
   <button onclick="confirmSettingsAction('select')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">STAGE SELECT</button>
   <button onclick="confirmSettingsAction('title')" style="display:block;width:100%;margin-bottom:14px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">TITLE</button>
   <button onclick="openDebugMenu()" style="display:none;width:100%;margin-bottom:14px;background:rgba(40,0,60,0.8);border:1px solid rgba(170,0,255,0.5);color:#aa88ff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">🐞 DEBUG</button>
+  <button onclick="openHelpModal()" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(255,220,0,0.5);color:#ffdd00;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">HELP</button>
   <button onclick="closeSettingsMenu()" style="display:block;width:100%;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#ff8800;padding:7px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">BACK</button>
 </div>
 
@@ -713,10 +713,10 @@
   background:rgba(0,5,20,0.92);border:2px solid rgba(255,150,0,0.7);padding:22px 26px;text-align:center;
   border-radius:4px;width:min(260px,80vw);box-sizing:border-box;
 ">
-  <p id="confirm-dialog-text" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#ffffff;margin-bottom:16px;line-height:1.6;">本当に良いですか？</p>
+  <p id="confirm-dialog-text" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#ffffff;margin-bottom:16px;line-height:1.8;white-space:pre-line;"></p>
   <div style="display:flex;gap:10px;justify-content:center;">
-    <button onclick="executeConfirmedAction()" style="background:rgba(80,20,0,0.9);border:1px solid rgba(255,150,0,0.8);color:#ffaa00;padding:7px 16px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">はい</button>
-    <button onclick="cancelConfirmDialog()" style="background:rgba(0,20,50,0.9);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:7px 16px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">いいえ</button>
+    <button onclick="executeConfirmedAction()" style="background:rgba(80,20,0,0.9);border:1px solid rgba(255,150,0,0.8);color:#ffaa00;padding:7px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;width:80px;">YES</button>
+    <button onclick="cancelConfirmDialog()" style="background:rgba(0,20,50,0.9);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:7px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;width:80px;">NO</button>
   </div>
 </div>
 
@@ -2846,9 +2846,9 @@ function closeHelpModal(){
 function confirmSettingsAction(action){
   _pendingConfirmAction = action;
   const texts = {
-    restart: 'リスタートします。本当に良いですか？',
-    select:  'ステージ選択に戻ります。本当に良いですか？',
-    title:   'タイトルに戻ります。本当に良いですか？',
+    restart: 'リスタートします。\n本当に良いですか？',
+    select:  'ステージ選択に戻ります。\n本当に良いですか？',
+    title:   'タイトルに戻ります。\n本当に良いですか？',
   };
   document.getElementById('confirm-dialog-text').textContent = texts[action] || '本当に良いですか？';
   document.getElementById('confirm-dialog').style.display = 'block';

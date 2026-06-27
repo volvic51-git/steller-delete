@@ -26,8 +26,8 @@
     el.innerHTML =
       '<div style="color:#00ffff;font-family:\'Orbitron\',sans-serif;font-size:clamp(16px,4vw,22px);letter-spacing:.2em;margin-bottom:24px;">STELLAR DELETE</div>' +
       '<div style="color:#ff8800;font-family:\'Orbitron\',sans-serif;font-size:clamp(12px,3vw,16px);letter-spacing:.15em;margin-bottom:16px;">ALREADY RUNNING</div>' +
-      '<div style="color:#aabbcc;font-family:\'Share Tech Mono\',monospace;font-size:clamp(11px,2.5vw,13px);line-height:1.8;margin-bottom:32px;">別のタブで起動中です<br>元のタブに戻ってください</div>' +
-      '<div style="color:#00ccff;font-family:\'Share Tech Mono\',monospace;font-size:clamp(11px,2.5vw,13px);">タブを手動で閉じてください</div>';
+      '<div style="color:#aabbcc;font-family:\'Share Tech Mono\',monospace;font-size:clamp(11px,2.5vw,13px);line-height:1.8;margin-bottom:16px;">別のタブで起動中です</div>' +
+      '<div style="color:#aabbcc;font-family:\'Share Tech Mono\',monospace;font-size:clamp(11px,2.5vw,13px);">このタブを閉じてください</div>';
     if (document.body) {
       document.body.appendChild(el);
     } else {
