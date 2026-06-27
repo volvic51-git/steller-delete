@@ -941,11 +941,7 @@
       AUCTION
     </button>
 
-    <button class="menu-btn" id="guide-btn">
-      GUIDE
-    </button>
-
-    <button class="menu-btn" id="credit-btn">
+<button class="menu-btn" id="credit-btn">
       CREDIT
     </button>
 
@@ -1459,13 +1455,6 @@ document.getElementById('simple-btn').addEventListener('click', function(){
       stageModal.classList.add('show');
       _titleNavLocked = false;
     });
-});
-
-// GUIDE — 操作マニュアルへ遷移
-document.getElementById('guide-btn').addEventListener('click', function(){
-  if (_titleNavLocked) return;
-  _titleNavLocked = true;
-  window.location.href = 'manual.html';
 });
 
 // ── STORY アコーディオン ──

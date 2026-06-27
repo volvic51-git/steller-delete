@@ -882,15 +882,18 @@ function showRescueScreen(){
   document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
   // 精密クリアタイム（コンマ3桁）
-  const clearTimeSec = window._timerStartMs
-    ? Math.round(performance.now() - window._timerStartMs) / 1000
-    : elapsed;
+  // 周回モードは1周目開始〜最終周クリアまでのトータル時間を使う
+  const clearTimeSec = loopMode && window._loopTotalStartMs
+    ? Math.round(performance.now() - window._loopTotalStartMs) / 1000
+    : window._timerStartMs
+      ? Math.round(performance.now() - window._timerStartMs) / 1000
+      : elapsed;
   document.getElementById('rescue-time').textContent = formatRankingTime(clearTimeSec);
 
   // ランキング保存・順位表示
   const stageId = new URLSearchParams(window.location.search).get('stage');
   const rankEl  = document.getElementById('rescue-rank');
-  if(stageId && !loopMode){
+  if(stageId){
     const rank = addRankingRecord(stageId, clearTimeSec);
     if(rank === 1){
       rankEl.innerHTML = '<span style="color:#ffd700;">👑 NEW RECORD!　BEST1 達成！</span>';
@@ -3119,6 +3122,7 @@ function startTimer(){
   window._timerStartMs = timeLimitMode && loopMode && currentLoop > 1
     ? performance.now() - (totalTime - remainingTime) * 1000
     : performance.now();
+  if(currentLoop === 1) window._loopTotalStartMs = performance.now();
   timerInterval=setInterval(()=>{
     elapsed++;
     document.getElementById('stat-time').textContent=formatTime(elapsed);
