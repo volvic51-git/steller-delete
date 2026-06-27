@@ -7,5 +7,7 @@
   { "role": "I LOV",  "name": "Stellar<BR>Blade"    },
   { "role": "AND",  "name": "FAR EAST<BR>OF EDEN"    },
   { "role": "AND",  "name": "Ai-chan's<BR>Dream<BR>Story"  },
-  { "role": "AND",  "name": "Alice in<BR>Wonder<BR>land"    }
+  { "role": "AND",  "name": "Alice in<BR>Wonder<BR>land"    },
+  { "role": "",  "name": "★"    },
+  { "role": "AND",  "name": "U"    }
 ]
