@@ -647,12 +647,63 @@
   border:2px solid rgba(0,200,255,0.6);padding:24px 28px;text-align:center;border-radius:4px;
   width:min(280px,82vw);box-sizing:border-box;
 ">
-  <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#00ffff;margin-bottom:18px;">PAUSED</h2>
-  <button onclick="confirmSettingsAction('restart')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">リスタート</button>
-  <button onclick="confirmSettingsAction('select')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">ステージ選択に戻る</button>
-  <button onclick="confirmSettingsAction('title')" style="display:block;width:100%;margin-bottom:14px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">タイトルに戻る</button>
-  <button onclick="openDebugMenu()" style="display:none;width:100%;margin-bottom:14px;background:rgba(40,0,60,0.8);border:1px solid rgba(170,0,255,0.5);color:#aa88ff;padding:9px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:2px;">🐞 DEBUG</button>
-  <button onclick="closeSettingsMenu()" style="display:block;width:100%;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#00ccff;padding:7px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">再開</button>
+  <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#00ffff;margin-bottom:18px;">CONFIG</h2>
+  <button onclick="confirmSettingsAction('restart')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">RESTART</button>
+  <button onclick="openHelpModal()" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">HELP</button>
+  <button onclick="confirmSettingsAction('select')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">STAGE SELECT</button>
+  <button onclick="confirmSettingsAction('title')" style="display:block;width:100%;margin-bottom:14px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">TITLE</button>
+  <button onclick="openDebugMenu()" style="display:none;width:100%;margin-bottom:14px;background:rgba(40,0,60,0.8);border:1px solid rgba(170,0,255,0.5);color:#aa88ff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">🐞 DEBUG</button>
+  <button onclick="closeSettingsMenu()" style="display:block;width:100%;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#ff8800;padding:7px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">BACK</button>
+</div>
+
+<!-- ヘルプモーダル -->
+<div id="help-modal" style="
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:215;display:none;
+  background:rgba(0,5,20,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:2px solid rgba(0,200,255,0.6);padding:24px 24px 20px;border-radius:4px;
+  width:min(320px,90vw);box-sizing:border-box;
+">
+  <h2 style="font-family:'Orbitron',sans-serif;font-size:13px;letter-spacing:3px;color:#00ffff;margin:0 0 16px;text-align:center;">HELP</h2>
+  <table style="width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:11px;color:#ccddff;">
+    <tbody>
+      <tr style="border-bottom:1px solid rgba(0,200,255,0.15);">
+        <td style="padding:7px 6px;font-size:18px;text-align:center;">✨</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">ORACLE</td>
+        <td style="padding:7px 6px;color:#aabbcc;">ヒント＆ライフ</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(0,200,255,0.15);">
+        <td style="padding:7px 6px;font-size:18px;text-align:center;">🧭</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">FOCUS</td>
+        <td style="padding:7px 6px;color:#aabbcc;">直近の数字セルへ移動</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(0,200,255,0.15);">
+        <td style="padding:7px 6px;font-size:18px;text-align:center;">🛡️</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">GUARD</td>
+        <td style="padding:7px 6px;color:#aabbcc;">掘削/旗立できないセルの誤操作防止</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(0,200,255,0.15);">
+        <td style="padding:7px 6px;font-size:18px;text-align:center;">👁️</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">JUDGE</td>
+        <td style="padding:7px 6px;color:#aabbcc;">？？？</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(0,200,255,0.15);">
+        <td style="padding:7px 6px;font-size:18px;text-align:center;white-space:nowrap;">⛏/🚩</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">SWITCH</td>
+        <td style="padding:7px 6px;color:#aabbcc;">掘削/旗を切替える</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(0,200,255,0.15);">
+        <td style="padding:7px 6px;font-size:18px;text-align:center;">⚙️</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">CONFIG</td>
+        <td style="padding:7px 6px;color:#aabbcc;">設定メニュー</td>
+      </tr>
+      <tr>
+        <td style="padding:7px 6px;font-size:18px;text-align:center;">🔊</td>
+        <td style="padding:7px 6px;color:#00ffcc;white-space:nowrap;">MUTE</td>
+        <td style="padding:7px 6px;color:#aabbcc;">音声ON/OFF</td>
+      </tr>
+    </tbody>
+  </table>
+  <button onclick="closeHelpModal()" style="display:block;width:100%;margin-top:16px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#00ccff;padding:7px 0;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;">閉じる</button>
 </div>
 
 <!-- 確認ダイアログ（設定メニューのアクション確認用） -->
@@ -2779,6 +2830,16 @@ function closeSettingsMenu(){
   gamePaused = false;
   document.getElementById('pause-overlay').style.display = 'none';
   document.getElementById('settings-menu').style.display = 'none';
+}
+
+function openHelpModal(){
+  document.getElementById('settings-menu').style.display = 'none';
+  document.getElementById('help-modal').style.display = 'block';
+}
+
+function closeHelpModal(){
+  document.getElementById('help-modal').style.display = 'none';
+  document.getElementById('settings-menu').style.display = 'block';
 }
 
 function confirmSettingsAction(action){

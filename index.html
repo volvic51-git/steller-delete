@@ -950,7 +950,7 @@
     </button>
 
     <button class="menu-btn" id="save-reset-btn" style="font-size:.7em;letter-spacing:.18em;color:rgba(232,244,255,.32);border-color:rgba(0,200,255,.18);">
-      SAVE RESET
+      DELETE
     </button>
 
   </div>
@@ -1008,13 +1008,24 @@
   </div>
 </div>
 
+<!-- RANKING RESET確認モーダル（隠しコマンド：長押し） -->
+<div id="ranking-reset-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+  <div class="modal-box">
+    <div class="modal-msg" style="font-size:clamp(11px,2vw,14px);line-height:1.7;">ランキングデータを<br>全て削除しますか？<br><span style="color:rgba(255,110,138,.7);font-size:.85em;">この操作は取り消せません</span></div>
+    <div class="modal-btns">
+      <button class="modal-btn" id="ranking-reset-cancel">CANCEL</button>
+      <button class="modal-btn danger" id="ranking-reset-confirm">DELETE</button>
+    </div>
+  </div>
+</div>
+
 <!-- SAVE RESET確認モーダル -->
 <div id="save-reset-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;">
   <div class="modal-box">
     <div class="modal-msg" style="font-size:clamp(11px,2vw,14px);line-height:1.7;">進行データを<br>全て削除しますか？<br><span style="color:rgba(255,110,138,.7);font-size:.85em;">この操作は取り消せません</span></div>
     <div class="modal-btns">
       <button class="modal-btn" id="save-reset-cancel">CANCEL</button>
-      <button class="modal-btn danger" id="save-reset-confirm">RESET</button>
+      <button class="modal-btn danger" id="save-reset-confirm">DELETE</button>
     </div>
   </div>
 </div>
@@ -1470,7 +1481,6 @@ const EPISODES = [
   { label:'EP.6', sub:'ABIS',        novel:'novel/novel07.html', minEp:6 },
   { label:'EP.7', sub:'XENO',        novel:'novel/novel08.html', minEp:7 },
   { label:'EP.8', sub:'YOMI AND...', novel:'novel/novel09.html', minEp:8 },
-  null, // 区切り線（ED手前）
   { label:'EP.9', sub:'ENDING?',     novel:'novel/novel10.html', minEp:9 },
 ];
 
@@ -1507,11 +1517,28 @@ document.getElementById('story-btn').addEventListener('click', function(){
   if (_storyOpen) buildEpisodeList(); // 毎回最新saveDataで再生成
 });
 
+function closeStoryAccordion() {
+  _storyOpen = false;
+  document.getElementById('story-btn').classList.remove('open');
+  document.getElementById('episode-list').classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+  if (!_storyOpen) return;
+  const wrap = document.getElementById('story-accordion-wrap');
+  if (!wrap.contains(e.target)) closeStoryAccordion();
+});
+
+document.addEventListener('touchstart', function(e) {
+  if (!_storyOpen) return;
+  const wrap = document.getElementById('story-accordion-wrap');
+  if (!wrap.contains(e.target)) closeStoryAccordion();
+}, { passive: true });
+
 // SAVE RESET
 const saveResetModal = document.getElementById('save-reset-modal');
 function openSaveResetModal(){ saveResetModal.style.display='flex'; }
 function closeSaveResetModal(){ saveResetModal.style.display='none'; }
-document.getElementById('save-reset-btn').addEventListener('click', openSaveResetModal);
 document.getElementById('save-reset-cancel').addEventListener('click', closeSaveResetModal);
 document.getElementById('save-reset-confirm').addEventListener('click', function(){
   try{ localStorage.removeItem('stellarDeleteSave'); }catch(e){}
@@ -1519,8 +1546,49 @@ document.getElementById('save-reset-confirm').addEventListener('click', function
     Object.keys(localStorage).filter(k => k.startsWith('stellarDeleteRanking_')).forEach(k => localStorage.removeItem(k));
   }catch(e){}
   closeSaveResetModal();
-  location.reload();
+  window.location.href = 'index.html';
 });
+
+// RANKING RESET（隠しコマンド：長押し）
+const rankingResetModal = document.getElementById('ranking-reset-modal');
+function openRankingResetModal(){ rankingResetModal.style.display='flex'; }
+function closeRankingResetModal(){ rankingResetModal.style.display='none'; }
+document.getElementById('ranking-reset-cancel').addEventListener('click', closeRankingResetModal);
+document.getElementById('ranking-reset-confirm').addEventListener('click', function(){
+  try{
+    Object.keys(localStorage).filter(k => k.startsWith('stellarDeleteRanking_')).forEach(k => localStorage.removeItem(k));
+  }catch(e){}
+  closeRankingResetModal();
+  window.location.href = 'index.html';
+});
+
+// SAVE RESET ボタン：クリック→通常、長押し→ランキングのみ
+(function(){
+  const btn = document.getElementById('save-reset-btn');
+  let pressTimer = null;
+  let longPressed = false;
+
+  function startPress(){
+    longPressed = false;
+    pressTimer = setTimeout(function(){
+      longPressed = true;
+      openRankingResetModal();
+    }, 800);
+  }
+  function cancelPress(){
+    clearTimeout(pressTimer);
+  }
+
+  btn.addEventListener('mousedown', startPress);
+  btn.addEventListener('touchstart', startPress, { passive: true });
+  btn.addEventListener('mouseup', cancelPress);
+  btn.addEventListener('mouseleave', cancelPress);
+  btn.addEventListener('touchend', cancelPress);
+  btn.addEventListener('click', function(){
+    if (longPressed) return;
+    openSaveResetModal();
+  });
+})();
 
 // CREDIT
 const creditModal    = document.getElementById('credit-modal');
