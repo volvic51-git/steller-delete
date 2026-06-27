@@ -1495,9 +1495,10 @@ function buildEpisodeList() {
     // 全エピソードとも通常進行URL（?reread=1なし）。
     // 解放済みのステージを再解放しないよう unlock処理側でガード済みなので問題なし。
     // 再読後はnextUrl通りにステージ選択へ進む（タイトルへ戻るより自然なUXのため）。
+    if (!unlocked) return '';
     const href = ep.novel;
     const sub = ep.sub ? ` <span>${ep.sub}</span>` : '';
-    return `<button class="ep-btn${unlocked ? '' : ' locked'}" data-href="${href}">
+    return `<button class="ep-btn" data-href="${href}">
       <span class="ep-label">${ep.label}</span>${sub}
     </button>`;
   }).join('');
