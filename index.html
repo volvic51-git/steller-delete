@@ -292,10 +292,12 @@
   #auction-btn::after { opacity: .18; }
 
   /* EXIT は少し控えめな色 */
-  #exit-btn { color: rgba(232,244,255,.6); }
+  #exit-btn { color: var(--ice-white); }
   #exit-btn::before {
-    border-color: rgba(0,200,255,.45);
-    box-shadow: none;
+    border-color: var(--accent);
+    box-shadow:
+      0 0 8px rgba(0,200,255,.35) inset,
+      0 0 14px rgba(0,200,255,.2);
   }
   #exit-btn:hover { color: #ff6e8a; }
   #exit-btn:hover::before {
@@ -305,6 +307,23 @@
       0 0 22px rgba(255,60,100,.25);
   }
   #exit-btn::after {
+    background:
+      linear-gradient(var(--accent), var(--accent)) top left / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top left / 1.5px 10px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top right / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) top right / 1.5px 10px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom left / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom left / 1.5px 10px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom right / 10px 1.5px no-repeat,
+      linear-gradient(var(--accent), var(--accent)) bottom right / 1.5px 10px no-repeat;
+    opacity: .5;
+  }
+
+  #save-reset-btn::before {
+    border-color: rgba(0,200,255,.45);
+    box-shadow: none;
+  }
+  #save-reset-btn::after {
     background:
       linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) top left / 10px 1.5px no-repeat,
       linear-gradient(rgba(255,110,138,.6), rgba(255,110,138,.6)) top left / 1.5px 10px no-repeat,
@@ -950,7 +969,9 @@
       EXIT
     </button>
 
-    <button class="menu-btn" id="save-reset-btn" style="font-size:.7em;letter-spacing:.18em;color:rgba(232,244,255,.32);border-color:rgba(0,200,255,.18);">
+    <div class="menu-btn" style="visibility:hidden;pointer-events:none;"></div>
+
+    <button class="menu-btn" id="save-reset-btn" style="font-size:.7em;letter-spacing:.18em;color:rgba(232,244,255,.32);border-color:rgba(0,200,255,.45);">
       DELETE
     </button>
 
