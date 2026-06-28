@@ -2111,7 +2111,16 @@ function revealAllMines(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const cell = board[r][c];
     if(cell.isMine){ cell.isOpen=true; updateCellVisual(cell); }
-    else if(cell.hasFlag){ cell.hasFlag=false; cell.isOpen=true; updateCellVisual(cell); }
+    else if(cell.hasFlag){
+      cell.hasFlag=false; cell.isOpen=true; updateCellVisual(cell);
+      // 誤旗セルをハイライト
+      if(cell === gameOverMistakeCell && cell.mesh){
+        cell.mesh.material.color.setHex(0xff2200);
+        cell.mesh.material.emissive.setHex(0x661100);
+        const border = cell.mesh.children.find(c=>c.isLine);
+        if(border) border.material.color.setHex(0xff4400);
+      }
+    }
   }
 }
 
@@ -2185,6 +2194,12 @@ function triggerGameOverSequence(extraMsg, mistakeCell){
   gameState = 'lose'; // 即座に入力（掘削・旗）をブロック。カメラ回転/ズームは引き続き可能
   gamePaused = false;
   gameOverMistakeCell = mistakeCell || null;
+  // 誤旗セル（非地雷に旗を立てた場合）：旗を消して数字を表示
+  if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
+    gameOverMistakeCell.hasFlag = false;
+    gameOverMistakeCell.isOpen = true;
+    updateCellVisual(gameOverMistakeCell);
+  }
   clearInterval(timerInterval);
   pauseBGM();
   document.getElementById('pause-overlay').style.display = 'none';
