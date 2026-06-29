@@ -293,6 +293,8 @@
     <button id="settings-btn" onclick="openSettingsMenu()" title="設定"
       style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚙️</button>
     <button id="audio-btn" onclick="toggleAudio()" title="音声ON/OFF">🔊</button>
+    <button id="manual-btn" onclick="startManual()" title="あそびかた"
+      style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">❓</button>
   </div>
   <!-- 右上：タイマー -->
   <div id="timer-zone" style="position:fixed;top:14px;right:16px;z-index:100;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:auto;">
@@ -4034,6 +4036,37 @@ history.pushState({ backGuard: true }, '');
 window.addEventListener('popstate', function(){
   window.location.replace('index.html');
 });
+// ===================== マニュアル起動（シナリオエンジン） =====================
+function startManual(scenario){
+  if(!window.ScenarioPlayer){ console.error('ScenarioPlayer 未ロード'); return; }
+  const name = (typeof scenario === 'string' && scenario) ? scenario : 'tutorial01';
+  const debug = (typeof debugMode !== 'undefined' && debugMode);
+  window.ScenarioPlayer.playUrl('manual/scenarios/' + name + '.json', { debug: debug })
+    .catch(err => console.error('[Manual] 起動失敗', err));
+}
+
+// URLに ?manual=tutorial01 が付いていれば自動起動（起動用HTML / 動作確認用）
+(function(){
+  try{
+    const p = new URLSearchParams(location.search);
+    const m = p.get('manual');
+    const dbg = p.get('debug') === '1';
+    if(m){
+      const boot = function(){
+        if(window.ScenarioPlayer){
+          window.ScenarioPlayer.playUrl('manual/scenarios/' + m + '.json', { debug: dbg })
+            .catch(err => console.error('[Manual] 起動失敗', err));
+        }
+      };
+      if(document.readyState === 'complete') setTimeout(boot, 600);
+      else window.addEventListener('load', function(){ setTimeout(boot, 600); });
+    }
+  }catch(e){ console.error('[Manual] auto-start error', e); }
+})();
 </script>
+<!-- マニュアル／シナリオ再生エンジン（ゲーム本体の後に読み込む） -->
+<link rel="stylesheet" href="manual/manual.css?v=4">
+<script src="manual/game-bridge.js?v=4"></script>
+<script src="manual/scenario-engine.js?v=4"></script>
 </body>
 </html>

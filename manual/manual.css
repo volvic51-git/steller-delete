@@ -1,0 +1,126 @@
+/* ============================================================================
+ * manual.css — シナリオ再生エンジン Overlay スタイル（MANUAL_SPEC.md §7 / §9）
+ *   #scn-canvas … 描画専用 / #scn-window … UI専用
+ * ========================================================================== */
+
+#scn-overlay { display: none; }
+#scn-overlay.active { display: block; }
+
+/* Canvas（描画専用・クリック透過） */
+#scn-canvas {
+  position: fixed; inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* トースト（誤操作メッセージ等） */
+#scn-toast {
+  position: fixed; left: 50%; top: 96px; bottom: auto;
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 60;
+  padding: 10px 18px;
+  background: rgba(20, 0, 30, 0.92);
+  border: 1px solid rgba(255, 80, 110, 0.7);
+  color: #ff8aa0;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  border-radius: 4px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .25s;
+}
+#scn-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* 説明ウィンドウ（画面下部・UI専用） */
+#scn-window {
+  position: fixed; left: 50%; bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 120;
+  width: min(680px, 92vw);
+  box-sizing: border-box;
+  padding: 16px 20px 14px;
+  background: linear-gradient(180deg, rgba(8, 14, 30, 0.96), rgba(4, 8, 20, 0.97));
+  border: 1px solid rgba(0, 200, 255, 0.45);
+  border-radius: 8px;
+  box-shadow: 0 0 24px rgba(0, 120, 220, 0.35), inset 0 0 18px rgba(0, 60, 120, 0.25);
+  color: #cfeaff;
+  font-family: 'Share Tech Mono', monospace;
+  pointer-events: auto;
+}
+
+#scn-step {
+  font-size: 12px; letter-spacing: 1px;
+  color: #4fd2ff; opacity: .85; margin-bottom: 6px;
+}
+#scn-title {
+  font-size: 17px; font-weight: 700; color: #ffffff;
+  margin-bottom: 6px; min-height: 0;
+}
+#scn-title:empty { display: none; }
+#scn-text {
+  font-size: 14px; line-height: 1.7; color: #bfe2ff;
+  min-height: 44px; white-space: pre-wrap;
+}
+
+#scn-controls {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+#scn-controls button {
+  flex: 1 1 0;          /* 3ボタンを均等幅に統一 */
+  text-align: center;
+  background: rgba(0, 30, 60, 0.85);
+  border: 1px solid rgba(0, 200, 255, 0.4);
+  color: #7fdcff;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  padding: 9px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+#scn-controls button:hover {
+  background: rgba(0, 70, 130, 0.95);
+  border-color: rgba(0, 230, 255, 0.9);
+  color: #eaffff;
+}
+#scn-quit { color: #ff8aa0; border-color: rgba(255, 90, 110, 0.45); }
+
+/* デバッグパネル（§10） */
+#scn-debug {
+  position: fixed; left: 12px; top: 12px;
+  z-index: 60;
+  background: rgba(0, 10, 24, 0.92);
+  border: 1px solid rgba(0, 200, 255, 0.35);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #8fd6ff;
+  pointer-events: auto;
+  min-width: 168px;
+}
+.scn-dbg-row { display: flex; justify-content: space-between; gap: 12px; padding: 2px 0; }
+.scn-dbg-row span { opacity: .6; }
+.scn-dbg-row b { color: #d6f3ff; font-weight: 700; }
+.scn-dbg-jump { display: flex; gap: 4px; margin-top: 8px; align-items: center; }
+.scn-dbg-jump input { width: 48px; background: #001828; border: 1px solid #045; color: #cef; font-family: inherit; }
+.scn-dbg-jump button { background: #013; border: 1px solid #056; color: #8df; cursor: pointer; padding: 2px 6px; border-radius: 3px; }
+
+/* チュートリアル中：下側アイコンを上方へ退避（インラインstyleを!importantで上書き）。
+   相対配置を保ったまま全体を約180px持ち上げ、上部ウィンドウ（〜288px）と重ならない下寄り中段へ。 */
+#mode-btns-float, #hint-btn-float, #focus-btn-wrap,
+#misclick-guard-wrap, #search-btn-wrap { transition: bottom .3s ease; }
+body.scn-manual-active #mode-btns-float,
+body.scn-manual-active #focus-btn-wrap,
+body.scn-manual-active #misclick-guard-wrap,
+body.scn-manual-active #search-btn-wrap { bottom: 270px !important; }
+body.scn-manual-active #hint-btn-float { bottom: 344px !important; }
+
+/* ③ UI Animation（CSSアニメ・副作用ゼロ） */
+@keyframes scn-press { 0%,100% { transform: scale(1); } 45% { transform: scale(0.86); } }
+@keyframes scn-pulse { 0%,100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.12); filter: brightness(1.5); } }
+@keyframes scn-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+@keyframes scn-flash { 0%,100% { filter: brightness(1); } 50% { filter: brightness(2.2); box-shadow: 0 0 18px #4fd2ff; } }
+.scn-anim-press  { animation: scn-press .4s ease-in-out; }
+.scn-anim-pulse  { animation: scn-pulse .7s ease-in-out infinite; }
+.scn-anim-shake  { animation: scn-shake .4s ease-in-out; }
+.scn-anim-flash  { animation: scn-flash .6s ease-in-out infinite; }

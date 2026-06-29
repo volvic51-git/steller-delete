@@ -1,0 +1,72 @@
+{
+  "chapter": "基本操作",
+  "boardPreset": "basic01",
+  "steps": [
+    {
+      "action": "message",
+      "title": "ようこそ",
+      "text": "ステラ・デリートの基本操作を説明します。\n画面の球体がプレイ盤面です。ドラッグで回転できます。"
+    },
+    {
+      "action": "focusCell",
+      "row": 6, "col": 8,
+      "effect": { "zoom": 4.0 }
+    },
+    {
+      "action": "message",
+      "title": "マスを掘る",
+      "text": "まずは安全なマスを掘ってみましょう。\n光っているマスをクリックしてください。"
+    },
+    {
+      "action": "condition",
+      "type": "dig",
+      "row": 6, "col": 8,
+      "inputMode": "guided",
+      "onError": { "message": "光っているマスをクリックしてください", "flash": true }
+    },
+    {
+      "action": "message",
+      "title": "数字の意味",
+      "text": "開いたマスの数字は、まわり8マスにある地雷の数です。\n数字を手がかりに地雷を避けて掘り進めます。"
+    },
+    {
+      "action": "message",
+      "title": "旗を立てる",
+      "text": "地雷だと思うマスには旗を立てて目印にできます。\nまずは旗モードに切り替えましょう。"
+    },
+    {
+      "action": "highlightUI",
+      "target": "#float-btn-toggle",
+      "effect": { "color": "green" }
+    },
+    {
+      "action": "condition",
+      "type": "flag",
+      "row": 8, "col": 6,
+      "inputMode": "guided",
+      "mode": "flag",
+      "focus": { "zoom": 3.6 },
+      "effect": { "color": "red" },
+      "onError": { "message": "赤く光っているマスに旗を立ててください", "flash": true }
+    },
+    {
+      "action": "highlightUI",
+      "target": "#hint-btn-outer",
+      "title": "ヒント（オラクル）",
+      "text": "困ったときはオラクル。光っているアイコンを押すと、安全なマスへカメラが移動します。",
+      "effect": { "color": "cyan" }
+    },
+    {
+      "action": "call",
+      "fn": "giveHint",
+      "args": [],
+      "uiEffect": { "target": "#hint-btn-outer", "animation": "press" }
+    },
+    {
+      "action": "message",
+      "title": "クリア",
+      "text": "地雷以外をすべて処理すればクリアです。\nこれで基本操作の説明は終わりです。お疲れさまでした！"
+    },
+    { "action": "finish" }
+  ]
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ステラ・デリート — マニュアル動作確認</title>
+<style>
+  :root { --cy: #00ccff; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 30%, #06122a, #01060f 70%);
+    color: #cfeaff; font-family: 'Share Tech Mono', monospace;
+  }
+  .panel {
+    width: min(520px, 92vw);
+    padding: 32px 30px;
+    background: linear-gradient(180deg, rgba(8,14,30,0.96), rgba(4,8,20,0.97));
+    border: 1px solid rgba(0,200,255,0.45);
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(0,120,220,0.35), inset 0 0 20px rgba(0,60,120,0.25);
+  }
+  h1 { font-size: 20px; margin: 0 0 6px; color: #fff; letter-spacing: 1px; }
+  .sub { font-size: 12px; color: #4fd2ff; opacity: .8; margin-bottom: 22px; }
+  .row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+  a.launch {
+    display: block; text-decoration: none; text-align: center;
+    padding: 14px 16px; border-radius: 6px;
+    background: rgba(0,30,60,0.85); border: 1px solid rgba(0,200,255,0.4);
+    color: #7fdcff; font-size: 15px; transition: all .15s;
+  }
+  a.launch:hover { background: rgba(0,70,130,0.95); border-color: rgba(0,230,255,0.9); color: #eaffff; }
+  a.launch b { color: #fff; }
+  a.launch span { display: block; font-size: 11px; opacity: .7; margin-top: 4px; }
+  a.plain { color: #8fb8d8; }
+  .note {
+    font-size: 11px; line-height: 1.8; color: #7fa6c8;
+    border-top: 1px solid rgba(0,120,200,0.25); padding-top: 14px;
+  }
+  .note code { color: #9fe; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <h1>マニュアル動作確認</h1>
+    <div class="sub">Scenario Engine V1.0 — launcher</div>
+
+    <div class="row">
+      <a class="launch" href="sphere-minesweeper.html?manual=tutorial01">
+        ▶ <b>tutorial01 を起動</b>
+        <span>基本操作チュートリアル（自動で起動します）</span>
+      </a>
+      <a class="launch" href="sphere-minesweeper.html?manual=tutorial01&debug=1">
+        🛠 <b>tutorial01（デバッグ表示つき）</b>
+        <span>STEP / ACTION / FOCUS / 座標 / ZOOM パネルを表示</span>
+      </a>
+      <a class="launch plain" href="sphere-minesweeper.html">
+        ゲームのみ起動（❓ボタンから手動でマニュアル）
+      </a>
+    </div>
+
+    <div class="note">
+      ・URLに <code>?manual=&lt;シナリオ名&gt;</code> を付けると自動起動します（例 <code>?manual=tutorial01</code>）。<br>
+      ・シナリオは <code>manual/scenarios/&lt;名前&gt;.json</code> に追加できます。<br>
+      ・ゲーム本体内の <code>❓</code> ボタンでも起動できます。
+    </div>
+  </div>
+
+  <script>
+    // ?debug=1 が付いていたら、遷移先にも引き継ぐ（debugパラメータはゲーム側のdebugModeとは別系統のため、
+    // ここではリンクに直接 &debug=1 を含めている。将来ゲーム側でURL debug を解釈する場合に備えた余地）
+  </script>
+</body>
+</html>
