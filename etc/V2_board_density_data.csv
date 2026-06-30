@@ -1,0 +1,3 @@
+rows,cols,density_pct,mine_count,wrap,start,trials,solvable,success_rate_pct,avg_solver_ms,max_solver_ms,retry300_ok_pct,gen_version,measured_at,note
+72,144,18,1866,cyl,center,,,10,,,,1,,realtime可（平均約10試行で1枚）
+72,144,20,2073,cyl,center,,,0.3,,,,1,,Factory推奨（平均約333試行）
