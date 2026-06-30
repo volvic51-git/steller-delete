@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stellar Delete — Board Hunter</title>
+<style>
+  :root{ --bg:#0b0d17; --fg:#e6e9ff; --acc:#8844ff; --acc2:#aa66ff; --ok:#28d17c; --bd:#262a40; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; min-height:100vh; background:radial-gradient(circle at 50% -10%,#1a1f3a,#0b0d17 60%); color:var(--fg);
+        font-family:'Segoe UI',system-ui,sans-serif; display:flex; justify-content:center; padding:24px; }
+  .wrap{ width:100%; max-width:480px; }
+  h1{ font-size:22px; margin:0 0 2px; letter-spacing:.5px; }
+  .tag{ color:#9aa0c8; font-size:13px; margin-bottom:20px; }
+  .card{ background:rgba(20,24,44,.7); border:1px solid var(--bd); border-radius:14px; padding:20px; margin-bottom:16px;
+         box-shadow:0 8px 30px rgba(0,0,0,.3); }
+  .campaign{ font-size:13px; color:#9aa0c8; }
+  .campaign b{ color:#fff; }
+  .big{ font-size:15px; }
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0; }
+  .stat b{ display:block; font-size:30px; font-weight:700; color:#fff; line-height:1.1; }
+  .stat.found b{ color:var(--ok); }
+  .stat span{ font-size:12px; color:#9aa0c8; }
+  button{ width:100%; border:none; border-radius:10px; padding:15px; font-size:16px; font-weight:700; cursor:pointer; color:#fff; }
+  #toggle{ background:linear-gradient(90deg,var(--acc),var(--acc2)); }
+  #toggle.running{ background:linear-gradient(90deg,#d1452f,#ff6a4d); }
+  .sub{ display:flex; gap:10px; margin-top:12px; }
+  .sub button{ background:#1b2038; border:1px solid var(--bd); font-size:13px; padding:11px; font-weight:600; }
+  .sub button:disabled{ opacity:.4; cursor:not-allowed; }
+  select{ width:100%; background:#11152a; color:var(--fg); border:1px solid var(--bd); border-radius:8px; padding:10px; font-size:14px; margin-top:8px; }
+  .how{ font-size:13px; color:#9aa0c8; line-height:1.7; }
+  .how b{ color:#fff; }
+  .pill{ display:inline-block; background:#1b2038; border:1px solid var(--bd); border-radius:20px; padding:2px 10px; font-size:11px; color:#9aa0c8; }
+  a{ color:var(--acc2); }
+  .err{ color:#ff6a4d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛰️ Board Hunter</h1>
+  <div class="tag">Stellar Delete — 保証盤面さがしキャンペーン</div>
+
+  <div class="card">
+    <div class="campaign">いまの探索ターゲット</div>
+    <select id="campaign"></select>
+    <div id="campaignInfo" class="campaign big" style="margin-top:10px"></div>
+
+    <div class="stats">
+      <div class="stat found"><b id="found">0</b><span>みつけた保証盤面</span></div>
+      <div class="stat"><b id="attempts">0</b><span>試行回数</span></div>
+      <div class="stat"><b id="rate">–</b><span>成功率</span></div>
+      <div class="stat"><b id="elapsed">0:00</b><span>経過時間</span></div>
+    </div>
+
+    <button id="toggle">▶ 探索スタート</button>
+    <div class="sub">
+      <button id="save" disabled>結果を保存（送信用）</button>
+      <button id="copy" disabled>seedをコピー</button>
+    </div>
+    <div id="msg" class="campaign" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="how">
+      <b>あそびかた</b><br>
+      ① <b>探索スタート</b>を押して、あとは放置するだけ。<br>
+      ② 見つかった保証盤面の <span class="pill">seed</span> が自動でたまります。<br>
+      ③ ときどき <b>結果を保存</b> して、ファイルを開発者に送ってください。<br>
+      <br>
+      送るのは <b>seedの数字だけ</b>。盤面そのものは含まれず、開発者側が同じseedから
+      再生成して検証します。重いデータのやり取りは不要です。<br>
+      <span class="campaign">※ タブを開いたままにすると探索が進みます。閉じると止まります。</span>
+    </div>
+  </div>
+</div>
+
+<script src="solver.js"></script>
+<script>
+const TOOL_VERSION = "1.0.0";
+const $ = id => document.getElementById(id);
+
+// ============================================================
+//  キャンペーン定義（開発者が編集する箇所）
+//  全ユーザー共通の固定パラメータ。これが同じだから seed だけで再現できる。
+//  genVersion は地雷生成アルゴリズムのバージョン。ロジックを変えたら必ず上げる。
+// ============================================================
+const GEN_VERSION = "1";
+const CAMPAIGNS = [
+  { id:"C1-72x144-18", label:"特大 72×144 / 密度18%（円柱）",
+    rows:72, cols:144, density:0.18, wrap:"cyl", start:"center" },
+  { id:"C2-50x100-20", label:"大 50×100 / 密度20%（円柱）",
+    rows:50, cols:100, density:0.20, wrap:"cyl", start:"center" },
+  { id:"C3-30x60-22",  label:"中 30×60 / 密度22%（円柱）",
+    rows:30, cols:60, density:0.22, wrap:"cyl", start:"center" },
+];
+
+// ---- 決定論PRNG（開発者の再検証と完全一致させるための実装） ----
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function wrapFlags(w){ return { wrapCols:w==='cyl'||w==='torus', wrapRows:w==='torus' }; }
+
+function generateMines(rows, cols, mineCount, sr, sc, rng, wrapCols, wrapRows){
+  const exclude = new Set();
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    let nr=sr+dr, nc=sc+dc;
+    if(wrapRows) nr=((nr%rows)+rows)%rows; else if(nr<0||nr>=rows) continue;
+    if(wrapCols) nc=((nc%cols)+cols)%cols; else if(nc<0||nc>=cols) continue;
+    exclude.add(nr*cols+nc);
+  }
+  const actual = Math.min(mineCount, rows*cols - exclude.size);
+  const mineSet = new Set();
+  let placed=0, guard=0;
+  while(placed<actual && guard < actual*1000+100000){
+    guard++;
+    const r=Math.floor(rng()*rows), c=Math.floor(rng()*cols), k=r*cols+c;
+    if(!mineSet.has(k) && !exclude.has(k)){ mineSet.add(k); placed++; }
+  }
+  return mineSet;
+}
+
+// ---- 状態 ----
+let running=false, attempts=0, found=[], startMs=0, lastTick=0;
+let cur=null; // 現在キャンペーンの展開済みパラメータ
+
+function buildCampaignParams(c){
+  const sr = c.start==='center' ? Math.floor(c.rows/2) : c.start.r;
+  const sc = c.start==='center' ? Math.floor(c.cols/2) : c.start.c;
+  const mineCount = Math.round(c.rows*c.cols*c.density);
+  const { wrapCols, wrapRows } = wrapFlags(c.wrap);
+  return { ...c, sr, sc, mineCount, wrapCols, wrapRows };
+}
+
+function selectCampaign(){
+  const c = CAMPAIGNS.find(x=>x.id===$('campaign').value);
+  cur = buildCampaignParams(c);
+  $('campaignInfo').innerHTML =
+    `<b>${cur.rows}×${cur.cols}</b> ・ 地雷 <b>${cur.mineCount}</b>（${(cur.density*100).toFixed(0)}%）`+
+    ` ・ <span class="pill">${cur.id}</span>`;
+  resetStats();
+}
+function resetStats(){ attempts=0; found=[]; render(); $('save').disabled=true; $('copy').disabled=true; $('msg').textContent=''; }
+
+function oneAttempt(){
+  const seed = (Math.random()*4294967296) >>> 0;
+  const rng = mulberry32(seed);
+  const mineSet = generateMines(cur.rows, cur.cols, cur.mineCount, cur.sr, cur.sc, rng, cur.wrapCols, cur.wrapRows);
+  const numMap = StellerSolver.computeNeighborMines(cur.rows, cur.cols, (r,c)=>mineSet.has(r*cur.cols+c), cur.wrapCols, cur.wrapRows);
+  const cellAt = (r,c)=>({ isMine:mineSet.has(r*cur.cols+c), neighborMines:numMap.get(r*cur.cols+c) });
+  const solvable = StellerSolver.isSolvable({
+    rows:cur.rows, cols:cur.cols, mineCount:cur.mineCount,
+    wrapCols:cur.wrapCols, wrapRows:cur.wrapRows, start:{r:cur.sr,c:cur.sc}, cellAt
+  });
+  attempts++;
+  if(solvable) found.push(seed);
+}
+
+async function loop(){
+  startMs = startMs || performance.now();
+  let yieldAt = performance.now();
+  while(running){
+    oneAttempt();
+    const now = performance.now();
+    if(now - yieldAt > 40){ // 40msごとにUIへ譲る（放置でもタブが固まらない）
+      yieldAt = now; render();
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  render();
+}
+
+function render(){
+  $('found').textContent = found.length;
+  $('attempts').textContent = attempts.toLocaleString();
+  $('rate').textContent = attempts ? (found.length/attempts*100).toFixed(2)+'%' : '–';
+  const sec = Math.floor((performance.now()-(startMs||performance.now()))/1000);
+  $('elapsed').textContent = Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');
+  const has = found.length>0;
+  $('save').disabled = !has; $('copy').disabled = !has;
+}
+
+function toggle(){
+  running = !running;
+  $('toggle').textContent = running ? '■ 停止' : '▶ 探索スタート';
+  $('toggle').classList.toggle('running', running);
+  $('campaign').disabled = running;
+  if(running){ if(!startMs) startMs=performance.now(); loop(); }
+}
+
+// ---- 出力（seedのみ） ----
+function buildResult(){
+  return {
+    tool:"board-hunter", toolVersion:TOOL_VERSION,
+    campaignId:cur.id, genVersion:GEN_VERSION,
+    params:{ rows:cur.rows, cols:cur.cols, density:cur.density, mineCount:cur.mineCount,
+             wrap:cur.wrap, start:{r:cur.sr,c:cur.sc} },
+    startedAt:new Date(Date.now()-(performance.now()-startMs)).toISOString(),
+    reportedAt:new Date().toISOString(),
+    attempts, foundCount:found.length, seeds:found,
+    client:{ userAgent:navigator.userAgent }
+  };
+}
+function download(name, text, type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function save(){
+  const stamp = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  download(`boardhunter_${cur.id}_${stamp}.json`, JSON.stringify(buildResult(),null,2), 'application/json');
+  $('msg').innerHTML = '保存しました。このファイルを開発者に送ってください 🙏';
+}
+async function copySeeds(){
+  const txt = found.join('\n');
+  try{ await navigator.clipboard.writeText(txt); $('msg').textContent = `seed ${found.length}件をコピーしました。`; }
+  catch(e){ $('msg').innerHTML = '<span class="err">コピーに失敗。「結果を保存」を使ってください。</span>'; }
+}
+
+// ---- 初期化 ----
+if(typeof StellerSolver==='undefined'){
+  $('campaignInfo').innerHTML = '<span class="err">solver.js が読み込めません。ファイル一式を同じフォルダに置いてください。</span>';
+  $('toggle').disabled = true;
+}else{
+  CAMPAIGNS.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.label; $('campaign').appendChild(o); });
+  $('campaign').onchange = selectCampaign;
+  selectCampaign();
+  $('toggle').onclick = toggle;
+  $('save').onclick = save;
+  $('copy').onclick = copySeeds;
+  setInterval(()=>{ if(running) render(); }, 1000); // 経過時間の表示更新
+}
+</script>
+</body>
+</html>
