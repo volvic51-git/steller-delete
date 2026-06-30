@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board Benchmark — Steller Solver 実測</title>
+<style>
+  :root { --bg:#0d1117; --fg:#c9d1d9; --acc:#8844ff; --ok:#00cc66; --ng:#ff5555; --bd:#30363d; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:'Segoe UI',system-ui,sans-serif; font-size:14px; padding:20px; }
+  h1 { font-size:18px; margin:0 0 4px; }
+  .sub { color:#8b949e; font-size:12px; margin-bottom:16px; }
+  fieldset { border:1px solid var(--bd); border-radius:8px; padding:14px 16px; margin-bottom:16px; }
+  legend { color:var(--acc); font-weight:600; padding:0 6px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+  label { display:block; font-size:12px; color:#8b949e; margin-bottom:4px; }
+  input, select { width:100%; background:#161b22; color:var(--fg); border:1px solid var(--bd); border-radius:6px; padding:6px 8px; font-size:13px; }
+  input:focus, select:focus { outline:none; border-color:var(--acc); }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+  button { background:var(--acc); color:#fff; border:none; border-radius:6px; padding:8px 16px; font-size:13px; cursor:pointer; font-weight:600; }
+  button:hover { filter:brightness(1.1); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button.sec { background:#21262d; border:1px solid var(--bd); }
+  #progress { height:8px; background:#161b22; border-radius:4px; overflow:hidden; margin:12px 0; border:1px solid var(--bd); }
+  #bar { height:100%; width:0; background:linear-gradient(90deg,var(--acc),#aa66ff); transition:width .1s; }
+  .stat { display:inline-block; min-width:140px; margin:4px 14px 4px 0; }
+  .stat b { display:block; font-size:20px; color:#fff; }
+  .stat span { font-size:11px; color:#8b949e; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; font-size:12px; }
+  th, td { text-align:right; padding:4px 8px; border-bottom:1px solid var(--bd); }
+  th { color:#8b949e; font-weight:500; position:sticky; top:0; background:var(--bg); }
+  .tbl-wrap { max-height:300px; overflow:auto; border:1px solid var(--bd); border-radius:6px; margin-top:10px; }
+  .ok { color:var(--ok); } .ng { color:var(--ng); }
+  code { background:#161b22; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .note { font-size:11px; color:#6e7681; margin-top:6px; }
+</style>
+</head>
+<body>
+<h1>Board Benchmark <span style="color:#6e7681;font-size:13px;">— Steller Solver 実測ツール</span></h1>
+<div class="sub">
+  Board JSON を決定論PRNGで生成 → <code>js/solver.js</code> で完全シミュレーション判定 → 統計を取得・CSV/JSON出力。
+  docs/20-BoardFormat.md / 00-Architecture.md 準拠。
+</div>
+
+<fieldset>
+  <legend>盤面・試行条件</legend>
+  <div class="grid">
+    <div><label>行数 rows (1–72)</label><input id="rows" type="number" min="1" max="72" value="20"></div>
+    <div><label>列数 cols (1–144)</label><input id="cols" type="number" min="1" max="144" value="30"></div>
+    <div><label>地雷密度 (%)</label><input id="density" type="number" min="0" max="90" step="0.5" value="20"></div>
+    <div><label>地雷数（直接指定・優先）</label><input id="mineCount" type="number" min="0" placeholder="空欄なら密度から算出"></div>
+    <div><label>試行回数</label><input id="trials" type="number" min="1" max="100000" value="100"></div>
+    <div><label>開始セル r,c（空欄=中央）</label><input id="start" type="text" placeholder="例 10,15"></div>
+    <div>
+      <label>隣接ルール</label>
+      <select id="wrap">
+        <option value="cyl" selected>円柱（列ラップ）</option>
+        <option value="rect">通常矩形</option>
+        <option value="torus">トーラス（両ラップ）</option>
+      </select>
+    </div>
+    <div>
+      <label>Seed</label>
+      <div class="row">
+        <select id="seedMode" style="flex:1">
+          <option value="random" selected>ランダム</option>
+          <option value="fixed">固定</option>
+        </select>
+        <input id="seed" type="number" placeholder="基準seed" style="flex:1">
+      </div>
+    </div>
+  </div>
+  <div class="note">最大 72×144 = 10,368 セル。大盤面では1試行に時間がかかる場合があります。</div>
+  <div class="row" style="margin-top:12px">
+    <button id="run">▶ 実測開始</button>
+    <button id="stop" class="sec" disabled>■ 停止</button>
+    <button id="sampleBoard" class="sec">サンプルBoard JSONを出力</button>
+  </div>
+</fieldset>
+
+<div id="progress"><div id="bar"></div></div>
+
+<fieldset>
+  <legend>結果</legend>
+  <div id="summary"><span style="color:#6e7681">未実行</span></div>
+  <div class="row" style="margin-top:10px">
+    <button id="exportCsv" class="sec" disabled>CSV保存</button>
+    <button id="exportJson" class="sec" disabled>JSON保存</button>
+  </div>
+  <div class="tbl-wrap">
+    <table id="tbl">
+      <thead><tr><th>#</th><th>seed</th><th>rows</th><th>cols</th><th>mines</th><th>密度%</th><th>判定</th><th>solver ms</th><th>生成 ms</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</fieldset>
+
+<script src="../js/solver.js"></script>
+<script>
+const GEN_VERSION = "1";
+const $ = id => document.getElementById(id);
+
+// ---- 決定論PRNG（mulberry32）: seed + genVersion で同一盤面を再現 ----
+function mulberry32(seed){
+  let a = seed >>> 0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function wrapFlags(){
+  const v = $('wrap').value;
+  return { wrapCols: v==='cyl'||v==='torus', wrapRows: v==='torus' };
+}
+
+// ---- 地雷生成（開始セル3x3除外・ラップ対応） ----
+function generateMines(rows, cols, mineCount, sr, sc, rng, wrapCols, wrapRows){
+  const exclude = new Set();
+  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+    let nr=sr+dr, nc=sc+dc;
+    if(wrapRows) nr=((nr%rows)+rows)%rows; else if(nr<0||nr>=rows) continue;
+    if(wrapCols) nc=((nc%cols)+cols)%cols; else if(nc<0||nc>=cols) continue;
+    exclude.add(nr*cols+nc);
+  }
+  const maxMines = rows*cols - exclude.size;
+  const actual = Math.min(mineCount, maxMines);
+  const mineSet = new Set();
+  let placed=0, guard=0;
+  while(placed<actual && guard < actual*1000+100000){
+    guard++;
+    const r=Math.floor(rng()*rows), c=Math.floor(rng()*cols), k=r*cols+c;
+    if(!mineSet.has(k) && !exclude.has(k)){ mineSet.add(k); placed++; }
+  }
+  return mineSet;
+}
+
+// ---- Board JSON 構築（20-BoardFormat.md 準拠） ----
+function buildBoardJSON(rows, cols, mineSet, startCells, seed){
+  const mines = [...mineSet].map(k=>({ r:Math.floor(k/cols), c:k%cols }))
+    .sort((a,b)=> a.r-b.r || a.c-b.c);
+  const starts = startCells.map(s=>({r:s.r,c:s.c})).sort((a,b)=> a.r-b.r || a.c-b.c);
+  return {
+    formatVersion: 1,
+    identity: { resourceId: (crypto.randomUUID?crypto.randomUUID():'LOCAL-'+seed), displayId: null, parentId: null },
+    board: { rows, cols, mines, startCells: starts /*, hash は出力時のみ計算 */ },
+    provenance: { createdBy:"factory", createdAt:new Date().toISOString(), createdWith:"board-benchmark", toolVersion:"0.9.0" },
+    meta: { seed, genVersion: GEN_VERSION }
+  };
+}
+
+// board 正規形 → SHA-256（サンプル出力時のみ・async）
+async function boardHash(b){
+  const mines = b.mines.map(m=>m.r+','+m.c).join(';');
+  const start = b.startCells.map(s=>s.r+','+s.c).join(';');
+  const canon = `v1|rows=${b.rows}|cols=${b.cols}|mines=${mines}|start=${start}`;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canon));
+  return 'sha256:'+[...new Uint8Array(buf)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// Board JSON を読込んで solver 入力アダプタにする
+function loadBoardForSolver(boardJson, wrapCols, wrapRows){
+  const { rows, cols, mines } = boardJson.board;
+  const mineSet = new Set(mines.map(m=>m.r*cols+m.c));
+  const numMap = StellerSolver.computeNeighborMines(rows, cols, (r,c)=>mineSet.has(r*cols+c), wrapCols, wrapRows);
+  const cellAt = (r,c)=>({ isMine:mineSet.has(r*cols+c), neighborMines:numMap.get(r*cols+c) });
+  return { rows, cols, cellAt };
+}
+
+// ---- 実測ループ ----
+let running=false, results=[], runMeta=null;
+
+function readConfig(){
+  const rows=Math.min(72,Math.max(1,+$('rows').value||1));
+  const cols=Math.min(144,Math.max(1,+$('cols').value||1));
+  const density=Math.max(0,+$('density').value||0)/100;
+  const mcRaw=$('mineCount').value.trim();
+  const mineCount = mcRaw!=='' ? Math.max(0,Math.floor(+mcRaw)) : Math.round(rows*cols*density);
+  const trials=Math.min(100000,Math.max(1,Math.floor(+$('trials').value||1)));
+  let sr=Math.floor(rows/2), sc=Math.floor(cols/2);
+  const st=$('start').value.trim();
+  if(st){ const m=st.split(',').map(x=>parseInt(x.trim(),10)); if(m.length===2&&!isNaN(m[0])&&!isNaN(m[1])){ sr=m[0]; sc=m[1]; } }
+  const { wrapCols, wrapRows } = wrapFlags();
+  const seedMode=$('seedMode').value;
+  const baseSeed = $('seed').value.trim()!=='' ? Math.floor(+$('seed').value) : (Date.now()>>>0);
+  return { rows, cols, mineCount, density:mineCount/(rows*cols), trials, sr, sc, wrapCols, wrapRows, seedMode, baseSeed,
+           wrapLabel:$('wrap').value };
+}
+
+async function runBenchmark(){
+  const cfg = readConfig();
+  results = [];
+  running = true;
+  $('run').disabled=true; $('stop').disabled=false; $('exportCsv').disabled=true; $('exportJson').disabled=true;
+  $('tbl').querySelector('tbody').innerHTML='';
+  const startedAt = new Date().toISOString();
+  const t0 = performance.now();
+  let lastYield = t0;
+
+  for(let i=0; i<cfg.trials && running; i++){
+    const seed = cfg.seedMode==='fixed' ? (cfg.baseSeed + i) : ((Math.random()*4294967296)>>>0);
+    const rng = mulberry32(seed);
+
+    const ga = performance.now();
+    const mineSet = generateMines(cfg.rows, cfg.cols, cfg.mineCount, cfg.sr, cfg.sc, rng, cfg.wrapCols, cfg.wrapRows);
+    const boardJson = buildBoardJSON(cfg.rows, cfg.cols, mineSet, [{r:cfg.sr,c:cfg.sc}], seed);
+    const view = loadBoardForSolver(boardJson, cfg.wrapCols, cfg.wrapRows);
+    const genMs = performance.now()-ga;
+
+    const sa = performance.now();
+    const solvable = StellerSolver.isSolvable({
+      rows:view.rows, cols:view.cols, mineCount:cfg.mineCount,
+      wrapCols:cfg.wrapCols, wrapRows:cfg.wrapRows,
+      start:{r:cfg.sr,c:cfg.sc}, cellAt:view.cellAt
+    });
+    const solverMs = performance.now()-sa;
+
+    results.push({ trial:i+1, seed, rows:cfg.rows, cols:cfg.cols, mines:mineSet.size,
+                   density:+(mineSet.size/(cfg.rows*cfg.cols)*100).toFixed(2), solvable, solverMs:+solverMs.toFixed(3), genMs:+genMs.toFixed(3) });
+
+    // 時間ベースで UI を譲る（~50msごと）。試行数ベースより setTimeout 呼び出しが激減し
+    // バックグラウンドタブのスロットリングにも強い。
+    const now = performance.now();
+    if(now - lastYield > 50 || i===cfg.trials-1){
+      lastYield = now;
+      updateProgress((i+1)/cfg.trials);
+      updateSummary(cfg, startedAt, null);
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+
+  const finishedAt = new Date().toISOString();
+  const totalMs = performance.now()-t0;
+  runMeta = { config:cfg, startedAt, finishedAt, wallClockMs:+totalMs.toFixed(1) };
+  running=false;
+  $('run').disabled=false; $('stop').disabled=true;
+  $('exportCsv').disabled=false; $('exportJson').disabled=false;
+  updateProgress(1);
+  updateSummary(cfg, startedAt, finishedAt);
+  renderTable();
+}
+
+function summarize(){
+  const n=results.length;
+  const ok=results.filter(r=>r.solvable).length;
+  const times=results.map(r=>r.solverMs);
+  const sum=times.reduce((a,b)=>a+b,0);
+  return {
+    trials:n, solvableCount:ok, failCount:n-ok,
+    successRate: n? +(ok/n*100).toFixed(2):0,
+    solverMs:{ min:n?+Math.min(...times).toFixed(3):0, max:n?+Math.max(...times).toFixed(3):0,
+               avg:n?+(sum/n).toFixed(3):0, total:+sum.toFixed(1) }
+  };
+}
+
+function updateSummary(cfg, startedAt, finishedAt){
+  const s=summarize();
+  $('summary').innerHTML =
+    `<div class="stat"><b>${s.trials}</b><span>試行回数</span></div>`+
+    `<div class="stat"><b class="ok">${s.solvableCount}</b><span>保証成立（solvable）</span></div>`+
+    `<div class="stat"><b>${s.successRate}%</b><span>成功率</span></div>`+
+    `<div class="stat"><b>${s.solverMs.avg} ms</b><span>solver 平均</span></div>`+
+    `<div class="stat"><b>${s.solverMs.min} / ${s.solverMs.max} ms</b><span>solver 最小/最大</span></div>`+
+    `<div class="stat"><b>${cfg.rows}×${cfg.cols}</b><span>盤面 (${cfg.mineCount}地雷 / ${(cfg.density*100).toFixed(1)}%)</span></div>`+
+    `<div class="note">開始: ${startedAt}　終了: ${finishedAt||'(実行中…)'}</div>`;
+}
+
+function renderTable(){
+  const tb=$('tbl').querySelector('tbody');
+  const frag=document.createDocumentFragment();
+  // 直近500行のみ描画（巨大試行でDOM爆発を防ぐ）
+  const rows = results.slice(-500);
+  for(const r of rows){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.trial}</td><td>${r.seed}</td><td>${r.rows}</td><td>${r.cols}</td><td>${r.mines}</td>`+
+      `<td>${r.density}</td><td class="${r.solvable?'ok':'ng'}">${r.solvable?'OK':'NG'}</td>`+
+      `<td>${r.solverMs}</td><td>${r.genMs}</td>`;
+    frag.appendChild(tr);
+  }
+  tb.innerHTML=''; tb.appendChild(frag);
+  if(results.length>500){
+    const note=document.createElement('tr');
+    note.innerHTML=`<td colspan="9" style="text-align:center;color:#6e7681">…直近500行を表示（全${results.length}行はCSV/JSONに含まれます）</td>`;
+    tb.insertBefore(note, tb.firstChild);
+  }
+}
+
+function updateProgress(p){ $('bar').style.width=(p*100).toFixed(1)+'%'; }
+
+// ---- エクスポート ----
+function download(name, text, type){
+  const blob=new Blob([text],{type}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function stamp(){ return new Date().toISOString().replace(/[:.]/g,'-').slice(0,19); }
+
+function exportCsv(){
+  const head='trial,seed,rows,cols,mines,density_pct,solvable,solver_ms,gen_ms';
+  const body=results.map(r=>[r.trial,r.seed,r.rows,r.cols,r.mines,r.density,r.solvable?1:0,r.solverMs,r.genMs].join(',')).join('\n');
+  download(`benchmark_${stamp()}.csv`, head+'\n'+body, 'text/csv');
+}
+function exportJson(){
+  const out={ tool:"board-benchmark", genVersion:GEN_VERSION, ...runMeta, summary:summarize(), trials:results };
+  download(`benchmark_${stamp()}.json`, JSON.stringify(out,null,2), 'application/json');
+}
+
+async function exportSampleBoard(){
+  const cfg=readConfig();
+  const seed = cfg.seedMode==='fixed'? cfg.baseSeed : ((Math.random()*4294967296)>>>0);
+  const rng=mulberry32(seed);
+  const mineSet=generateMines(cfg.rows,cfg.cols,cfg.mineCount,cfg.sr,cfg.sc,rng,cfg.wrapCols,cfg.wrapRows);
+  const b=buildBoardJSON(cfg.rows,cfg.cols,mineSet,[{r:cfg.sr,c:cfg.sc}],seed);
+  b.board.hash = await boardHash(b.board);
+  download(`board_${seed}.json`, JSON.stringify(b,null,2), 'application/json');
+}
+
+// ---- bind ----
+$('run').onclick = ()=>{ if(!running) runBenchmark(); };
+$('stop').onclick = ()=>{ running=false; };
+$('exportCsv').onclick = exportCsv;
+$('exportJson').onclick = exportJson;
+$('sampleBoard').onclick = exportSampleBoard;
+
+// 起動時チェック
+if(typeof StellerSolver==='undefined'){
+  $('summary').innerHTML='<span class="ng">js/solver.js が読み込めません（../js/solver.js を確認）。</span>';
+  $('run').disabled=true;
+}
+</script>
+</body>
+</html>
