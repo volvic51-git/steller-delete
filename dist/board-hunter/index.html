@@ -7,49 +7,59 @@
 <style>
   :root{ --bg:#0b0d17; --fg:#e6e9ff; --acc:#8844ff; --acc2:#aa66ff; --ok:#28d17c; --bd:#262a40; }
   *{ box-sizing:border-box; }
-  body{ margin:0; min-height:100vh; background:radial-gradient(circle at 50% -10%,#1a1f3a,#0b0d17 60%); color:var(--fg);
-        font-family:'Segoe UI',system-ui,sans-serif; display:flex; justify-content:center; padding:24px; }
-  .wrap{ width:100%; max-width:480px; }
-  h1{ font-size:22px; margin:0 0 2px; letter-spacing:.5px; }
-  .tag{ color:#9aa0c8; font-size:13px; margin-bottom:20px; }
-  .card{ background:rgba(20,24,44,.7); border:1px solid var(--bd); border-radius:14px; padding:20px; margin-bottom:16px;
-         box-shadow:0 8px 30px rgba(0,0,0,.3); }
-  .campaign{ font-size:13px; color:#9aa0c8; }
+  html,body{ height:100%; }
+  body{ margin:0; background:radial-gradient(circle at 50% -10%,#1a1f3a,#0b0d17 60%); color:var(--fg);
+        font-family:'Segoe UI',system-ui,sans-serif; display:flex; justify-content:center; align-items:center;
+        padding:10px; overflow:hidden; }
+  .wrap{ width:100%; max-width:600px; max-height:460px; display:flex; flex-direction:column; gap:8px; }
+  .head{ display:flex; align-items:baseline; gap:8px; }
+  h1{ font-size:18px; margin:0; letter-spacing:.5px; }
+  .tag{ color:#9aa0c8; font-size:11px; }
+  .card{ background:rgba(20,24,44,.7); border:1px solid var(--bd); border-radius:12px; padding:12px 14px;
+         box-shadow:0 6px 20px rgba(0,0,0,.3); }
+  .campaign{ font-size:12px; color:#9aa0c8; }
   .campaign b{ color:#fff; }
-  .big{ font-size:15px; }
-  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0; }
-  .stat b{ display:block; font-size:30px; font-weight:700; color:#fff; line-height:1.1; }
+  .row1{ display:flex; gap:10px; align-items:center; }
+  .row1 select{ flex:1; }
+  #campaignInfo{ font-size:12px; white-space:nowrap; }
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0; text-align:center; }
+  .stat{ background:#11152a; border:1px solid var(--bd); border-radius:8px; padding:8px 4px; }
+  .stat b{ display:block; font-size:22px; font-weight:700; color:#fff; line-height:1.1; }
   .stat.found b{ color:var(--ok); }
-  .stat span{ font-size:12px; color:#9aa0c8; }
-  button{ width:100%; border:none; border-radius:10px; padding:15px; font-size:16px; font-weight:700; cursor:pointer; color:#fff; }
+  .stat span{ font-size:10px; color:#9aa0c8; }
+  button{ width:100%; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:700; cursor:pointer; color:#fff; }
   #toggle{ background:linear-gradient(90deg,var(--acc),var(--acc2)); }
   #toggle.running{ background:linear-gradient(90deg,#d1452f,#ff6a4d); }
-  .sub{ display:flex; gap:10px; margin-top:12px; }
-  .sub button{ background:#1b2038; border:1px solid var(--bd); font-size:13px; padding:11px; font-weight:600; }
+  .sub{ display:flex; gap:8px; margin-top:8px; }
+  .sub button{ background:#1b2038; border:1px solid var(--bd); font-size:12px; padding:9px; font-weight:600; }
   .sub button:disabled{ opacity:.4; cursor:not-allowed; }
-  select{ width:100%; background:#11152a; color:var(--fg); border:1px solid var(--bd); border-radius:8px; padding:10px; font-size:14px; margin-top:8px; }
-  .how{ font-size:13px; color:#9aa0c8; line-height:1.7; }
+  select{ background:#11152a; color:var(--fg); border:1px solid var(--bd); border-radius:8px; padding:8px; font-size:13px; }
+  #msg{ font-size:11px; min-height:14px; margin-top:6px; }
+  .how{ font-size:11px; color:#9aa0c8; line-height:1.5; }
   .how b{ color:#fff; }
-  .pill{ display:inline-block; background:#1b2038; border:1px solid var(--bd); border-radius:20px; padding:2px 10px; font-size:11px; color:#9aa0c8; }
+  .pill{ display:inline-block; background:#1b2038; border:1px solid var(--bd); border-radius:20px; padding:1px 8px; font-size:10px; color:#9aa0c8; }
   a{ color:var(--acc2); }
   .err{ color:#ff6a4d; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>🛰️ Board Hunter</h1>
-  <div class="tag">Stellar Delete — 保証盤面さがしキャンペーン</div>
+  <div class="head">
+    <h1>🛰️ Board Hunter</h1>
+    <span class="tag">Stellar Delete — 保証盤面さがし</span>
+  </div>
 
   <div class="card">
-    <div class="campaign">いまの探索ターゲット</div>
-    <select id="campaign"></select>
-    <div id="campaignInfo" class="campaign big" style="margin-top:10px"></div>
+    <div class="row1">
+      <select id="campaign"></select>
+      <div id="campaignInfo" class="campaign"></div>
+    </div>
 
     <div class="stats">
-      <div class="stat found"><b id="found">0</b><span>みつけた保証盤面</span></div>
-      <div class="stat"><b id="attempts">0</b><span>試行回数</span></div>
+      <div class="stat found"><b id="found">0</b><span>みつけた</span></div>
+      <div class="stat"><b id="attempts">0</b><span>試行</span></div>
       <div class="stat"><b id="rate">–</b><span>成功率</span></div>
-      <div class="stat"><b id="elapsed">0:00</b><span>経過時間</span></div>
+      <div class="stat"><b id="elapsed">0:00</b><span>経過</span></div>
     </div>
 
     <button id="toggle">▶ 探索スタート</button>
@@ -57,19 +67,13 @@
       <button id="save" disabled>結果を保存（送信用）</button>
       <button id="copy" disabled>seedをコピー</button>
     </div>
-    <div id="msg" class="campaign" style="margin-top:10px"></div>
+    <div id="msg" class="campaign"></div>
   </div>
 
   <div class="card">
     <div class="how">
-      <b>あそびかた</b><br>
-      ① <b>探索スタート</b>を押して、あとは放置するだけ。<br>
-      ② 見つかった保証盤面の <span class="pill">seed</span> が自動でたまります。<br>
-      ③ ときどき <b>結果を保存</b> して、ファイルを開発者に送ってください。<br>
-      <br>
-      送るのは <b>seedの数字だけ</b>。盤面そのものは含まれず、開発者側が同じseedから
-      再生成して検証します。重いデータのやり取りは不要です。<br>
-      <span class="campaign">※ タブを開いたままにすると探索が進みます。閉じると止まります。</span>
+      <b>あそびかた</b>　① <b>スタート</b>を押して放置　② 見つかった <span class="pill">seed</span> が自動でたまる　③ ときどき <b>結果を保存</b>して開発者に送る<br>
+      送るのは <b>seedの数字だけ</b>（盤面は含まない）。開発者が同じseedから再生成して検証します。<span class="campaign">※タブを開いている間だけ探索が進みます。</span>
     </div>
   </div>
 </div>
