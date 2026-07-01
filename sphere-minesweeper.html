@@ -2702,6 +2702,39 @@ function isSafeguardedCell(row,col){
   return neighbors.every(n => n.isRemoved || (!n.isOpen && !n.hasFlag));
 }
 
+// ===================== REPLAY RECORDER（操作ログ記録・共通インフラ）=====================
+// リプレイ(Stage3)と中断・再開(Stage4)の土台。
+// ゲーム開始時に盤面の身元（window._boardGen）を固定し、以降の入力操作を時刻付きで記録する。
+// 記録は「入力レベル」（プレイヤーが押した dig/flag）。決定論生成＋決定論ゲーム進行の前提で、
+// 同じ身元＋同じ操作列を再適用すれば同じ結果になる（＝リプレイ／中断復元）。
+// ※現状フックは dig / flag のみ。search/hint など盤面状態を変える入力は、
+//   Stage3(リプレイ)を忠実化する前に順次フックする（TODO: replay-fidelity）。
+let _replay = null;
+
+// ゲーム開始時に呼ぶ：盤面の身元を固定し、操作ログを開始する。
+function replayReset(){
+  const g = window._boardGen || {};
+  _replay = {
+    genVersion: g.genVersion ?? null,
+    seed: g.seed ?? null,
+    start: g.start ? { r:g.start.r, c:g.start.c } : null,
+    rows: g.rows ?? ROWS, cols: g.cols ?? COLS,
+    mineCount: g.mineCount ?? mineCount, wrap: g.wrap || 'cyl',
+    startedAt: new Date().toISOString(),
+    startMs: performance.now(),
+    actions: []
+  };
+}
+
+// 入力操作を記録する（playing 中のみ）。t はゲーム開始からの経過ms。
+function replayRecord(action, row, col){
+  if(!_replay || gameState!=='playing') return;
+  _replay.actions.push({ a: action, r: row, c: col, t: Math.round(performance.now() - _replay.startMs) });
+}
+
+// シリアライズ可能なスナップショットを返す（Stage3/4 で localStorage 保存等に使う）。
+function replaySnapshot(){ return _replay ? JSON.parse(JSON.stringify(_replay)) : null; }
+
 function handleCellAction(row,col,action){
   if(gameState==='playing' && misclickGuard){
     const cell = board[row][col];
@@ -2717,11 +2750,12 @@ function handleCellAction(row,col,action){
     // 全経路共通の後処理：盤面確定後に playing へ遷移し、初手を実行する。
     const finishFirstAction = ()=>{
       gameState='playing';
+      replayReset();                 // 盤面の身元を固定し操作ログを開始（初手より前）
       startTimer();
       calcTotalNonMineCells();
       autoEnableMisclickGuard();
-      if(action==='dig') digCell(row,col);
-      else if(action==='flag') flagCell(row,col);
+      if(action==='dig'){ replayRecord('dig',row,col); digCell(row,col); }
+      else if(action==='flag'){ replayRecord('flag',row,col); flagCell(row,col); }
       updateStats();
       if(debugMode) runSolverDebug();
     };
@@ -2744,8 +2778,8 @@ function handleCellAction(row,col,action){
     }
     return; // idle の処理は finishFirstAction で完結（以降の共通処理は playing 中の操作用）
   }
-  if(action==='dig') digCell(row,col);
-  else if(action==='flag') flagCell(row,col);
+  if(action==='dig'){ replayRecord('dig',row,col); digCell(row,col); }
+  else if(action==='flag'){ replayRecord('flag',row,col); flagCell(row,col); }
   updateStats();
   if(debugMode) runSolverDebug();
 }
