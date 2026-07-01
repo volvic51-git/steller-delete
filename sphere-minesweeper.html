@@ -1623,6 +1623,7 @@ function triggerSearchButton(){
   });
   const target = tAdj||tAll;
   if(!target) return;
+  replayRecord('search', target.row, target.col); // リプレイ用（盤面は変えないがレーダー演出の再現に使う）
   _radarTarget   = target;
   _radarActive   = true;
   _radarProgress = 0;
@@ -2440,6 +2441,7 @@ function giveHint(){
   }
   if(!target) return;
   hintCount++;
+  replayRecord('hint', target.row, target.col); // リプレイ用（盤面は変えないがhintCount/演出の再現に使う）
   const statHints=document.getElementById('stat-hints'); if(statHints) statHints.textContent=hintCount;
   updateHintGauge();
   hintTarget=target; hintAnimTime=0;
@@ -2714,10 +2716,10 @@ function isSafeguardedCell(row,col){
 // ===================== REPLAY RECORDER（操作ログ記録・共通インフラ）=====================
 // リプレイ(Stage3)と中断・再開(Stage4)の土台。
 // ゲーム開始時に盤面の身元（window._boardGen）を固定し、以降の入力操作を時刻付きで記録する。
-// 記録は「入力レベル」（プレイヤーが押した dig/flag）。決定論生成＋決定論ゲーム進行の前提で、
-// 同じ身元＋同じ操作列を再適用すれば同じ結果になる（＝リプレイ／中断復元）。
-// ※現状フックは dig / flag のみ。search/hint など盤面状態を変える入力は、
-//   Stage3(リプレイ)を忠実化する前に順次フックする（TODO: replay-fidelity）。
+// 記録は「入力レベル」（プレイヤーが押した dig/flag/hint/search）。決定論生成＋決定論ゲーム進行の
+// 前提で、同じ身元＋同じ操作列を再適用すれば同じ結果になる（＝リプレイ／中断復元）。
+// dig/flag=盤面を変える。hint/search=盤面は変えない補助（hintCount/演出の再現用）。
+// → リプレイ再生では全種を再適用、中断復元では dig/flag のみ再適用（盤面のみ復元・hintCountはmetaで復元）。
 let _replay = null;
 
 // ゲーム開始時に呼ぶ：盤面の身元を固定し、操作ログを開始する。
@@ -2814,6 +2816,7 @@ function startReplay(record, opts){
   ROWS = b.rows; COLS = b.cols; mineCount = b.mineCount;
   clearInterval(timerInterval);
   removedMines = 0; hintCount = 0; misclickGuard = false;
+  maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
   updateStats();
@@ -2830,6 +2833,8 @@ function startReplay(record, opts){
       if(!_replayMode) return;
       if(a.a==='dig') digCell(a.r, a.c);
       else if(a.a==='flag') flagCell(a.r, a.c);
+      else if(a.a==='hint') giveHint();                                   // ヒント演出＋hintCountを再現
+      else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
     }, acc));
   });
   _replayTimers.push(setTimeout(()=>{ _replayMode=false; console.info(`Replay終了: ${record.actions.length}手 (${record.result})`); }, acc + 200));
