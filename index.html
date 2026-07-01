@@ -957,6 +957,14 @@
       <span class="pulse-ring"></span>
     </button>
 
+    <button class="menu-btn" id="resume-btn" style="display:none;color:#aaff44;border-color:rgba(150,255,0,.5);">
+      RESUME
+    </button>
+
+    <button class="menu-btn" id="replay-btn">
+      REPLAY
+    </button>
+
     <button class="menu-btn" id="auction-btn" disabled aria-disabled="true">
       AUCTION
     </button>
@@ -1048,6 +1056,17 @@
     <div class="modal-btns">
       <button class="modal-btn" id="save-reset-cancel">CANCEL</button>
       <button class="modal-btn danger" id="save-reset-confirm">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- REPLAY一覧モーダル -->
+<div id="replay-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+  <div class="modal-box" style="max-width:min(440px,92vw);width:100%;">
+    <div class="modal-msg" style="font-family:'Orbitron',sans-serif;letter-spacing:.2em;color:#00ffff;margin-bottom:10px;">REPLAY</div>
+    <div id="replay-list" style="max-height:52vh;overflow:auto;"></div>
+    <div class="modal-btns" style="margin-top:10px;">
+      <button class="modal-btn" id="replay-close">CLOSE</button>
     </div>
   </div>
 </div>
@@ -1571,6 +1590,51 @@ document.getElementById('save-reset-confirm').addEventListener('click', function
   closeSaveResetModal();
   window.location.href = 'index.html';
 });
+
+// ===== RESUME / REPLAY（中断・リプレイ）=====
+// ゲーム(sphere-minesweeper.html)側のエンジンを、URLパラメータのハンドオフで起動する。
+// データは localStorage 共有（steller_suspend / steller_replays）。
+const RESUME_SUSPEND_KEY = 'steller_suspend';
+const RESUME_REPLAY_KEY  = 'steller_replays';
+
+// RESUME: 中断データがある時だけ表示
+(function(){
+  const btn = document.getElementById('resume-btn');
+  if(!btn) return;
+  if(localStorage.getItem(RESUME_SUSPEND_KEY)){ btn.style.display=''; }
+  btn.addEventListener('click', ()=>{ window.location.href = 'sphere-minesweeper.html?boot=resume'; });
+})();
+
+// REPLAY: 保存済み一覧モーダル → 選択でゲームを再生モードで起動
+(function(){
+  const modal = document.getElementById('replay-modal');
+  const listEl = document.getElementById('replay-list');
+  const openBtn = document.getElementById('replay-btn');
+  const closeBtn = document.getElementById('replay-close');
+  if(!modal || !openBtn) return;
+  function loadList(){ try { return JSON.parse(localStorage.getItem(RESUME_REPLAY_KEY) || '[]'); } catch(e){ return []; } }
+  function open(){
+    const list = loadList();
+    if(!list.length){
+      listEl.innerHTML = '<div style="color:#889;padding:14px;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:12px;">保存されたリプレイはありません</div>';
+    } else {
+      // 新しい順に表示（data-i は元の配列インデックスを保持）
+      listEl.innerHTML = list.map((r,i)=>{
+        const res = r.result==='win' ? '🏆 CLEAR' : (r.result==='lose' ? '💥 LOSE' : (r.result||'—'));
+        const size = r.board ? `${r.board.rows}×${r.board.cols}` : '';
+        const ct = (r.clearTime!=null) ? ` / ${r.clearTime}s` : '';
+        const t = r.savedAt ? r.savedAt.slice(0,16).replace('T',' ') : '';
+        return `<button class="replay-item" data-i="${i}" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px 11px;background:rgba(0,20,50,.6);border:1px solid rgba(0,200,255,.35);color:#bfe;border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;">${res}　<span style="color:#8ac;">${size}${ct}</span><br><span style="color:#678;font-size:11px;">${t}</span></button>`;
+      }).reverse().join('');
+      listEl.querySelectorAll('.replay-item').forEach(b=>{
+        b.addEventListener('click', ()=>{ window.location.href = 'sphere-minesweeper.html?boot=replay&i=' + b.dataset.i; });
+      });
+    }
+    modal.style.display = 'flex';
+  }
+  openBtn.addEventListener('click', open);
+  if(closeBtn) closeBtn.addEventListener('click', ()=>{ modal.style.display='none'; });
+})();
 
 // RANKING RESET（隠しコマンド：長押し）
 const rankingResetModal = document.getElementById('ranking-reset-modal');

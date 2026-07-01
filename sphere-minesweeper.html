@@ -4075,8 +4075,23 @@ updateAutoSaveButton(); // 設定トグルの表示を永続値に同期
 initRadarCanvas();
 // UIバー描画後にmode-indicator・expose-bar-wrapのtopを同期
 requestAnimationFrame(()=>requestAnimationFrame(()=>{ syncCharaLayerSize(); updateHintGauge(); }));
-// ステージモード時はapplyStageParam内のrestartGameに任せる
-if(!new URLSearchParams(window.location.search).get('stage')){
+// タイトルからのハンドオフ（中断再開 / リプレイ再生）を優先処理。
+// steller_suspend / steller_replays は localStorage 共有。
+const _bootParams = new URLSearchParams(window.location.search);
+const _bootMode = _bootParams.get('boot');
+if(_bootMode === 'resume'){
+  restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
+  const _rec = loadSuspend();
+  if(_rec && resumeSuspend(_rec)){ clearSuspend(); }  // 再開したら中断データは消費
+  else { console.warn('中断再開に失敗（データ無し/非互換）'); }
+} else if(_bootMode === 'replay'){
+  restartGame();
+  const _i = parseInt(_bootParams.get('i') || '0', 10);
+  const _rec = getReplay(_i);
+  if(_rec) startReplay(_rec);
+  else console.warn('リプレイが見つかりません', _i);
+} else if(!_bootParams.get('stage')){
+  // ステージモード時はapplyStageParam内のrestartGameに任せる
   restartGame();
 }
 // 最初のマスを開く前でも、ページへの最初の操作（クリック/タップ）でBGMを開始する
