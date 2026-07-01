@@ -987,6 +987,15 @@ function updateRescueButtons(){
   const btnTitle  = document.getElementById('rescue-btn-title');
   const btnRetry  = document.getElementById('rescue-btn-retry');
 
+  if(_isReplaySession){
+    // リプレイ再生の終了：TITLE へ戻る手段のみ（RETRY/NEXT/STAGE は出さない）
+    if(btnNovel)  btnNovel.style.display  = 'none';
+    if(btnSelect) btnSelect.style.display = 'none';
+    if(btnRetry)  btnRetry.style.display  = 'none';
+    if(btnTitle)  btnTitle.style.display  = '';
+    return;
+  }
+
   if(!isStageMode){
     // デバッグ・ステージ指定なしの通常プレイ：もう一度のみ
     if(btnNovel)  btnNovel.style.display  = 'none';
@@ -2750,7 +2759,8 @@ function replaySnapshot(){ return _replay ? JSON.parse(JSON.stringify(_replay)) 
 // ===================== REPLAY (Stage3): 保存・一覧・再生 =====================
 const REPLAY_STORE_KEY = 'steller_replays';
 const REPLAY_MAX = 20;                 // 保存上限（古いものから破棄）
-let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う）
+let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う。手順完了で解除）
+let _isReplaySession = false;          // このゲームがリプレイ再生セッションか（終了画面のUI切替に使う。次のゲームまで保持）
 let _replayTimers = [];                // 再生中の setTimeout ハンドル（停止用）
 
 // ゲームロジックのバージョン（互換契約）。掘削/フラッド/勝敗判定などロジックを変えたら +1。
@@ -2784,6 +2794,7 @@ function saveReplay(result, clearTime){
     formatVersion: 1, kind: 'replay',
     genVersion: snap.genVersion, gameVersion: GAME_VERSION,
     board: { seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
+    charId: (currentCharacter && currentCharacter.id) || null,
     actions: snap.actions,
     result: result || 'unknown',
     clearTime: (typeof clearTime==='number') ? Math.round(clearTime*10)/10 : null,
@@ -2819,9 +2830,11 @@ function startReplay(record, opts){
   maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+  if(record.charId){ selectCharacter(record.charId); setupCharacterPlane(); buildCageWire(); } // 元プレイと同じキャラ
   updateStats();
 
   _replayMode = true;
+  _isReplaySession = true;               // 終了画面のUIを再生用に切替える
   gameState = 'playing';                 // digCell/flagCell を通すため
 
   // 操作を時間差でスケジュール
@@ -2831,7 +2844,7 @@ function startReplay(record, opts){
     prevT = a.t; acc += gap / speed;
     _replayTimers.push(setTimeout(()=>{
       if(!_replayMode) return;
-      if(a.a==='dig') digCell(a.r, a.c);
+      if(a.a==='dig'){ digCell(a.r, a.c); startAutoRotate(a.r, a.c); } // カメラを開いたセルへ追従
       else if(a.a==='flag') flagCell(a.r, a.c);
       else if(a.a==='hint') giveHint();                                   // ヒント演出＋hintCountを再現
       else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
@@ -2879,6 +2892,7 @@ function clearSuspend(){ localStorage.removeItem(SUSPEND_KEY); }
 // 終了画面が出るときに呼び、保存済み/未保存でボタンの見た目を切替える。
 function refreshManualSaveBtn(btnId, result, clearTime){
   const btn = document.getElementById(btnId); if(!btn) return;
+  if(_isReplaySession){ btn.style.display='none'; return; } // 再生中はリプレイ保存不要
   btn.dataset.result = result;
   btn.dataset.clearTime = (clearTime!=null ? clearTime : elapsed);
   if(_replaySavedThisGame){ btn.textContent='✦ 保存済 ✦'; btn.disabled=true; btn.style.opacity='0.5'; }
@@ -3662,6 +3676,7 @@ function restartGame(){
   }
 
   clearInterval(timerInterval);
+  stopReplay(); _isReplaySession=false; // リプレイ再生の後始末（通常ゲームに戻す）
   stopBGM();
   SND.clear.pause(); SND.clear.currentTime=0;
   gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
