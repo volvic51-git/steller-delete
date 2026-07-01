@@ -1,145 +1,148 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30  
-V1完成後、V2開発を開始するためのハンドオフ文書。
+作成日: 2026-06-30 / 最終更新: 2026-07-01
+V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## V1 状態（完成済み）
+## ⚠️ 最初に読む：ブランチ構成（重要）
 
-### 完了した主な機能
-- ステージ1〜9（9はループモード）全クリアタイム記録・ランキング表示
-- ループモード: 1周目開始〜最終周クリアまでの合計タイムを `_loopTotalStartMs` で記録
-- HELP モーダル（絵文字・名前・役割テーブル）
-- CONFIG メニュー（RESTART / HELP / STAGE SELECT / TITLE / BACK）
-- タブ二重起動防止（`js/tab-guard.js`、BroadcastChannel + sessionStorage）
-- STORY アコーディオン（未開放非表示、外側タップで閉じる）
-- DELETE ボタン（長押し800ms → ランキングのみ初期化の隠しコマンド）
-- itch.io 公開済み
+今セッションで **設計（docs）と実装（code）を別ブランチに分けた**。ファイルが「無い」と感じたら
+まずブランチを疑うこと。
 
-### itch.io 公開に関する注意
-- zip は必ず `System.IO.Compression` で作成（`Compress-Archive` はパス区切りが `\` になりitch.ioで全リソース404になる）
+```
+master
+├─ feature/spec-foundation   ← 設計文書。docs/ と etc/ の設計メモ・CSV
+│                               （00-Architecture / 10-DataSpec / 20-BoardFormat /
+│                                 V2_GENERATION_ENGINE / 密度CSV）
+└─ feature/solver-extraction ← 実装。js/solver.js / tools/board-benchmark.html /
+                                dist/board-hunter/ / この引き継ぎ書
+```
+
+- **docs/ は spec-foundation にしか無い**（solver-extraction には無い）
+- **tools/ と dist/ は solver-extraction にしか無い**
+- 両ブランチとも **master 未マージ**
+- **未push が残っている可能性**：`feature/spec-foundation` の密度CSVコミット（`59c2a28`）と
+  タグ `design/data-foundation-v0.9` は未push（GitHub Desktop でブランチ切替→Push、タグは別途）
+
+> **既知の未処理**
+> - `tool/`（単数・既存）と `tools/`（複数・今回新規）が混在。将来 `tool/` に統一予定（solver-extraction上で）
+> - `feature/solver-extraction` に出自不明の `d0a480d「solver.js生成」` コミットあり（`git show d0a480d --stat` で確認）
 
 ---
 
-## V2 開発方針
+## いま何をしているフェーズか
 
-### フェーズ1: 事前盤面生成（次セッションから開始）
-
-**目的:** 大きな盤面（特にステージ9/ループモード）で確率保証が難しい問題を解消する。  
-プレイ時に盤面生成するのではなく、**事前に生成したJSONファイルを読み込んでプレイする。**
-
-**設計概要:**
-```
-tool/board-generator.html  ← 盤面生成ツール（新規作成）
-  ↓ 生成
-data/boards/stage9/board_001.json, board_002.json ...
-  ↓ プレイ時
-sphere-minesweeper.html でランダムに1つ読み込む
-```
-
-**JSONフォーマット案:**
-```json
-{
-  "id": "stage9_001",
-  "stage": 9,
-  "rows": 20,
-  "cols": 30,
-  "mines": [{"r": 0, "c": 5}, ...],
-  "seed": 1234567890,
-  "generatedAt": "2026-06-30T00:00:00Z"
-}
-```
-
-**生成ツール仕様（`tool/board-generator.html`）:**
-- ステージ選択（1〜9）
-- 生成枚数入力（例: 50枚）
-- 確率保証チェック（初手安全・解法チェック）付きで生成
-- JSONを1ファイルまたはまとめてダウンロード
-- 進捗表示（生成中はプログレスバー）
-
-**sphere-minesweeper.html 側の変更:**
-- 起動時に `data/boards/stageN/` をfetchして一覧取得
-- ランダムに1枚選んでJSONで盤面初期化
-- 既存の盤面生成ロジック（`generateBoard()`）は残す（フォールバック用）
-
-### フェーズ2: リプレイ機能
-
-フェーズ1完了後に実装。  
-**仕組み:** プレイ中の操作ログ（開くセル、フラグ操作、タイムスタンプ）を記録し、盤面IDとセットでlocalStorageに保存。再生時は同じ盤面JSONを読んで操作を再現。
-
-**必要な追加フィールド:**
-```json
-{
-  "boardId": "stage9_001",
-  "actions": [
-    {"type": "open", "r": 5, "c": 10, "t": 1234},
-    {"type": "flag", "r": 3, "c": 7, "t": 2500}
-  ],
-  "clearTime": 183.4
-}
-```
-
-### フェーズ3: 中断・再開機能
-
-リプレイ機能が完成すれば実装は容易。  
-途中状態 = 途中までの操作ログを保存し、再開時に盤面を復元してから残りのログを適用。
-
----
-
-## Capacitor / Android APK 化
-
-V2完了後に着手予定。分析結果は [`etc/CAPACITOR_ANALYSIS.md`](CAPACITOR_ANALYSIS.md) に記載。
-
-**主要課題:**
-1. マルチページ→SPA化（最大工数）
-2. Three.js CDN → ローカル同梱
-3. Google Fonts CDN → ローカル同梱
-4. Androidバックボタン対応
-
-**ユーザー側の事前準備:**
-- Node.js インストール（Capacitor CLI に必要）
-- Android Studio インストール（APKビルドに必要）
-
----
-
-## プロジェクト構成（V1完成時点）
+**設計はほぼ完了。今は「実測データ収集」フェーズ。** これ以上の机上設計は危険（solver実測を入れる段階）。
 
 ```
-ver9_20_Git/
-├── index.html              # タイトル・ステージ選択
-├── sphere-minesweeper.html # プレイ画面（メイン）
-├── endrole_release.html    # エンドロール
-├── novel/
-│   ├── novel01.html 〜 novel10.html
-│   └── js/novel.js         # NovelEngine
-├── js/
-│   └── tab-guard.js        # タブ二重起動防止
-├── assets/
-│   ├── audio/              # BGM・SE
-│   ├── images/             # 画像
-│   └── fonts/              # フォント（ローカル）
-├── data/                   # （V2で boards/ を追加予定）
-├── tool/
-│   ├── manual-editor.html
-│   └── novel_editor.html
-└── etc/
-    ├── V2_HANDOFF.md       # この文書
-    └── CAPACITOR_ANALYSIS.md
+✓ データアーキテクチャ設計（七原則）
+✓ solver.js 切り出し（純関数・ゲーム/Factory/解析ツールで共通）
+✓ 実測ベンチ + 公開用 Board Hunter
+✓ 開始モデル・生成エンジン入替の設計
+▶ 密度別 保証成功率の実測 ← いまここ（ユーザーがデータ収集中）
+  ↓
+  BoardFormat を v1.0 に凍結
+  ↓
+  実装 Phase 1（js/board-gen.js 一本化）へ
 ```
 
 ---
 
-## 次セッションでやること
+## 今セッションで確定した設計（要点）
 
-1. `tool/board-generator.html` を新規作成（事前盤面生成ツール）
-2. `data/boards/` ディレクトリ構成を決定
-3. 生成ツールで盤面を生成・動作確認
-4. `sphere-minesweeper.html` を改修して盤面JSONを読み込む処理を追加
+詳細は各文書。ここは索引。
+
+### データアーキテクチャ憲法（`docs/00-Architecture.md`）七原則
+1. Data Responsibility（一データ一責務）
+2. Identity（UUIDが真のキー、displayIdは表示専用・認定時採番）
+3. Reference（所有せず参照）
+4. Data Separation（仕様の能力と個体の状態を混ぜない）
+5. Traceability（出自までたどれる。UUIDの目的は追跡性）
+6. Immutability（Boardは不変・事実／評価は外付け）
+7. Evolution（既存データを壊さない）
++ Non Goals（通信/UI/ゲームルール/ソルバー実装は規定しない）
+
+### データ仕様
+- `docs/10-StellerDataSpec.md`：共通型（Version / Identity / Reference / Provenance）。
+  Board/Verification/Save/Replay/Job/Ranking/RuleSet は名前のみ予約
+- `docs/20-BoardFormat.md`（v0.9）：Board は事実のみ。`identity/board/meta` で構成。
+  verification も予約フィールドも持たない。`board.hash` は正規形のSHA-256（完全一致のみ）
+
+### 開始モデル・生成エンジン入替（`etc/V2_GENERATION_ENGINE.md`）
+- **ゴール：Factory盤面（事前生成・検証済み）で遊ぶ（段階B）まで見据える**
+- **開始は single startCell + ORACLE**：盤面は事前生成・不変、開始セルは正確に1個。
+  ユーザーはどこを押してもよいが、ORACLEが唯一のstartCellを開く（クリックは開始合図）
+- **なぜ「好きな場所で初手安全」を捨てるか**：不変盤面では初手安全のための地雷移動が
+  できない（hash/verification が無効化＝Immutability違反）
+- **生成器を js/board-gen.js に一本化**（ゲーム=Hunter=Factory のパリティをテストで固定）
+
+### 生成方式の振り分け（Border）
+- 振り分けは **「保証あり」経路の中だけ**（保証なしは常にリアルタイムでOK）
+- 判断軸は **密度**（＝リトライ上限内・許容時間内に保証盤面が出せるか）
+- **Factoryに振られた瞬間、開始が ORACLE 方式に変わる**（リアルタイムは従来の初手安全）
+
+### 実測でわかったこと（要・追試）
+- 72×144：密度 **18%→成功率約10%**（リアルタイム保証で可）、**20%→約0.3%**（Factory必須）
+- **保証なしのリアルタイム生成コストは誤差**（72×144でも生成+近傍計算 平均5.25ms、1フレーム内）
+- 重いのは「保証（isSolvable）を何百回も回す」部分だけ
+- データ収集用テンプレ：`etc/V2_board_density_data.csv`（列説明は同名 `_README.md`）
 
 ---
 
-## 参考: V1の重要な実装メモ
+## 実装ロードマップ（`etc/V2_GENERATION_ENGINE.md §3` に詳細）
+
+```
+Phase 1  js/board-gen.js 一本化（決定論化 / seed記録 / genVersion導入 / パリティテスト）
+Phase 2  ORACLE 開始モデル（単一startCellを開く演出）
+Phase 3  Factory 盤面の Board JSON 読込（＝ゴール。既存生成はフォールバック）
+Phase 4  リプレイ / 中断（seed+genVersion+params+操作ログ。startが1個なので再現がシンプル）
+```
+
+### 実装着手前に詰める未決（`V2_GENERATION_ENGINE.md §5`）
+- `js/board-gen.js` の API（引数・返り値）
+- `placeMines` 改修の具体範囲（呼び出し3箇所：初手/保証リトライ/デバッグ）
+- ORACLE 開始演出の具体（visual/SE/物語フック）
+- Board JSON の供給方法（data/boards同梱 / seedから都度生成 / Hunter由来の採用フロー）
+- `asyncEnsureSolvable` の300回上限を密度実測に合わせて見直すか
+- `verification.level=2` の厳密な合格定義（solver実測とセットで確定）
+
+---
+
+## すでに出来ている実装物（feature/solver-extraction）
+
+- **`js/solver.js`**：`runSolver`（制約伝播+CSP）と `isSolvable`（完全シミュレーション）を
+  純関数化。隣接ルールは `wrapCols/wrapRows` 引数。`computeNeighborMines` ユーティリティ付き。
+  ゲーム側 `runSolver()/isSolvable()` は薄いアダプタ（`cellAt:(r,c)=>board[r][c]`）に変更済み
+- **`tools/board-benchmark.html`**：seed再現つき実測ベンチ。盤面サイズ/密度別の保証成功率・
+  solver時間を計測、CSV/JSON出力、サンプルBoard JSON（sha256付き）出力
+- **`dist/board-hunter/`**：公開用（itch別公開）。全ユーザー共通キャンペーンで探索し、
+  **seedのみ返す**（開発者が再生成して再検証 = trust but verify）。640×480に最適化済み
+
+---
+
+## V1 状態（完成済み・itch.io公開済み）
+
+- ステージ1〜9（9はループ）全クリアタイム記録・ランキング
+- HELP / CONFIG メニュー、タブ二重起動防止（`js/tab-guard.js`）、STORYアコーディオン、
+  DELETEボタン（長押し800msでランキング初期化）
+- **itch.io zip は必ず `System.IO.Compression` で作成**（`Compress-Archive` はパス区切り `\` で全404）
+
+### V1盤面は seed 再現できない（重要）
+- 現状 `placeMines` は `Math.random()` 直使用・seedなし。プレイ盤面は再現不可
+- 再現性は新ツール（mulberry32）側にのみ存在。ゲーム側の決定論化が Phase 1
+
+---
+
+## Capacitor / Android APK 化（V2後）
+
+分析：[`etc/CAPACITOR_ANALYSIS.md`](CAPACITOR_ANALYSIS.md)
+主要課題：SPA化 / Three.js・Google Fonts のローカル同梱 / Androidバックボタン
+事前準備：Node.js, Android Studio
+
+---
+
+## 参考：V1の重要な実装メモ
 
 ### ループモード cleartime
 ```js
@@ -167,3 +170,13 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
   updateCellVisual(gameOverMistakeCell);
 }
 ```
+
+---
+
+## 次セッションの入口
+
+1. ユーザーが密度データを収集中 → 揃ったら `etc/V2_board_density_data.csv` を集計
+2. `V2_BOARD_DENSITY_FINDINGS.md`（しきい値の文章化）を作成し、`V2_GENERATION_ENGINE.md` から参照
+3. 実測を反映して `docs/20-BoardFormat.md` を v1.0 に凍結
+4. 実装 Phase 1（`js/board-gen.js` 一本化）に着手
+5. 保留タスク：`tool/`/`tools/` 統一、未pushの解消
