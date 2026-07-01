@@ -2127,6 +2127,7 @@ function showSaveToast(){
 let gameOverCheckMode = false;
 
 function triggerGameOverSequence(extraMsg, mistakeCell){
+  if(!_replayMode) saveReplay('lose', elapsed); // リプレイ自動保存（再生中は保存しない）
   gameState = 'lose'; // 即座に入力（掘削・旗）をブロック。カメラ回転/ズームは引き続き可能
   gamePaused = false;
   gameOverMistakeCell = mistakeCell || null;
@@ -2193,6 +2194,7 @@ function reopenGameOverDialog(){
 function checkWin(){
   if(removedMines!==mineCount) return;
   if(gameState!=='playing') return; // 既に遷移演出が進行中なら無視（連続操作による二重発火を防止）
+  if(!_replayMode) saveReplay('win', elapsed); // リプレイ自動保存（再生中は保存しない）
   gameState='idle'; // 演出完了まで入力を即座にブロック
   setTimeout(()=>{
     let pending=0;
@@ -2595,6 +2597,7 @@ const mouse2=new THREE.Vector2();
 function handleMouseAction(cx,cy,action){
   if(gameState==='lose' && gameOverCheckMode){ reopenGameOverDialog(); return; }
   if(gameState==='win'||gameState==='lose'||gameState==='generating') return;
+  if(_replayMode) return; // 再生中はユーザー入力を無視
   if(gamePaused) return;
   mouse2.x=(cx/window.innerWidth)*2-1;
   mouse2.y=-(cy/window.innerHeight)*2+1;
@@ -2734,6 +2737,73 @@ function replayRecord(action, row, col){
 
 // シリアライズ可能なスナップショットを返す（Stage3/4 で localStorage 保存等に使う）。
 function replaySnapshot(){ return _replay ? JSON.parse(JSON.stringify(_replay)) : null; }
+
+// ===================== REPLAY (Stage3): 保存・一覧・再生 =====================
+const REPLAY_STORE_KEY = 'steller_replays';
+const REPLAY_MAX = 20;                 // 保存上限（古いものから破棄）
+let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う）
+let _replayTimers = [];                // 再生中の setTimeout ハンドル（停止用）
+
+// 現在の操作ログを結果付きで localStorage に保存する。
+function saveReplay(result, clearTime){
+  const snap = replaySnapshot();
+  if(!snap || snap.seed==null || !snap.actions.length) return null;
+  const rec = {
+    formatVersion: 1, kind: 'replay',
+    genVersion: snap.genVersion,
+    board: { seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
+    actions: snap.actions,
+    result: result || 'unknown',
+    clearTime: (typeof clearTime==='number') ? Math.round(clearTime*10)/10 : null,
+    startedAt: snap.startedAt,
+    savedAt: new Date().toISOString()
+  };
+  let list = listReplays();
+  list.push(rec);
+  if(list.length > REPLAY_MAX) list = list.slice(list.length - REPLAY_MAX);
+  try { localStorage.setItem(REPLAY_STORE_KEY, JSON.stringify(list)); } catch(e){ console.warn('replay保存失敗', e); }
+  return rec;
+}
+function listReplays(){ try { return JSON.parse(localStorage.getItem(REPLAY_STORE_KEY) || '[]'); } catch(e){ return []; } }
+function getReplay(i){ const l=listReplays(); return l[i] || null; }
+function clearReplays(){ localStorage.removeItem(REPLAY_STORE_KEY); }
+
+// 再生：record の身元から盤面を再構築し、操作を時間差で再適用する（実ゲーム画面で可視化）。
+// opts.speed:再生速度倍率(既定2) / opts.maxGapMs:手間の最大待ち(既定800ms・間延び防止)
+function startReplay(record, opts){
+  if(!record || !record.board) return;
+  opts = opts || {};
+  const speed = opts.speed || 2;
+  const maxGap = (opts.maxGapMs != null) ? opts.maxGapMs : 800;
+  stopReplay();
+
+  // 盤面を replay の身元で再構築（全セル閉じた状態＋地雷を同一配置）
+  const b = record.board;
+  ROWS = b.rows; COLS = b.cols; mineCount = b.mineCount;
+  clearInterval(timerInterval);
+  removedMines = 0; hintCount = 0; misclickGuard = false;
+  initBoard();
+  applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+  updateStats();
+
+  _replayMode = true;
+  gameState = 'playing';                 // digCell/flagCell を通すため
+
+  // 操作を時間差でスケジュール
+  let prevT = 0, acc = 0;
+  record.actions.forEach((a)=>{
+    const gap = Math.min(Math.max(0, a.t - prevT), maxGap);
+    prevT = a.t; acc += gap / speed;
+    _replayTimers.push(setTimeout(()=>{
+      if(!_replayMode) return;
+      if(a.a==='dig') digCell(a.r, a.c);
+      else if(a.a==='flag') flagCell(a.r, a.c);
+    }, acc));
+  });
+  _replayTimers.push(setTimeout(()=>{ _replayMode=false; console.info(`Replay終了: ${record.actions.length}手 (${record.result})`); }, acc + 200));
+  console.info(`Replay開始: ${record.actions.length}手 seed=${b.seed} ${b.rows}x${b.cols}`);
+}
+function stopReplay(){ _replayTimers.forEach(h=>clearTimeout(h)); _replayTimers=[]; _replayMode=false; }
 
 function handleCellAction(row,col,action){
   if(gameState==='playing' && misclickGuard){
