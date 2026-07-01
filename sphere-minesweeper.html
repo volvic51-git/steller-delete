@@ -734,6 +734,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/solver.js"></script>
+<script src="js/board-gen.js"></script>
 <script>
 // ===================== BOARD DIMENSIONS (変更可能定数) =====================
 // 難易度に応じて動的に変更される
@@ -1493,21 +1494,30 @@ function initBoard() {
 }
 
 // ===================== MINE PLACEMENT =====================
+// 地雷配置は js/board-gen.js（決定論・共通生成器）に一本化。
+// placeMines は「新規seedを発行 → 生成器で盤面を作り、盤面の身元を記録」する薄いアダプタ。
+// 盤面の身元（seed/genVersion/start/params）は window._boardGen に記録され、
+// リプレイ・中断・盤面の再現に使う。
 function placeMines(excludeRow, excludeCol) {
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine=false;
-  const exclude=new Set();
-  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
-    const nr=excludeRow+dr, nc=((excludeCol+dc)+COLS)%COLS;
-    if(nr>=0&&nr<ROWS) exclude.add(nr*COLS+nc);
-  }
-  // Clamp mineCount to max possible
-  const maxMines = ROWS*COLS - exclude.size;
-  const actualMines = Math.min(mineCount, maxMines);
-  let placed=0;
-  while(placed<actualMines){
-    const r=Math.floor(Math.random()*ROWS), c=Math.floor(Math.random()*COLS);
-    if(!board[r][c].isMine && !exclude.has(r*COLS+c)){ board[r][c].isMine=true; placed++; }
-  }
+  const seed = StellerBoardGen.randomSeed();
+  applyBoardFromSeed(seed, excludeRow, excludeCol);
+}
+
+// 指定 seed + 初手セルから盤面を決定論的に生成して board[][] に反映する。
+// リプレイ/中断からの復元でも同じ経路を使う（同じ身元 → 同じ盤面）。
+function applyBoardFromSeed(seed, excludeRow, excludeCol) {
+  const mineSet = StellerBoardGen.generateMineSet({
+    rows: ROWS, cols: COLS, mineCount,
+    start: { r: excludeRow, c: excludeCol },
+    seed, wrapCols: true, wrapRows: false
+  });
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine = mineSet.has(r*COLS+c);
+  // 盤面の身元を記録（seedだけでは再現できない。genVersion+params+startが揃って再現可能）
+  window._boardGen = {
+    seed, genVersion: StellerBoardGen.GEN_VERSION,
+    start: { r: excludeRow, c: excludeCol },
+    rows: ROWS, cols: COLS, mineCount, wrap: 'cyl'
+  };
   calcNeighbors();
 }
 
