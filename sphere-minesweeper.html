@@ -1753,6 +1753,11 @@ function clearRadarCanvas(){
   _radarCtx.clearRect(0, 0, cv.width, cv.height);
 }
 let logicGuarantee = false;
+// Border（生成の入り口・振り分け）: 論理保証ONでも、この密度以上は保証を試みず保証なしで開始する。
+// 実測で高密度は保証盤面がほぼ出ない（例 72x144 20%→0.3%）ため、300回の無駄打ちを避ける。
+// ※将来 Factory盤面が入ればこの経路が Factory 行きになる（暫定は保証なし）。
+// TODO(density): サイズ非依存の暫定値。密度実測(etc/V2_board_density_data.csv)が揃ったらサイズ別に見直す。
+const GUARANTEE_SKIP_DENSITY = 0.22;
 let misclickGuard = false; // 誤操作防止モード（周囲が全て未開封/消滅のセルへの操作を無効化）
 let gamePaused = false; // 設定メニューによる一時停止（球体操作のみ無効化、タイマー/BGMは継続）
 
@@ -2708,26 +2713,36 @@ function handleCellAction(row,col,action){
   if(gameState==='idle'){
     gameState='generating';
     placeMines(row,col);
-    if(logicGuarantee){
-      // 非同期で再生成（UIをブロックしない）
-      const maxAttempts = 300;
+
+    // 全経路共通の後処理：盤面確定後に playing へ遷移し、初手を実行する。
+    const finishFirstAction = ()=>{
+      gameState='playing';
+      startTimer();
+      calcTotalNonMineCells();
+      autoEnableMisclickGuard();
+      if(action==='dig') digCell(row,col);
+      else if(action==='flag') flagCell(row,col);
+      updateStats();
+      if(debugMode) runSolverDebug();
+    };
+
+    // ===== Border（生成の入り口・振り分け）=====
+    // (logicGuarantee, 密度) で「保証あり / 保証なし」を決める。
+    //   保証あり : 論理保証ON かつ 密度 < GUARANTEE_SKIP_DENSITY
+    //             → seedを変えて最大300回リトライ（②:300回全滅なら保証なしで開始 ← asyncEnsureSolvable内）
+    //   保証なし : 論理保証OFF、または ①密度≧しきい値で保証スキップ（将来ここが Factory 行き）
+    const density = mineCount / (ROWS*COLS);
+    if(logicGuarantee && density < GUARANTEE_SKIP_DENSITY){
       showGenerating(true);
-      asyncEnsureSolvable(row, col, maxAttempts, ()=>{
-      showGenerating(false);
-        gameState='playing';
-        startTimer();
-        calcTotalNonMineCells();
-        autoEnableMisclickGuard();
-        if(action==='dig') digCell(row,col);
-        else if(action==='flag') flagCell(row,col);
-        updateStats();
-        if(debugMode) runSolverDebug();
-      });
-      return; // 非同期なので以降の処理はコールバックで実行
+      asyncEnsureSolvable(row, col, 300, ()=>{ showGenerating(false); finishFirstAction(); });
+    } else {
+      if(logicGuarantee){ // = 密度がしきい値以上：条件①（保証スキップ）
+        console.info(`Border: 密度 ${(density*100).toFixed(1)}% ≥ ${(GUARANTEE_SKIP_DENSITY*100)}% → 保証スキップ（保証なし・将来Factory）`);
+        setGuaranteeResult(false, 0);
+      }
+      finishFirstAction();
     }
-    startTimer();
-    calcTotalNonMineCells();
-    autoEnableMisclickGuard();
+    return; // idle の処理は finishFirstAction で完結（以降の共通処理は playing 中の操作用）
   }
   if(action==='dig') digCell(row,col);
   else if(action==='flag') flagCell(row,col);
