@@ -71,8 +71,9 @@ master
 
 ### 開始モデル・生成エンジン入替（`etc/V2_GENERATION_ENGINE.md`）
 - **ゴール：Factory盤面（事前生成・検証済み）で遊ぶ（段階B）まで見据える**
-- **開始は single startCell + ORACLE**：盤面は事前生成・不変、開始セルは正確に1個。
-  ユーザーはどこを押してもよいが、ORACLEが唯一のstartCellを開く（クリックは開始合図）
+- **開始は single startCell + Judge**：盤面は事前生成・不変、開始セルは正確に1個。
+  ユーザーはどこを押してもよいが、Judgeが唯一のstartCellを開く（クリックは開始合図）
+  ※ Judge は Factory盤面の初手を開く機能。既存のヒント機能 ORACLE とは別物。
 - **なぜ「好きな場所で初手安全」を捨てるか**：不変盤面では初手安全のための地雷移動が
   できない（hash/verification が無効化＝Immutability違反）
 - **生成器を js/board-gen.js に一本化**（ゲーム=Hunter=Factory のパリティをテストで固定）
@@ -80,7 +81,7 @@ master
 ### 生成方式の振り分け（Border）
 - 振り分けは **「保証あり」経路の中だけ**（保証なしは常にリアルタイムでOK）
 - 判断軸は **密度**（＝リトライ上限内・許容時間内に保証盤面が出せるか）
-- **Factoryに振られた瞬間、開始が ORACLE 方式に変わる**（リアルタイムは従来の初手安全）
+- **Factoryに振られた瞬間、開始が Judge 方式に変わる**（リアルタイムは従来の初手安全）
 
 ### 実測でわかったこと（要・追試）
 - 72×144：密度 **18%→成功率約10%**（リアルタイム保証で可）、**20%→約0.3%**（Factory必須）
@@ -94,7 +95,7 @@ master
 
 ```
 Phase 1  js/board-gen.js 一本化（決定論化 / seed記録 / genVersion導入 / パリティテスト）
-Phase 2  ORACLE 開始モデル（単一startCellを開く演出）
+Phase 2  Judge 開始モデル（単一startCellを開く演出）
 Phase 3  Factory 盤面の Board JSON 読込（＝ゴール。既存生成はフォールバック）
 Phase 4  リプレイ / 中断（seed+genVersion+params+操作ログ。startが1個なので再現がシンプル）
 ```
@@ -102,7 +103,7 @@ Phase 4  リプレイ / 中断（seed+genVersion+params+操作ログ。startが1
 ### 実装着手前に詰める未決（`V2_GENERATION_ENGINE.md §5`）
 - `js/board-gen.js` の API（引数・返り値）
 - `placeMines` 改修の具体範囲（呼び出し3箇所：初手/保証リトライ/デバッグ）
-- ORACLE 開始演出の具体（visual/SE/物語フック）
+- Judge 開始演出の具体（visual/SE/物語フック）
 - Board JSON の供給方法（data/boards同梱 / seedから都度生成 / Hunter由来の採用フロー）
 - `asyncEnsureSolvable` の300回上限を密度実測に合わせて見直すか
 - `verification.level=2` の厳密な合格定義（solver実測とセットで確定）
