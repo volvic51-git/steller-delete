@@ -2805,6 +2805,102 @@ function startReplay(record, opts){
 }
 function stopReplay(){ _replayTimers.forEach(h=>clearTimeout(h)); _replayTimers=[]; _replayMode=false; }
 
+// ===================== SUSPEND / RESUME (Stage4): 中断・再開 =====================
+// リプレイの仕組み（身元＋操作ログ）に、アクション由来でない「メタ状態」
+// （経過時間・ループ周回・制限時間・ヒント・モード等）の保存/復元を足したもの。
+// 再開＝盤面を身元から再構築 → 操作ログを"即時"再適用（途中盤面を復元）→ メタを上書き → タイマー再開。
+const SUSPEND_KEY = 'steller_suspend';
+
+// プレイ中の状態を丸ごと保存する（playing のときのみ）。
+function saveSuspend(){
+  if(gameState!=='playing') return null;
+  const snap = replaySnapshot();
+  if(!snap || snap.seed==null) return null;
+  const rec = {
+    formatVersion:1, kind:'suspend', genVersion:snap.genVersion,
+    board:{ seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
+    actions: snap.actions,
+    meta: {
+      elapsed, removedMines, hintCount, maxHints,
+      currentLoop, loopCount, loopMode, exMode, stMode,
+      timeLimitMode, remainingTime, totalTime,
+      logicGuarantee, currentDiff,
+      stageMines: window._stageMines ?? null,
+      boardTheme: window._boardTheme ?? null
+    },
+    savedAt: new Date().toISOString()
+  };
+  try { localStorage.setItem(SUSPEND_KEY, JSON.stringify(rec)); } catch(e){ console.warn('中断保存失敗', e); }
+  return rec;
+}
+function hasSuspend(){ return !!localStorage.getItem(SUSPEND_KEY); }
+function loadSuspend(){ try { return JSON.parse(localStorage.getItem(SUSPEND_KEY) || 'null'); } catch(e){ return null; } }
+function clearSuspend(){ localStorage.removeItem(SUSPEND_KEY); }
+
+// タイマー再開（elapsed/remainingTime を保持したまま。startTimer はリセットするので使わない）。
+function resumeTimer(){
+  clearInterval(timerInterval);
+  startBGM();
+  updateCharacterReveal();
+  // cleartime/制限時間の基準を「途中状態」に合わせて逆算する。
+  if(timeLimitMode && totalTime > 0){
+    window._timerStartMs = performance.now() - (totalTime - remainingTime) * 1000;
+  } else {
+    window._timerStartMs = performance.now() - elapsed * 1000;
+  }
+  window._loopTotalStartMs = performance.now() - elapsed * 1000; // 通しタイムは近似（周回中断は限界あり）
+  if(timeLimitMode) syncTimeLimitGaugeSize();
+  timerInterval = setInterval(()=>{
+    elapsed++;
+    document.getElementById('stat-time').textContent = formatTime(elapsed);
+    updateDigitTimer(elapsed);
+  }, 1000);
+}
+
+// 中断データから再開する。
+function resumeSuspend(rec){
+  if(!rec || !rec.board) return false;
+  const b = rec.board, m = rec.meta || {};
+
+  // モード・パラメータ復元（盤面/タイマーより先に）
+  ROWS=b.rows; COLS=b.cols; mineCount=b.mineCount;
+  clearInterval(timerInterval);
+  window._stageMines = m.stageMines ?? null;
+  window._boardTheme = m.boardTheme ?? null;
+  loopMode=!!m.loopMode; loopCount=m.loopCount ?? loopCount; currentLoop=m.currentLoop ?? 1;
+  if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
+  timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;
+  if(m.currentDiff) currentDiff=m.currentDiff;
+  maxHints = m.maxHints ?? maxHints;
+
+  // 盤面を身元から再構築（全セル閉じた状態＋地雷を同一配置）
+  initBoard();
+  applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+
+  // 操作ログを"即時"再適用して途中盤面を復元（アニメ待ちなし・自動保存/入力ガード抑止）
+  _replayMode = true; gameState = 'playing'; removedMines = 0;
+  for(const a of rec.actions){ if(a.a==='dig') digCell(a.r,a.c); else if(a.a==='flag') flagCell(a.r,a.c); }
+  _replayMode = false;
+
+  // アクション由来でないメタを上書き復元
+  elapsed   = m.elapsed ?? elapsed;
+  hintCount = m.hintCount ?? 0;
+  if(timeLimitMode){ totalTime = m.totalTime ?? 0; remainingTime = m.remainingTime ?? totalTime; }
+
+  // 操作ログの基準を「途中まで」に戻す（以降の操作は続きから追記される）
+  _replay = {
+    genVersion: rec.genVersion, seed:b.seed, start:b.start,
+    rows:b.rows, cols:b.cols, mineCount:b.mineCount, wrap:b.wrap,
+    startedAt: rec.savedAt, startMs: performance.now() - elapsed*1000,
+    actions: rec.actions.slice()
+  };
+
+  resumeTimer();
+  gameState = 'playing';
+  updateStats(); updateHintGauge();
+  return true;
+}
+
 function handleCellAction(row,col,action){
   if(gameState==='playing' && misclickGuard){
     const cell = board[row][col];
