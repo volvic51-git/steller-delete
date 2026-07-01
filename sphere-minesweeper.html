@@ -2857,6 +2857,7 @@ function saveSuspend(){
       currentLoop, loopCount, loopMode, exMode, stMode,
       timeLimitMode, remainingTime, totalTime,
       logicGuarantee, currentDiff,
+      charId: (currentCharacter && currentCharacter.id) || null,
       stageMines: window._stageMines ?? null,
       boardTheme: window._boardTheme ?? null
     },
@@ -2950,6 +2951,9 @@ function resumeSuspend(rec){
     startedAt: rec.savedAt, startMs: performance.now() - elapsed*1000,
     actions: rec.actions.slice()
   };
+
+  // キャラ復元（中断時と同じキャラにする。restartGameで選ばれたランダムキャラを上書き）
+  if(m.charId){ selectCharacter(m.charId); setupCharacterPlane(); buildCageWire(); }
 
   resumeTimer();
   gameState = 'playing';
