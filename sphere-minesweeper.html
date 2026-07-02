@@ -1010,6 +1010,7 @@ function showRescueScreen(){
   img.onerror = ()=>{ img.style.display='none'; };
   img.onload  = ()=>{ img.style.display=''; };
 
+  const replayBar = document.getElementById('replay-controls'); if(replayBar) replayBar.style.display = 'none';
   scr.classList.add('active');
   startRescueBgAnimation();
 }
@@ -2241,6 +2242,7 @@ function showGameOverDialog(extraMsg){
   gameOverCheckMode = false;
   // 同セッション内で複数回死んでもフェードイン演出が毎回再生されるよう、
   // classを一度外してリフロー→再付与してCSSアニメーションを再トリガー
+  const replayBar = document.getElementById('replay-controls'); if(replayBar) replayBar.style.display = 'none';
   msg.classList.remove('lose');
   void msg.offsetWidth;
   msg.style.display = 'block';
