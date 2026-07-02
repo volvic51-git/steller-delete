@@ -2803,6 +2803,8 @@ function saveReplay(result, clearTime){
     genVersion: snap.genVersion, gameVersion: GAME_VERSION,
     board: { seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
     charId: (currentCharacter && currentCharacter.id) || null,
+    boardTheme: window._boardTheme ?? null,   // 盤面色テーマ
+    bg: getCanvasBackground(),                 // 背景画像(CSS)
     actions: snap.actions,
     result: result || 'unknown',
     clearTime: (typeof clearTime==='number') ? Math.round(clearTime*10)/10 : null,
@@ -2820,6 +2822,15 @@ function listReplays(){ try { return JSON.parse(localStorage.getItem(REPLAY_STOR
 function getReplay(i){ const l=listReplays(); return l[i] || null; }
 function clearReplays(){ localStorage.removeItem(REPLAY_STORE_KEY); }
 
+// 背景画像（ステージ固有）の取得/適用。replay/resume はステージ読込を通らないので、
+// 記録した CSS背景を復元する（未設定なら none）。
+function getCanvasBackground(){ const cc=document.getElementById('canvas-container'); return cc ? cc.style.backgroundImage : ''; }
+function applyCanvasBackground(cssBg){
+  const cc=document.getElementById('canvas-container'); if(!cc) return;
+  if(cssBg && cssBg!=='none'){ cc.style.backgroundImage=cssBg; cc.style.backgroundSize='cover'; cc.style.backgroundPosition='center'; }
+  else { cc.style.backgroundImage='none'; }
+}
+
 // 再生：record の身元から盤面を再構築し、操作を時間差で再適用する（実ゲーム画面で可視化）。
 // opts.speed:再生速度倍率(既定2) / opts.maxGapMs:手間の最大待ち(既定800ms・間延び防止)
 function startReplay(record, opts){
@@ -2836,9 +2847,11 @@ function startReplay(record, opts){
   clearInterval(timerInterval);
   removedMines = 0; hintCount = 0; misclickGuard = false;
   maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
+  window._boardTheme = record.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
   if(record.charId){ selectCharacter(record.charId); setupCharacterPlane(); buildCageWire(); } // 元プレイと同じキャラ
+  applyCanvasBackground(record.bg); // 背景画像復元
   updateStats();
 
   _replayMode = true;
@@ -2885,7 +2898,8 @@ function saveSuspend(){
       logicGuarantee, currentDiff,
       charId: (currentCharacter && currentCharacter.id) || null,
       stageMines: window._stageMines ?? null,
-      boardTheme: window._boardTheme ?? null
+      boardTheme: window._boardTheme ?? null,
+      bg: getCanvasBackground()
     },
     savedAt: new Date().toISOString()
   };
@@ -2981,6 +2995,7 @@ function resumeSuspend(rec){
 
   // キャラ復元（中断時と同じキャラにする。restartGameで選ばれたランダムキャラを上書き）
   if(m.charId){ selectCharacter(m.charId); setupCharacterPlane(); buildCageWire(); }
+  applyCanvasBackground(m.bg); // 背景画像復元
 
   resumeTimer();
   gameState = 'playing';
