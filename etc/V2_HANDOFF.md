@@ -64,10 +64,19 @@ preview_evalによる実操作シミュレーションで検証済みだが、**
      古いsuspendデータ**（`meta.bg`が`undefined`）が原因だった可能性が高い。
    - **次アクション**: 実機で再度 中断→即再開 のフローを新規に試して確認。まだ直らなければ再調査。
 
-2. **resume クリア画面に「TITLE」ボタンが無い** → 修正済み（実機フィードバックで再修正）
-   - 一次修正：`updateRescueButtons()`の`!isStageMode`枝で`btnTitle`を表示 → 実機確認の結果、
-     SIMPLE系resumeでは「STAGE」（ステージ選択）の方が自然というフィードバックを受け、
-     `!isStageMode`枝は最終的に **RETRY + STAGE**（`btnSelect`）表示、TITLE非表示に変更。
+2. **resume クリア画面に「TITLE」ボタンが無い** → 修正済み（実機フィードバックで3回再修正）
+   - `updateRescueButtons()`の最終形（実機確認込みで確定）：
+     - STORY（`?stage=N&mode=story` **または** STORYを中断→resume）：SAVE REPLAY + NEXT + TITLE
+     - それ以外全部（SIMPLE通常/resume・デバッグ・SIMPLEを中断→resume）：SAVE REPLAY + RETRY + STAGE
+   - `?boot=resume`はURLに`mode=story`を持てない（stage/modeパラメータ自体が無い）ため、
+     resumeがSTORYだったかどうかはURLからは判定不可。**suspendデータに`meta.isStoryMode`と
+     `meta.novelAfterClear`を追加**し、`resumeSuspend()`が`window._resumeStoryMode`
+     （新規グローバル）と`window._novelAfterClear`を復元。`updateRescueButtons()`は
+     `isStoryMode = (URLのmode=story) || window._resumeStoryMode`で判定。
+     `window._resumeStoryMode`は`restartGame()`でfalseにリセット（RETRY等で次のゲームへ持ち越さない）。
+   - 経緯：一次修正でresume枝にTITLEを追加→実機で「STAGEの方が自然」とフィードバック→
+     resume枝をRETRY+STAGEに変更→「通常SIMPLEクリアも同じに」でSIMPLE枝も統一→
+     「STORY＋resumeはNEXT+TITLEにしたい」で上記のフラグ復元方式を追加。
 
 3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI** → 実装済み
    - `startReplay`のsetTimeout自動再生を廃止し、`replayStepTo(index)`ベースの手動ステップに変更。

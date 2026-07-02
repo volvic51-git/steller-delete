@@ -995,8 +995,9 @@ function showRescueScreen(){
 }
 
 function updateRescueButtons(){
-  const isStageMode = !!new URLSearchParams(window.location.search).get('stage');
-  const isStoryMode = new URLSearchParams(window.location.search).get('mode') === 'story';
+  // resumeはURLにmode=storyを持てない（?boot=resumeのみ）ので、resumeSuspend が復元した
+  // window._resumeStoryMode も合わせて見る（元プレイがSTORYだったかの真の判定）。
+  const isStoryMode = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
   const btnNovel  = document.getElementById('rescue-btn-novel');
   const btnSelect = document.getElementById('rescue-btn-select');
   const btnTitle  = document.getElementById('rescue-btn-title');
@@ -1011,26 +1012,19 @@ function updateRescueButtons(){
     return;
   }
 
-  if(!isStageMode){
-    // デバッグ・ステージ指定なしの通常プレイ（resume含む）：もう一度＋STAGE（ステージ選択）
+  if(isStoryMode){
+    // STORY（通常 or resume）：NEXT（次のノベルへ）＋ TITLE（RETRYは出さない。物語進行を明確にするため）
+    if(btnNovel)  btnNovel.style.display  = '';
+    if(btnSelect) btnSelect.style.display = 'none';
+    if(btnTitle)  btnTitle.style.display  = '';
+    if(btnRetry)  btnRetry.style.display  = 'none';
+  } else {
+    // SIMPLE／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = '';
     if(btnTitle)  btnTitle.style.display  = 'none';
     if(btnRetry)  btnRetry.style.display  = '';
-    return;
   }
-  if(btnRetry) btnRetry.style.display = 'none';
-
-  if(isStoryMode){
-    // STORY：NEXT（次のノベルへ）＋ TITLE
-    if(btnNovel)  btnNovel.style.display  = '';
-    if(btnSelect) btnSelect.style.display = 'none';
-  } else {
-    // SIMPLE：STAGE（ステージ選択）＋ TITLE
-    if(btnNovel)  btnNovel.style.display  = 'none';
-    if(btnSelect) btnSelect.style.display = '';
-  }
-  if(btnTitle) btnTitle.style.display = '';
 }
 
 // 救出画面の背景パーティクルアニメ
@@ -2930,7 +2924,9 @@ function saveSuspend(){
       charId: (currentCharacter && currentCharacter.id) || null,
       stageMines: window._stageMines ?? null,
       boardTheme: window._boardTheme ?? null,
-      bg: getCanvasBackground()
+      bg: getCanvasBackground(),
+      isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
+      novelAfterClear: window._novelAfterClear ?? null
     },
     savedAt: new Date().toISOString()
   };
@@ -2996,6 +2992,8 @@ function resumeSuspend(rec){
   clearInterval(timerInterval);
   window._stageMines = m.stageMines ?? null;
   window._boardTheme = m.boardTheme ?? null;
+  window._novelAfterClear = m.novelAfterClear ?? null; // STORYモードで中断した場合のNEXT遷移先を復元
+  window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
   loopMode=!!m.loopMode; loopCount=m.loopCount ?? loopCount; currentLoop=m.currentLoop ?? 1;
   if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
   timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;
@@ -3731,6 +3729,7 @@ function restartGame(){
 
   clearInterval(timerInterval);
   stopReplay(); _isReplaySession=false; // リプレイ再生の後始末（通常ゲームに戻す）
+  window._resumeStoryMode = false; // 中断復元由来のSTORY判定フラグをリセット（resumeSuspendが必要なら再設定）
   stopBGM();
   SND.clear.pause(); SND.clear.currentTime=0;
   gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
