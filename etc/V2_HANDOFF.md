@@ -34,14 +34,16 @@ master
 ## いま何をしているフェーズか
 
 **リプレイ/中断 機能を実装・実機テスト中（GitHub Pages）。** Stage1-4＋UI＋各種修正まで完了・push済み。
-実機で見つかった残不具合の対応が「いまここ」（下記「実機フィードバック 未対応」参照）。
+実機フィードバック3件（背景/TITLEボタン/ステップUI）はローカル検証済みで実装完了。**未push**。
+実機（GitHub Pages）での最終確認が「いまここ」（下記「実機フィードバック 対応済み」参照）。
 
 ```
 ✓ Stage1-4（決定論生成/Border/ログ基盤/リプレイ/中断）
 ✓ UI-1-3（自動保存トグル/gameVersion/ゲーム内ボタン/タイトルRESUME・REPLAY/ハンドオフ）
 ✓ キャラ永続・replay-fidelity(hint/search)・キャラ名レース修正・背景/テーマ復元
 ✓ GitHub Pages公開・実機テスト（volvic51-git.github.io/steller-delete）
-▶ 実機で見つかった残不具合3件 ← いまここ
+✓ 実機フィードバック3件をローカル検証・実装（TITLE表示／リプレイstep UI／背景はコード上問題なし）
+▶ push→実機（GitHub Pages）で最終確認 ← いまここ
 ```
 
 **別トラック（未着手・保留中）:** 盤面密度の実測（etc/V2_board_density_data.csv）→ BoardFormat v1.0凍結
@@ -49,28 +51,33 @@ master
 
 ---
 
-## ⚠️ 実機フィードバック 未対応（次セッションの最優先）
+## ✅ 実機フィードバック 対応済み（2026-07-02 セッションで実装。要実機再確認）
 
-GitHub Pages 実機テストで確認。**調査途中で引っ越し。**
+GitHub Pages 実機テストで確認された3件。ローカル(`.claude/launch.json`の`static`サーバ)で
+preview_evalによる実操作シミュレーションで検証済みだが、**実機（GitHub Pages）での最終確認はまだ**。
 
-1. **resume で背景が出ない**（replay の背景はOK）
-   - 背景は `canvas-container.style.backgroundImage`。applyStageParam(4041)と
-     `applyCanvasBackground()`(2829)でのみ設定。restartGameは触らない。
-   - saveSuspend は `meta.bg = getCanvasBackground()`、resumeSuspend は `applyCanvasBackground(m.bg)` を呼ぶ**はず**。
-     replay(record.bg 直接)は動くのに resume(meta.bg)が出ない理由は未特定。
-   - **次アクション**: 実際に `?boot=resume` で navigate して canvas-container の backgroundImage を確認
-     （直接resumeSuspend呼び出しテストでは復元できていた＝boot経路 or 古いsuspendデータ疑い）。
+1. **resume で背景が出ない** → ローカルでは再現せず（コードは正しく動作）
+   - `?stage=1`で開始→suspend→`index.html`のRESUMEボタン→`?boot=resume`の完全な実ナビゲーションで
+     再テストしたが、`canvas-container.style.backgroundImage`は正しく復元された。
+   - 結論：`saveSuspend`/`resumeSuspend`/`applyCanvasBackground`のロジック自体に問題は無い。
+     実機で見えた不具合は、**`meta.bg`フィールド追加（コミット35b99a1）より前に保存された
+     古いsuspendデータ**（`meta.bg`が`undefined`）が原因だった可能性が高い。
+   - **次アクション**: 実機で再度 中断→即再開 のフローを新規に試して確認。まだ直らなければ再調査。
 
-2. **resume クリア画面に「TITLE」ボタンが無い**
-   - `updateRescueButtons()`(982)は `isStageMode`(=?stageパラメータ有無)で分岐。resumeは`?boot=resume`で
-     stageパラメータ無し → `!isStageMode`枝 → RETRYのみ表示・TITLE非表示。
-   - **修正案**: 非stage枝でも TITLE を出す（resume/デバッグ両方に効く）。replayは`_isReplaySession`枝で対応済み。
+2. **resume クリア画面に「TITLE」ボタンが無い** → 修正済み
+   - `updateRescueButtons()`の`!isStageMode`枝（997行目付近）で`btnTitle.style.display=''`を追加。
+     RETRYと併記される。
 
-3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI が欲しい（replay時のみ）**
-   - 現状 startReplay は setTimeout自動再生＋dig時 startAutoRotate。速くて追従が弱い。
-   - **要望**: ステップUI（«前へ / 次へ»、手数カウンタ）。
-   - **実装案**: `replayStepTo(index)` = 盤面を身元から再構築→actions[0..index-1]を即時再適用→
-     最後の手のセルへ startAutoRotate。Next=+1 / Prev=-1（Prevは0から作り直し）。再生セッション時のみ表示するコントロールバー。
+3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI** → 実装済み
+   - `startReplay`のsetTimeout自動再生を廃止し、`replayStepTo(index)`ベースの手動ステップに変更。
+   - 新規関数：`replayStepTo(index)`（身元から盤面再構築→actions[0..index-1]即時再適用→
+     直近dig手へstartAutoRotate）、`replayStepNext()`/`replayStepPrev()`、`updateReplayStepUI()`。
+   - `_replayMode`はセッション中ずっとtrueを維持する方式に変更（旧実装は各アクション後にfalseへ
+     戻していたため、ステップUIで終盤にジャンプするとdigCell内の非同期checkWin/triggerGameOverSequence
+     〈300-400ms遅延〉が`_replayMode=false`後に発火し、自動保存ガードが効かず誤ってsaveReplayされる
+     恐れがあった。セッション中trueを維持することで回避）。
+   - UI：`#replay-controls`（画面下部中央固定、«前へ / 次へ / N of M カウンタ）。
+     `_isReplaySession`中のみ表示、`stopReplay()`（=`restartGame()`経由）で非表示に戻る。
 
 ---
 
@@ -201,9 +208,11 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ## 次セッションの入口
 
-**最優先: 上記「実機フィードバック 未対応」3件**（resume背景 / resume TITLEボタン / replayステップUI）。
-実装は全て `sphere-minesweeper.html`（`feature/solver-extraction` ブランチ）。
+**最優先: 上記「実機フィードバック 対応済み」3件を push して実機確認。**
+実装は全て `sphere-minesweeper.html`（`feature/solver-extraction` ブランチ、未push）。
 実機確認は GitHub Pages（push→数分で反映、`volvic51-git.github.io/steller-delete`）。
+特に1（resume背景）はローカルで再現しなかった＝古いsuspendデータが原因の可能性が高いという仮説なので、
+実機で新規に中断→再開して確認すること。まだ直らなければ再調査が必要。
 新しいプレイヤー操作を足すときの記録フック方針は memory [[project-replay-suspend]] を参照。
 
 **別トラック（リプレイ/中断が一段落したら）:**

@@ -310,6 +310,13 @@
   </div>
 </div>
 
+<!-- リプレイ再生時のみ表示：手ずつ進む/戻る ステップコントロール -->
+<div id="replay-controls" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:100;display:none;align-items:center;gap:10px;pointer-events:auto;background:rgba(0,10,30,0.75);border:1px solid rgba(0,200,255,0.4);border-radius:20px;padding:8px 16px;backdrop-filter:blur(6px);">
+  <button id="replay-prev-btn" onclick="replayStepPrev()" style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:5px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:14px;">« 前へ</button>
+  <span id="replay-step-label" style="color:#88ffff;font-size:12px;font-family:'Share Tech Mono',monospace;min-width:64px;text-align:center;">0 / 0</span>
+  <button id="replay-next-btn" onclick="replayStepNext()" style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:5px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:14px;">次へ »</button>
+</div>
+
 <!-- デバッグメニュー（設定アイコン→PAUSEDメニュー→DEBUG からタイル形式で開く） -->
 <div id="debug-menu" style="
   position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:215;display:none;
@@ -1005,10 +1012,10 @@ function updateRescueButtons(){
   }
 
   if(!isStageMode){
-    // デバッグ・ステージ指定なしの通常プレイ：もう一度のみ
+    // デバッグ・ステージ指定なしの通常プレイ（resume含む）：もう一度＋TITLE
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = 'none';
-    if(btnTitle)  btnTitle.style.display  = 'none';
+    if(btnTitle)  btnTitle.style.display  = '';
     if(btnRetry)  btnRetry.style.display  = '';
     return;
   }
@@ -2767,9 +2774,10 @@ function replaySnapshot(){ return _replay ? JSON.parse(JSON.stringify(_replay)) 
 // ===================== REPLAY (Stage3): 保存・一覧・再生 =====================
 const REPLAY_STORE_KEY = 'steller_replays';
 const REPLAY_MAX = 20;                 // 保存上限（古いものから破棄）
-let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う。手順完了で解除）
+let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う。セッション終了まで維持）
 let _isReplaySession = false;          // このゲームがリプレイ再生セッションか（終了画面のUI切替に使う。次のゲームまで保持）
-let _replayTimers = [];                // 再生中の setTimeout ハンドル（停止用）
+let _replayRecord = null;              // ステップ再生中の record（replayStepTo の身元復元に使う）
+let _replayStepIndex = 0;              // 現在のステップ（0=初期状態、N=actions[0..N-1]まで適用済み）
 
 // ゲームロジックのバージョン（互換契約）。掘削/フラッド/勝敗判定などロジックを変えたら +1。
 // リプレイ/中断は genVersion(生成) と gameVersion(ロジック) の両方が一致して初めて忠実再現できる。
@@ -2831,50 +2839,73 @@ function applyCanvasBackground(cssBg){
   else { cc.style.backgroundImage='none'; }
 }
 
-// 再生：record の身元から盤面を再構築し、操作を時間差で再適用する（実ゲーム画面で可視化）。
-// opts.speed:再生速度倍率(既定2) / opts.maxGapMs:手間の最大待ち(既定800ms・間延び防止)
-function startReplay(record, opts){
+// 再生：record の身元から盤面を再構築し、手ずつ進む/戻る ステップUIで可視化する。
+// 自動タイマー再生は廃止（速すぎてカメラ追従が弱い実機フィードバックのため）。
+// replayStepTo(index) が身元から毎回作り直すので、Prev/Next とも同じ経路を通る。
+function startReplay(record){
   if(!record || !record.board) return;
   if(!isReplayCompatible(record)){ console.warn('Replay: バージョン非互換のため再生不可', record.genVersion, record.gameVersion); return; }
-  opts = opts || {};
-  const speed = opts.speed || 2;
-  const maxGap = (opts.maxGapMs != null) ? opts.maxGapMs : 800;
   stopReplay();
+  _replayRecord = record;
+  _replayMode = true;                    // セッション中は入力ガード・自動保存の抑止に使う（stopReplayまで維持）
+  _isReplaySession = true;               // 終了画面のUIを再生用に切替える
+  const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'flex';
+  replayStepTo(0);
+  console.info(`Replay開始: ${record.actions.length}手 seed=${record.board.seed} ${record.board.rows}x${record.board.cols}`);
+}
+function stopReplay(){
+  _replayMode = false;
+  _replayRecord = null; _replayStepIndex = 0;
+  const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'none';
+}
 
-  // 盤面を replay の身元で再構築（全セル閉じた状態＋地雷を同一配置）
-  const b = record.board;
+// 指定ステップまで盤面を作り直す（身元から再構築 → actions[0..index-1]を即時再適用）。
+// Prev は0から作り直すしかない（操作は逆再生できない）ので、Next/Prevとも本関数に統一する。
+function replayStepTo(index){
+  if(!_replayRecord) return;
+  const rec = _replayRecord, b = rec.board;
+  index = Math.max(0, Math.min(index, rec.actions.length));
+
   ROWS = b.rows; COLS = b.cols; mineCount = b.mineCount;
   clearInterval(timerInterval);
   removedMines = 0; hintCount = 0; misclickGuard = false;
   maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
-  window._boardTheme = record.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
+  hintTarget = null; autoRotating = false;
+  clearTimeout(_vanishTimer); _vanishTimer = null; _vanishQueue = []; // 前ステップの遅延演出を持ち越さない
+  window._boardTheme = rec.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
-  if(record.charId){ selectCharacter(record.charId); setupCharacterPlane(); buildCageWire(); } // 元プレイと同じキャラ
-  applyCanvasBackground(record.bg); // 背景画像復元
-  updateStats();
+  if(rec.charId){ selectCharacter(rec.charId); setupCharacterPlane(); buildCageWire(); } // 元プレイと同じキャラ
+  applyCanvasBackground(rec.bg); // 背景画像復元
 
-  _replayMode = true;
-  _isReplaySession = true;               // 終了画面のUIを再生用に切替える
-  gameState = 'playing';                 // digCell/flagCell を通すため
+  gameState = 'playing'; // digCell/flagCell を通すため（_replayModeはセッション中ずっとtrueのまま）
+  let lastDigCell = null;
+  for(let i=0;i<index;i++){
+    const a = rec.actions[i];
+    if(a.a==='dig'){ digCell(a.r, a.c); lastDigCell = a; }
+    else if(a.a==='flag') flagCell(a.r, a.c);
+    else if(a.a==='hint') giveHint();                                   // ヒント演出＋hintCountを再現
+    else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
+  }
 
-  // 操作を時間差でスケジュール
-  let prevT = 0, acc = 0;
-  record.actions.forEach((a)=>{
-    const gap = Math.min(Math.max(0, a.t - prevT), maxGap);
-    prevT = a.t; acc += gap / speed;
-    _replayTimers.push(setTimeout(()=>{
-      if(!_replayMode) return;
-      if(a.a==='dig'){ digCell(a.r, a.c); startAutoRotate(a.r, a.c); } // カメラを開いたセルへ追従
-      else if(a.a==='flag') flagCell(a.r, a.c);
-      else if(a.a==='hint') giveHint();                                   // ヒント演出＋hintCountを再現
-      else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
-    }, acc));
-  });
-  _replayTimers.push(setTimeout(()=>{ _replayMode=false; console.info(`Replay終了: ${record.actions.length}手 (${record.result})`); }, acc + 200));
-  console.info(`Replay開始: ${record.actions.length}手 seed=${b.seed} ${b.rows}x${b.cols}`);
+  _replayStepIndex = index;
+  updateStats(); updateHintGauge();
+  updateReplayStepUI();
+  if(lastDigCell) startAutoRotate(lastDigCell.r, lastDigCell.c); // カメラを直近の一手へ追従
 }
-function stopReplay(){ _replayTimers.forEach(h=>clearTimeout(h)); _replayTimers=[]; _replayMode=false; }
+function replayStepNext(){ if(_replayRecord) replayStepTo(_replayStepIndex + 1); }
+function replayStepPrev(){ if(_replayRecord) replayStepTo(_replayStepIndex - 1); }
+
+function updateReplayStepUI(){
+  if(!_replayRecord) return;
+  const total = _replayRecord.actions.length;
+  const label = document.getElementById('replay-step-label');
+  if(label) label.textContent = `${_replayStepIndex} / ${total}`;
+  const prevBtn = document.getElementById('replay-prev-btn');
+  const nextBtn = document.getElementById('replay-next-btn');
+  if(prevBtn){ prevBtn.disabled = (_replayStepIndex <= 0); prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1'; }
+  if(nextBtn){ nextBtn.disabled = (_replayStepIndex >= total); nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1'; }
+}
 
 // ===================== SUSPEND / RESUME (Stage4): 中断・再開 =====================
 // リプレイの仕組み（身元＋操作ログ）に、アクション由来でない「メタ状態」
