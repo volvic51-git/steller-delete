@@ -856,9 +856,17 @@ let CHARACTER_LIST = [
 ];
 
 // JSON読み込み（非同期・失敗時はフォールバックを維持）
-fetch('./assets/images/characters/characters.json')
+// ★重要: 起動時ハンドオフ(resume/replay)や初回restartGameは、この完了(_charDataReady)を
+//   待ってからキャラ選択する。待たないと JSON到着前のフォールバック(旧名)で確定してしまう。
+const _charDataReady = fetch('./assets/images/characters/characters.json')
   .then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
-  .then(data=>{ if(Array.isArray(data)&&data.length>0) CHARACTER_LIST=data; })
+  .then(data=>{
+    if(Array.isArray(data)&&data.length>0){
+      CHARACTER_LIST=data;
+      // 既に選択済みなら新リストの同一idへ張り替え（表示名のズレ防止・安全網）
+      if(currentCharacter){ currentCharacter = CHARACTER_LIST.find(c=>c.id===currentCharacter.id) || currentCharacter; }
+    }
+  })
   .catch(()=>{ console.info('characters.json not found, using built-in data.'); });
 
 let currentCharacter = null;
@@ -4103,21 +4111,24 @@ requestAnimationFrame(()=>requestAnimationFrame(()=>{ syncCharaLayerSize(); upda
 // steller_suspend / steller_replays は localStorage 共有。
 const _bootParams = new URLSearchParams(window.location.search);
 const _bootMode = _bootParams.get('boot');
-if(_bootMode === 'resume'){
-  restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
-  const _rec = loadSuspend();
-  if(_rec && resumeSuspend(_rec)){ clearSuspend(); }  // 再開したら中断データは消費
-  else { console.warn('中断再開に失敗（データ無し/非互換）'); }
-} else if(_bootMode === 'replay'){
-  restartGame();
-  const _i = parseInt(_bootParams.get('i') || '0', 10);
-  const _rec = getReplay(_i);
-  if(_rec) startReplay(_rec);
-  else console.warn('リプレイが見つかりません', _i);
-} else if(!_bootParams.get('stage')){
-  // ステージモード時はapplyStageParam内のrestartGameに任せる
-  restartGame();
-}
+// キャラデータ(characters.json)の読み込み完了を待ってから起動する（旧名フォールバック回避）。
+_charDataReady.finally(()=>{
+  if(_bootMode === 'resume'){
+    restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
+    const _rec = loadSuspend();
+    if(_rec && resumeSuspend(_rec)){ clearSuspend(); }  // 再開したら中断データは消費
+    else { console.warn('中断再開に失敗（データ無し/非互換）'); }
+  } else if(_bootMode === 'replay'){
+    restartGame();
+    const _i = parseInt(_bootParams.get('i') || '0', 10);
+    const _rec = getReplay(_i);
+    if(_rec) startReplay(_rec);
+    else console.warn('リプレイが見つかりません', _i);
+  } else if(!_bootParams.get('stage')){
+    // ステージモード時はapplyStageParam内のrestartGameに任せる
+    restartGame();
+  }
+});
 // 最初のマスを開く前でも、ページへの最初の操作（クリック/タップ）でBGMを開始する
 // （ブラウザの自動再生制限対策。startTimer()内のstartBGM()は1手目専用で別途呼ばれる）
 document.addEventListener('pointerdown', function(){ startBGM(); }, { once: true });
