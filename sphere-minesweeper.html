@@ -315,6 +315,7 @@
   <button id="replay-prev-btn" onclick="replayStepPrev()" style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:5px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:14px;">« 前へ</button>
   <span id="replay-step-label" style="color:#88ffff;font-size:12px;font-family:'Share Tech Mono',monospace;min-width:64px;text-align:center;">0 / 0</span>
   <button id="replay-next-btn" onclick="replayStepNext()" style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:5px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:14px;">次へ »</button>
+  <button id="replay-auto-btn" onclick="replayAutoToggle()" style="background:rgba(0,40,20,0.85);border:1px solid rgba(0,220,120,0.6);color:#00dd88;padding:5px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;border-radius:14px;">▶ AUTO</button>
 </div>
 
 <!-- デバッグメニュー（設定アイコン→PAUSEDメニュー→DEBUG からタイル形式で開く） -->
@@ -1029,10 +1030,10 @@ function updateRescueButtons(){
     if(btnTitle)  btnTitle.style.display  = '';
     if(btnRetry)  btnRetry.style.display  = 'none';
   } else {
-    // SIMPLE／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）
+    // SIMPLE／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）＋TITLE
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = '';
-    if(btnTitle)  btnTitle.style.display  = 'none';
+    if(btnTitle)  btnTitle.style.display  = '';
     if(btnRetry)  btnRetry.style.display  = '';
   }
 }
@@ -2184,6 +2185,7 @@ let gameOverCheckMode = false;
 
 function triggerGameOverSequence(extraMsg, mistakeCell){
   if(replayAutoSave && !_replayMode) saveReplay('lose', elapsed); // 自動保存ON時のみ（再生中は保存しない）
+  if(_isReplaySession){ _replayEnded = true; replayAutoStop(); } // 再生が終端（ゲームオーバー）に達した→操作バー全ボタン無効化
   gameState = 'lose'; // 即座に入力（掘削・旗）をブロック。カメラ回転/ズームは引き続き可能
   gamePaused = false;
   gameOverMistakeCell = mistakeCell || null;
@@ -2252,6 +2254,7 @@ function checkWin(){
   if(removedMines!==mineCount) return;
   if(gameState!=='playing') return; // 既に遷移演出が進行中なら無視（連続操作による二重発火を防止）
   // 自動保存（win）は showRescueScreen で行う（クリア画面と同一の精密タイムで保存し全タイムを統一するため）。
+  if(_isReplaySession){ _replayEnded = true; replayAutoStop(); } // 再生が終端に達した→操作バー全ボタン無効化
   gameState='idle'; // 演出完了まで入力を即座にブロック
   setTimeout(()=>{
     let pending=0;
@@ -2813,6 +2816,9 @@ let _replayRecord = null;              // ステップ再生中の record（repl
 // 1手 = 2サブステップ（奇数=次の一手をカメラ移動＋ハイライトで予告／偶数=それまでの手を確定適用）。
 // _replayPos の範囲は 0..actions.length*2。floor(_replayPos/2)=確定済みの手数。
 let _replayPos = 0;
+let _replayAutoTimer = null;           // AUTO再生（0.5秒間隔で次サブステップへ）の setInterval ハンドル
+const REPLAY_AUTO_INTERVAL_MS = 500;
+let _replayEnded = false;              // 再生が終端（クリア/ゲームオーバー画面）に達したか。true中は操作バー全ボタン無効
 
 // ゲームロジックのバージョン（互換契約）。掘削/フラッド/勝敗判定などロジックを変えたら +1。
 // リプレイ/中断は genVersion(生成) と gameVersion(ロジック) の両方が一致して初めて忠実再現できる。
@@ -2885,13 +2891,15 @@ function startReplay(record){
   _replayRecord = record;
   _replayMode = true;                    // セッション中は入力ガード・自動保存の抑止に使う（stopReplayまで維持）
   _isReplaySession = true;               // 終了画面のUIを再生用に切替える
+  _replayEnded = false;                  // 新規再生開始：終端フラグをリセット
   const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'flex';
   replaySubStepTo(0);
   console.info(`Replay開始: ${record.actions.length}手 seed=${record.board.seed} ${record.board.rows}x${record.board.cols}`);
 }
 function stopReplay(){
+  if(_replayAutoTimer){ clearInterval(_replayAutoTimer); _replayAutoTimer = null; } // AUTO再生を止める
   _replayMode = false;
-  _replayRecord = null; _replayPos = 0;
+  _replayRecord = null; _replayPos = 0; _replayEnded = false;
   const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'none';
 }
 
@@ -2913,9 +2921,25 @@ function replaySubStepTo(pos){
   hintTarget = null; autoRotating = false;
   clearTimeout(_vanishTimer); _vanishTimer = null; _vanishQueue = []; // 前ステップの遅延演出を持ち越さない
   _replayAnimTimers.forEach(clearTimeout); _replayAnimTimers = [];      // 前ステップの演出付き遅延を全キャンセル
+  // rapid Next/Prev対策：前ステップで演出中（scene直下へ移送済み）のメッシュを強制除去する。
+  // initBoardはboardGroupしか掃除しないため、これをしないとフェード途中のメッシュがsceneに取り残されて崩れる。
+  if(board && board.length){
+    for(let r=0;r<board.length;r++){
+      const row = board[r]; if(!row) continue;
+      for(let c=0;c<row.length;c++){
+        const cell = row[c];
+        if(cell && cell.animating && cell.mesh){
+          scene.remove(cell.mesh); boardGroup.remove(cell.mesh);
+          cell.mesh = null; cell.animating = false;
+        }
+      }
+    }
+  }
+  while(particleGroup.children.length) particleGroup.remove(particleGroup.children[0]); // 演出パーティクルも掃除
   window._boardTheme = rec.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+  calcTotalNonMineCells(); // 総非地雷数を確定＋vanishedNonMine=0リセット（RESCUE PROGRESS率の分母。これが無いと0除算回避で即100%になる）
   if(rec.charId){ selectCharacter(rec.charId); setupCharacterPlane(); buildCageWire(); } // 元プレイと同じキャラ
   applyCanvasBackground(rec.bg); // 背景画像復元
 
@@ -2953,6 +2977,26 @@ function replaySubStepTo(pos){
 function replayStepNext(){ if(_replayRecord) replaySubStepTo(_replayPos + 1); }
 function replayStepPrev(){ if(_replayRecord) replaySubStepTo(_replayPos - 1); }
 
+// AUTO/STOP：1つのボタンでトグル。再生中でなければ開始、再生中なら停止。
+function replayAutoToggle(){
+  if(_replayAutoTimer) replayAutoStop();
+  else replayAutoPlay();
+}
+// AUTO：0.5秒間隔で自動的に「次へ」を進める。末尾に達したら自動停止。
+function replayAutoPlay(){
+  if(!_replayRecord || _replayAutoTimer) return;
+  if(_replayPos >= _replayRecord.actions.length * 2) return; // 末尾なら何もしない
+  _replayAutoTimer = setInterval(()=>{
+    if(!_replayRecord || _replayPos >= _replayRecord.actions.length * 2){ replayAutoStop(); return; }
+    replaySubStepTo(_replayPos + 1);
+  }, REPLAY_AUTO_INTERVAL_MS);
+  updateReplayStepUI();
+}
+function replayAutoStop(){
+  if(_replayAutoTimer){ clearInterval(_replayAutoTimer); _replayAutoTimer = null; }
+  updateReplayStepUI();
+}
+
 // 予告中のセルを色ハイライトする（掘削=緑／旗立て=赤）。パルスなしの静的表示で十分。
 function showReplayPreviewHighlight(cell, colorHex){
   if(!cell || !cell.mesh) return;
@@ -2970,19 +3014,40 @@ function updateReplayStepUI(){
   const isPreview = (_replayPos % 2 === 1) && committedCount < total;
   const label = document.getElementById('replay-step-label');
   if(label){
+    // カウンタのみ表示。予告フェーズは文字色（掘削=緑/旗立て=赤）で種別を示す（テキストは出さない）。
+    label.textContent = `${committedCount} / ${total}`;
     if(isPreview){
       const next = _replayRecord.actions[committedCount];
-      label.textContent = `${committedCount} / ${total} (${next.a==='flag' ? '旗立て予告' : next.a==='dig' ? '掘削予告' : '予告'})`;
       label.style.color = next.a==='flag' ? '#ff6688' : '#66ff99';
     } else {
-      label.textContent = `${committedCount} / ${total}`;
       label.style.color = '#88ffff';
     }
   }
+  const auto  = !!_replayAutoTimer;
+  const atEnd = (_replayPos >= maxPos);
+  const ended = _replayEnded; // クリア/ゲームオーバー画面到達後は全ボタン無効
   const prevBtn = document.getElementById('replay-prev-btn');
   const nextBtn = document.getElementById('replay-next-btn');
-  if(prevBtn){ prevBtn.disabled = (_replayPos <= 0); prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1'; }
-  if(nextBtn){ nextBtn.disabled = (_replayPos >= maxPos); nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1'; }
+  const autoBtn = document.getElementById('replay-auto-btn');
+  // 終端到達後は全無効。AUTO再生中は手動の前へ/次へを無効化。
+  if(prevBtn){ prevBtn.disabled = ended || auto || (_replayPos <= 0); prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1'; }
+  if(nextBtn){ nextBtn.disabled = ended || auto || atEnd;            nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1'; }
+  // AUTO/STOP トグルボタン：再生中は「■ STOP」（橙）、それ以外は「▶ AUTO」（緑）。末尾/終端では無効化。
+  if(autoBtn){
+    if(auto && !ended){
+      autoBtn.textContent = '■ STOP';
+      autoBtn.style.background  = 'rgba(40,10,0,0.85)';
+      autoBtn.style.borderColor = 'rgba(255,120,60,0.6)';
+      autoBtn.style.color       = '#ff9955';
+      autoBtn.disabled = false; autoBtn.style.opacity = '1';
+    } else {
+      autoBtn.textContent = '▶ AUTO';
+      autoBtn.style.background  = 'rgba(0,40,20,0.85)';
+      autoBtn.style.borderColor = 'rgba(0,220,120,0.6)';
+      autoBtn.style.color       = '#00dd88';
+      autoBtn.disabled = ended || atEnd; autoBtn.style.opacity = autoBtn.disabled ? '0.4' : '1';
+    }
+  }
 }
 
 // ===================== SUSPEND / RESUME (Stage4): 中断・再開 =====================
