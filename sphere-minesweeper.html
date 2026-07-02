@@ -1012,10 +1012,10 @@ function updateRescueButtons(){
   }
 
   if(!isStageMode){
-    // デバッグ・ステージ指定なしの通常プレイ（resume含む）：もう一度＋TITLE
+    // デバッグ・ステージ指定なしの通常プレイ（resume含む）：もう一度＋STAGE（ステージ選択）
     if(btnNovel)  btnNovel.style.display  = 'none';
-    if(btnSelect) btnSelect.style.display = 'none';
-    if(btnTitle)  btnTitle.style.display  = '';
+    if(btnSelect) btnSelect.style.display = '';
+    if(btnTitle)  btnTitle.style.display  = 'none';
     if(btnRetry)  btnRetry.style.display  = '';
     return;
   }

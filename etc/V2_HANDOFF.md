@@ -64,9 +64,10 @@ preview_evalによる実操作シミュレーションで検証済みだが、**
      古いsuspendデータ**（`meta.bg`が`undefined`）が原因だった可能性が高い。
    - **次アクション**: 実機で再度 中断→即再開 のフローを新規に試して確認。まだ直らなければ再調査。
 
-2. **resume クリア画面に「TITLE」ボタンが無い** → 修正済み
-   - `updateRescueButtons()`の`!isStageMode`枝（997行目付近）で`btnTitle.style.display=''`を追加。
-     RETRYと併記される。
+2. **resume クリア画面に「TITLE」ボタンが無い** → 修正済み（実機フィードバックで再修正）
+   - 一次修正：`updateRescueButtons()`の`!isStageMode`枝で`btnTitle`を表示 → 実機確認の結果、
+     SIMPLE系resumeでは「STAGE」（ステージ選択）の方が自然というフィードバックを受け、
+     `!isStageMode`枝は最終的に **RETRY + STAGE**（`btnSelect`）表示、TITLE非表示に変更。
 
 3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI** → 実装済み
    - `startReplay`のsetTimeout自動再生を廃止し、`replayStepTo(index)`ベースの手動ステップに変更。
