@@ -43,6 +43,9 @@ master
 ✓ キャラ永続・replay-fidelity(hint/search)・キャラ名レース修正・背景/テーマ復元
 ✓ GitHub Pages公開・実機テスト（volvic51-git.github.io/steller-delete）
 ✓ 実機フィードバック3件をローカル検証・実装（TITLE表示／リプレイstep UI／背景はコード上問題なし）
+✓ リプレイstep UIを予告→確定の2サブステップ化＋消滅演出のちらつき修正（当該手のみ演出）
+✓ クリアタイム統一：全表示を computeClearTimeSec()（=ランキングタイム）に統一。自動保存も同値で保存。
+  再生クリア画面はrecordのclearTimeを表示（0.000秒バグ修正）。タイトル一覧もX.XXX秒に統一
 ▶ push→実機（GitHub Pages）で最終確認 ← いまここ
 ```
 
@@ -78,16 +81,43 @@ preview_evalによる実操作シミュレーションで検証済みだが、**
      resume枝をRETRY+STAGEに変更→「通常SIMPLEクリアも同じに」でSIMPLE枝も統一→
      「STORY＋resumeはNEXT+TITLEにしたい」で上記のフラグ復元方式を追加。
 
-3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI** → 実装済み
-   - `startReplay`のsetTimeout自動再生を廃止し、`replayStepTo(index)`ベースの手動ステップに変更。
-   - 新規関数：`replayStepTo(index)`（身元から盤面再構築→actions[0..index-1]即時再適用→
-     直近dig手へstartAutoRotate）、`replayStepNext()`/`replayStepPrev()`、`updateReplayStepUI()`。
-   - `_replayMode`はセッション中ずっとtrueを維持する方式に変更（旧実装は各アクション後にfalseへ
-     戻していたため、ステップUIで終盤にジャンプするとdigCell内の非同期checkWin/triggerGameOverSequence
-     〈300-400ms遅延〉が`_replayMode=false`後に発火し、自動保存ガードが効かず誤ってsaveReplayされる
-     恐れがあった。セッション中trueを維持することで回避）。
-   - UI：`#replay-controls`（画面下部中央固定、«前へ / 次へ / N of M カウンタ）。
-     `_isReplaySession`中のみ表示、`stopReplay()`（=`restartGame()`経由）で非表示に戻る。
+3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI** → 実装済み（さらに予告→確定の2段階に細分化）
+   - `startReplay`のsetTimeout自動再生を廃止し、`replaySubStepTo(pos)`ベースの手動ステップに変更。
+   - **1手 = 2サブステップ**：奇数pos=次の一手を予告（カメラ移動＋掘削は緑/旗立ては赤でハイライト、
+     盤面はまだ変えない）／偶数pos=それまでの手を確定適用（実際にdigCell/flagCellを呼ぶ。カメラは
+     直前の予告で既に向いているので動かさない）。`pos`の範囲は`0..actions.length*2`。
+   - 新規/変更関数：`replaySubStepTo(pos)`（身元から毎回全再構築→committedCount=floor(pos/2)手ぶん
+     即時再適用→奇数posならstartAutoRotate+showReplayPreviewHighlight）、`showReplayPreviewHighlight(cell,colorHex)`
+     （cell.mesh.material.emissiveを静的に緑/赤へ。パルス無し）、`replayStepNext/Prev`（pos±1）、
+     `updateReplayStepUI()`（ラベルは`確定数 / 総手数`＋予告中は「(掘削予告)」「(旗立て予告)」を併記、
+     ラベル文字色も緑/赤に）。
+   - `_replayMode`はセッション中ずっとtrueを維持する方式（旧実装は各アクション後にfalseへ戻していたため、
+     ステップUIで終盤にジャンプするとdigCell内の非同期checkWin/triggerGameOverSequence〈300-400ms遅延〉が
+     `_replayMode=false`後に発火し、自動保存ガードが効かず誤ってsaveReplayされる恐れがあった）。
+   - UI：`#replay-controls`（画面下部中央固定、«前へ / 次へ / カウンタ）。`_isReplaySession`中のみ表示、
+     `stopReplay()`（=`restartGame()`経由）で非表示に戻る。
+   - **追加修正（実機フィードバック）**：クリックのたびに「消滅済みのセルが復活してまた消滅する」
+     ちらつきが発生。原因は`replaySubStepTo`が毎回盤面を全部作り直す設計（過去の手をdigCell/flagCellで
+     再実行）のため、0セル消滅演出の遅延（scheduleVanishの80ms＋千鳥ずらしi*8ms、地雷除去/爆発後の
+     カスケード確定の400ms）がある間、本来もう消えているはずのセルが一瞬「開いたまま」でレンダリングされていた。
+     修正：`replayTimeout(fn,delay)`ヘルパーを追加し、`_replayInstant`フラグがtrueの間は`setTimeout`を
+     使わず即時実行するように、digCell/openCell経由のscheduleVanish/removeMine/flagCellの該当setTimeoutを
+     置換。`replaySubStepTo`の確定済み手再適用ループ（と`resumeSuspend`の即時再適用ループ）を
+     `_replayInstant=true`で囲むことで、盤面再構築が完全に同期的に最終状態まで確定するようにした。
+   - **さらに追加修正（1回目では直らず）**：本当の原因は「消滅アニメーションそのものが毎回再生される」こと。
+     `replaySubStepTo`はクリックのたびに`initBoard()`で全セルのメッシュを作り直すため、消滅済みセルも
+     `triggerVanishAnimation`/`triggerRemovalAnimation`で新メッシュがscene直下へ再ペアレントされフェードアウト
+     演出を再生していた（＝「復活→再度消滅」ちらつき）。修正：`removeMeshInstant(cell)`ヘルパーを追加し、
+     `triggerVanishAnimation`/`triggerRemovalAnimation`の冒頭で`_replayInstant`ならメッシュを即boardGroup/scene
+     から除去・null化して`return`（演出・パーティクルなし）。
+   - **さらに追加修正（今度は演出が消えすぎた）**：修正2は再構築ループ全体を`_replayInstant=true`で囲んで
+     いたため「いま確定した一手」の消滅演出まで消えていた。要件は「過去の手の再構築は即時／いま確定した
+     一手だけは演出あり」。修正：`replaySubStepTo`の確定フェーズ（偶数pos）でのみ、ループ最後の一手
+     （`i===committedCount-1`）だけ`_replayInstant=false`にして演出付きで適用（`animateLast`フラグ）。
+     予告フェーズ（奇数pos）は全手を即時（既に見た手を再演出しない）。演出付き一手が張るsetTimeoutは
+     `_replayAnimTimers`に追跡し、次ステップ再構築の冒頭で全clear（rapid Next/Prevで演出が重ならない）。
+     検証：確定ステップで当該手の消滅セルのみanimating>0（過去の手はscene無スパイクで即時）、プレビュー
+     ステップはanimating最大0、連打ジャンプでも最終removed一致・残留なし。
 
 ---
 

@@ -1622,7 +1622,8 @@ const RESUME_REPLAY_KEY  = 'steller_replays';
       listEl.innerHTML = list.map((r,i)=>{
         const res = r.result==='win' ? '🏆 CLEAR' : (r.result==='lose' ? '💥 LOSE' : (r.result||'—'));
         const size = r.board ? `${r.board.rows}×${r.board.cols}` : '';
-        const ct = (r.clearTime!=null) ? ` / ${r.clearTime}s` : '';
+        // クリア画面と同じ「X.XXX秒」形式に統一（recordのclearTimeはランキングと同一の精密タイム）
+        const ct = (r.clearTime!=null) ? ` / ${Number(r.clearTime).toFixed(3)}秒` : '';
         const t = r.savedAt ? r.savedAt.slice(0,16).replace('T',' ') : '';
         return `<button class="replay-item" data-i="${i}" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px 11px;background:rgba(0,20,50,.6);border:1px solid rgba(0,200,255,.35);color:#bfe;border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;">${res}　<span style="color:#8ac;">${size}${ct}</span><br><span style="color:#678;font-size:11px;">${t}</span></button>`;
       }).reverse().join('');

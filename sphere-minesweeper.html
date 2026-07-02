@@ -947,6 +947,16 @@ function calcTotalNonMineCells(){
 let rescueBgCtx = null;
 let rescueParticles = [];
 
+// クリアタイム（ランキング・クリア画面共通の精密タイム）を算出する。
+// 周回モードは1周目開始〜最終周クリアまでのトータル時間を使う。ゲーム内で表示するタイムは全てこれに統一。
+function computeClearTimeSec(){
+  return loopMode && window._loopTotalStartMs
+    ? Math.round(performance.now() - window._loopTotalStartMs) / 1000
+    : window._timerStartMs
+      ? Math.round(performance.now() - window._timerStartMs) / 1000
+      : elapsed;
+}
+
 function showRescueScreen(){
   // 全外殻消滅後に呼ばれる
   const scr = document.getElementById('rescue-screen');
@@ -956,14 +966,14 @@ function showRescueScreen(){
   document.getElementById('rescue-title').textContent  = currentCharacter.name;
   document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
-  // 精密クリアタイム（コンマ3桁）
-  // 周回モードは1周目開始〜最終周クリアまでのトータル時間を使う
-  const clearTimeSec = loopMode && window._loopTotalStartMs
-    ? Math.round(performance.now() - window._loopTotalStartMs) / 1000
-    : window._timerStartMs
-      ? Math.round(performance.now() - window._timerStartMs) / 1000
-      : elapsed;
+  // 精密クリアタイム（コンマ3桁）。再生時は「実際にクリアした時のタイム」をrecordから表示する
+  // （再生セッションでは実タイマーが走らず0になるため、その場再計算はしない）。
+  const clearTimeSec = _isReplaySession
+    ? ((_replayRecord && _replayRecord.clearTime != null) ? _replayRecord.clearTime : 0)
+    : computeClearTimeSec();
   document.getElementById('rescue-time').textContent = formatRankingTime(clearTimeSec);
+  // 自動保存（クリア）：表示・ランキングと同一の clearTimeSec で保存し、ゲーム内の全タイムを一致させる。
+  if(!_isReplaySession && replayAutoSave && !_replaySavedThisGame) saveReplay('win', clearTimeSec);
   refreshManualSaveBtn('rescue-btn-savereplay', 'win', clearTimeSec); // リプレイ保存ボタンの状態同期
 
   // ランキング保存・順位表示
@@ -1892,6 +1902,19 @@ function isSolvable(startRow, startCol){
     cellAt: (r,c)=>board[r][c]
   });
 }
+// リプレイのステップ再構築中フラグ。true の間、通常は setTimeout で遅延させている
+// 「カスケード確定・0セル消滅」等の後処理を即時実行し、消滅演出もスキップする（replayTimeout/triggerVanish等）。
+// 理由：replaySubStepToは毎回盤面を全部作り直す＝過去の手をdigCell/flagCellで再実行するため、
+// 遅延・演出をそのままにすると「消滅済みのはずのセルが一瞬復活してから再度消滅する」ちらつきが起きる。
+// ただし「いま確定した一手」だけは _replayInstant=false で適用し、その手で消えるセルの演出は見せる。
+let _replayInstant = false;
+let _replayAnimTimers = [];            // 演出付き一手が張る setTimeout（次ステップ再構築時にまとめてクリア）
+function replayTimeout(fn, delay){
+  if(_replayInstant){ fn(); return null; }
+  const h = setTimeout(fn, delay);
+  if(_isReplaySession) _replayAnimTimers.push(h); // 再生セッション中のみ追跡（rapid Next/Prevで演出が重ならないよう）
+  return h;
+}
 function digCell(row,col){
   const cell=board[row][col];
   if(cell.isOpen||cell.hasFlag||cell.isRemoved) return;
@@ -1908,7 +1931,7 @@ function digCell(row,col){
       cell.isMine=false; cell.isRemoved=true; removedMines++;
       playSE('flag');
       triggerRemovalAnimation(cell);
-      setTimeout(()=>{
+      replayTimeout(()=>{
         calcNeighbors();
         for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
         checkCascade();
@@ -1922,7 +1945,7 @@ function digCell(row,col){
   }
   playSE('popen');
   openCell(row,col);
-  setTimeout(()=>{ updateStats(); checkWin(); }, 300);
+  replayTimeout(()=>{ updateStats(); checkWin(); }, 300);
 }
 
 function openCell(row,col){
@@ -1946,11 +1969,11 @@ let _vanishTimer=null;
 function scheduleVanish(cell){
   _vanishQueue.push(cell);
   if(_vanishTimer) clearTimeout(_vanishTimer);
-  _vanishTimer=setTimeout(()=>{
+  _vanishTimer=replayTimeout(()=>{
     const batch=[..._vanishQueue];
     _vanishQueue=[];
     batch.forEach((c,i)=>{
-      setTimeout(()=>vanishZeroCell(c), i*8);
+      replayTimeout(()=>vanishZeroCell(c), i*8);
     });
   }, 80);
 }
@@ -1982,7 +2005,7 @@ function flagCell(row,col){
       cell.hasFlag=false;
       playSE('popen');
       openCell(row,col);
-      setTimeout(()=>{ updateStats(); checkWin(); }, 300);
+      replayTimeout(()=>{ updateStats(); checkWin(); }, 300);
       return;
     }
     cell.hasFlag=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell);
@@ -1994,7 +2017,7 @@ function removeMine(row,col){
   cell.isMine=false; cell.isRemoved=true; removedMines++;
   playSE('flag');
   triggerRemovalAnimation(cell);
-  setTimeout(()=>{
+  replayTimeout(()=>{
     calcNeighbors();
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
     checkCascade();
@@ -2023,9 +2046,17 @@ function checkCascade(){
   }
 }
 
+// リプレイのステップ再構築中は、消滅演出を再生せずメッシュを即座に消す
+// （毎回盤面を作り直すため、演出を残すと「消滅済みセルが復活→再度フェードアウト」がちらつく）。
+function removeMeshInstant(cell){
+  if(cell.mesh){ boardGroup.remove(cell.mesh); scene.remove(cell.mesh); cell.mesh=null; }
+  cell.animating=false;
+}
+
 // 地雷除去アニメ（爆発的・橙色）
 function triggerRemovalAnimation(cell){
   if(!cell.mesh) return;
+  if(_replayInstant){ removeMeshInstant(cell); return; } // 再構築中は演出なしで即消去
   // ワールド座標で位置を取得してからscene直下に移動
   const worldPos = new THREE.Vector3();
   cell.mesh.getWorldPosition(worldPos);
@@ -2041,6 +2072,7 @@ function triggerRemovalAnimation(cell){
 // 0セル消滅アニメ（静かに散る・青色）
 function triggerVanishAnimation(cell){
   if(!cell.mesh) return;
+  if(_replayInstant){ removeMeshInstant(cell); return; } // 再構築中は演出なしで即消去
   const worldPos = new THREE.Vector3();
   cell.mesh.getWorldPosition(worldPos);
   boardGroup.remove(cell.mesh);
@@ -2219,7 +2251,7 @@ function reopenGameOverDialog(){
 function checkWin(){
   if(removedMines!==mineCount) return;
   if(gameState!=='playing') return; // 既に遷移演出が進行中なら無視（連続操作による二重発火を防止）
-  if(replayAutoSave && !_replayMode) saveReplay('win', elapsed); // 自動保存ON時のみ（再生中は保存しない）
+  // 自動保存（win）は showRescueScreen で行う（クリア画面と同一の精密タイムで保存し全タイムを統一するため）。
   gameState='idle'; // 演出完了まで入力を即座にブロック
   setTimeout(()=>{
     let pending=0;
@@ -2770,8 +2802,10 @@ const REPLAY_STORE_KEY = 'steller_replays';
 const REPLAY_MAX = 20;                 // 保存上限（古いものから破棄）
 let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う。セッション終了まで維持）
 let _isReplaySession = false;          // このゲームがリプレイ再生セッションか（終了画面のUI切替に使う。次のゲームまで保持）
-let _replayRecord = null;              // ステップ再生中の record（replayStepTo の身元復元に使う）
-let _replayStepIndex = 0;              // 現在のステップ（0=初期状態、N=actions[0..N-1]まで適用済み）
+let _replayRecord = null;              // ステップ再生中の record（replaySubStepTo の身元復元に使う）
+// 1手 = 2サブステップ（奇数=次の一手をカメラ移動＋ハイライトで予告／偶数=それまでの手を確定適用）。
+// _replayPos の範囲は 0..actions.length*2。floor(_replayPos/2)=確定済みの手数。
+let _replayPos = 0;
 
 // ゲームロジックのバージョン（互換契約）。掘削/フラッド/勝敗判定などロジックを変えたら +1。
 // リプレイ/中断は genVersion(生成) と gameVersion(ロジック) の両方が一致して初めて忠実再現できる。
@@ -2809,7 +2843,7 @@ function saveReplay(result, clearTime){
     bg: getCanvasBackground(),                 // 背景画像(CSS)
     actions: snap.actions,
     result: result || 'unknown',
-    clearTime: (typeof clearTime==='number') ? Math.round(clearTime*10)/10 : null,
+    clearTime: (typeof clearTime==='number') ? clearTime : null, // 表示・ランキングと完全一致させるため丸めない
     startedAt: snap.startedAt,
     savedAt: new Date().toISOString()
   };
@@ -2835,7 +2869,8 @@ function applyCanvasBackground(cssBg){
 
 // 再生：record の身元から盤面を再構築し、手ずつ進む/戻る ステップUIで可視化する。
 // 自動タイマー再生は廃止（速すぎてカメラ追従が弱い実機フィードバックのため）。
-// replayStepTo(index) が身元から毎回作り直すので、Prev/Next とも同じ経路を通る。
+// replaySubStepTo(pos) が身元から毎回作り直すので、Prev/Next とも同じ経路を通る。
+// 1手 = 予告（カメラ移動＋緑/赤ハイライト）→確定（実際に掘削/旗立て）の2サブステップ。
 function startReplay(record){
   if(!record || !record.board) return;
   if(!isReplayCompatible(record)){ console.warn('Replay: バージョン非互換のため再生不可', record.genVersion, record.gameVersion); return; }
@@ -2844,21 +2879,25 @@ function startReplay(record){
   _replayMode = true;                    // セッション中は入力ガード・自動保存の抑止に使う（stopReplayまで維持）
   _isReplaySession = true;               // 終了画面のUIを再生用に切替える
   const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'flex';
-  replayStepTo(0);
+  replaySubStepTo(0);
   console.info(`Replay開始: ${record.actions.length}手 seed=${record.board.seed} ${record.board.rows}x${record.board.cols}`);
 }
 function stopReplay(){
   _replayMode = false;
-  _replayRecord = null; _replayStepIndex = 0;
+  _replayRecord = null; _replayPos = 0;
   const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'none';
 }
 
-// 指定ステップまで盤面を作り直す（身元から再構築 → actions[0..index-1]を即時再適用）。
-// Prev は0から作り直すしかない（操作は逆再生できない）ので、Next/Prevとも本関数に統一する。
-function replayStepTo(index){
+// 指定サブステップまで盤面を作り直す（身元から再構築→確定済みの手を即時再適用→
+// 予告フェーズなら次の一手へカメラ移動＋色ハイライト）。
+// Prevは0から作り直すしかない（操作は逆再生できない）ので、Next/Prevとも本関数に統一する。
+function replaySubStepTo(pos){
   if(!_replayRecord) return;
-  const rec = _replayRecord, b = rec.board;
-  index = Math.max(0, Math.min(index, rec.actions.length));
+  const rec = _replayRecord, b = rec.board, total = rec.actions.length;
+  const maxPos = total * 2;
+  pos = Math.max(0, Math.min(pos, maxPos));
+  const committedCount = Math.floor(pos / 2);
+  const isPreview = (pos % 2 === 1) && committedCount < total; // 奇数=次の一手を予告中（未実行）
 
   ROWS = b.rows; COLS = b.cols; mineCount = b.mineCount;
   clearInterval(timerInterval);
@@ -2866,6 +2905,7 @@ function replayStepTo(index){
   maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
   hintTarget = null; autoRotating = false;
   clearTimeout(_vanishTimer); _vanishTimer = null; _vanishQueue = []; // 前ステップの遅延演出を持ち越さない
+  _replayAnimTimers.forEach(clearTimeout); _replayAnimTimers = [];      // 前ステップの演出付き遅延を全キャンセル
   window._boardTheme = rec.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
@@ -2873,32 +2913,69 @@ function replayStepTo(index){
   applyCanvasBackground(rec.bg); // 背景画像復元
 
   gameState = 'playing'; // digCell/flagCell を通すため（_replayModeはセッション中ずっとtrueのまま）
-  let lastDigCell = null;
-  for(let i=0;i<index;i++){
+  // 過去の手（確定済みだが今回の一手ではない）は即時実行・演出なしで再構築する。
+  // ただし確定フェーズ（偶数pos）の「いま確定した一手（=最後の手）」だけは演出ありで適用し、
+  // その手で消えるセルの消滅アニメを見せる。予告フェーズ（奇数pos）は全手を即時（見た手を再演出しない）。
+  const animateLast = !isPreview && committedCount > 0; // この一手だけ演出付きにするか
+  _replayInstant = true;
+  for(let i=0;i<committedCount;i++){
+    if(animateLast && i === committedCount - 1) _replayInstant = false; // 最後の手だけ演出ON
     const a = rec.actions[i];
-    if(a.a==='dig'){ digCell(a.r, a.c); lastDigCell = a; }
+    if(a.a==='dig') digCell(a.r, a.c);
     else if(a.a==='flag') flagCell(a.r, a.c);
     else if(a.a==='hint') giveHint();                                   // ヒント演出＋hintCountを再現
     else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
   }
+  _replayInstant = false;
 
-  _replayStepIndex = index;
+  _replayPos = pos;
   updateStats(); updateHintGauge();
   updateReplayStepUI();
-  if(lastDigCell) startAutoRotate(lastDigCell.r, lastDigCell.c); // カメラを直近の一手へ追従
+
+  if(isPreview){
+    // 次の一手を予告：カメラを移動し、掘削(緑)/旗立て(赤)をハイライト（盤面はまだ変えない）
+    const next = rec.actions[committedCount];
+    startAutoRotate(next.r, next.c);
+    const cell = board[next.r] && board[next.r][next.c];
+    if(cell && (next.a==='dig' || next.a==='flag')){
+      showReplayPreviewHighlight(cell, next.a==='dig' ? 0x00ff66 : 0xff2244);
+    }
+  }
+  // 確定フェーズはカメラを動かさない（直前の予告フェーズで既にその手のセルへ向いているため）
 }
-function replayStepNext(){ if(_replayRecord) replayStepTo(_replayStepIndex + 1); }
-function replayStepPrev(){ if(_replayRecord) replayStepTo(_replayStepIndex - 1); }
+function replayStepNext(){ if(_replayRecord) replaySubStepTo(_replayPos + 1); }
+function replayStepPrev(){ if(_replayRecord) replaySubStepTo(_replayPos - 1); }
+
+// 予告中のセルを色ハイライトする（掘削=緑／旗立て=赤）。パルスなしの静的表示で十分。
+function showReplayPreviewHighlight(cell, colorHex){
+  if(!cell || !cell.mesh) return;
+  cell.mesh.material.emissive.setHex(colorHex);
+  cell.mesh.material.emissiveIntensity = 1.4;
+  const brd = cell.mesh.children.find(c=>c.isLine);
+  if(brd) brd.material.color.setHex(colorHex);
+}
 
 function updateReplayStepUI(){
   if(!_replayRecord) return;
   const total = _replayRecord.actions.length;
+  const maxPos = total * 2;
+  const committedCount = Math.floor(_replayPos / 2);
+  const isPreview = (_replayPos % 2 === 1) && committedCount < total;
   const label = document.getElementById('replay-step-label');
-  if(label) label.textContent = `${_replayStepIndex} / ${total}`;
+  if(label){
+    if(isPreview){
+      const next = _replayRecord.actions[committedCount];
+      label.textContent = `${committedCount} / ${total} (${next.a==='flag' ? '旗立て予告' : next.a==='dig' ? '掘削予告' : '予告'})`;
+      label.style.color = next.a==='flag' ? '#ff6688' : '#66ff99';
+    } else {
+      label.textContent = `${committedCount} / ${total}`;
+      label.style.color = '#88ffff';
+    }
+  }
   const prevBtn = document.getElementById('replay-prev-btn');
   const nextBtn = document.getElementById('replay-next-btn');
-  if(prevBtn){ prevBtn.disabled = (_replayStepIndex <= 0); prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1'; }
-  if(nextBtn){ nextBtn.disabled = (_replayStepIndex >= total); nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1'; }
+  if(prevBtn){ prevBtn.disabled = (_replayPos <= 0); prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1'; }
+  if(nextBtn){ nextBtn.disabled = (_replayPos >= maxPos); nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1'; }
 }
 
 // ===================== SUSPEND / RESUME (Stage4): 中断・再開 =====================
@@ -3005,9 +3082,9 @@ function resumeSuspend(rec){
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
 
   // 操作ログを"即時"再適用して途中盤面を復元（アニメ待ちなし・自動保存/入力ガード抑止）
-  _replayMode = true; gameState = 'playing'; removedMines = 0;
+  _replayMode = true; _replayInstant = true; gameState = 'playing'; removedMines = 0;
   for(const a of rec.actions){ if(a.a==='dig') digCell(a.r,a.c); else if(a.a==='flag') flagCell(a.r,a.c); }
-  _replayMode = false;
+  _replayMode = false; _replayInstant = false;
 
   // アクション由来でないメタを上書き復元
   elapsed   = m.elapsed ?? elapsed;
