@@ -294,7 +294,7 @@
       style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚙️</button>
     <button id="audio-btn" onclick="toggleAudio()" title="音声ON/OFF">🔊</button>
     <button id="manual-btn" onclick="startManual()" title="あそびかた"
-      style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">❓</button>
+      style="display:none;background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;align-items:center;justify-content:center;">❓</button>
   </div>
   <!-- 右上：タイマー -->
   <div id="timer-zone" style="position:fixed;top:14px;right:16px;z-index:100;display:flex;flex-direction:column;align-items:flex-end;gap:2px;pointer-events:auto;">
@@ -308,6 +308,23 @@
     <button class="mode-btn active" id="btn-dig" onclick="setMode('dig')">⛏ 掘削</button>
     <button class="mode-btn" id="btn-flag" onclick="setMode('flag')">🚩 旗</button>
   </div>
+</div>
+
+<!-- リプレイ再生時のみ表示：手ずつ進む/戻る ステップコントロール -->
+<div id="replay-controls" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9990;display:none;align-items:center;gap:6px;flex-wrap:nowrap;pointer-events:auto;background:rgba(0,10,30,0.75);border:1px solid rgba(0,200,255,0.4);border-radius:20px;padding:8px 14px;backdrop-filter:blur(6px);">
+  <button id="replay-prev-btn" onclick="replayStepPrev()" style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:4px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:0;min-width:42px;flex-shrink:0;">
+    <span style="font-size:14px;line-height:1.3;">«</span>
+    <span style="font-size:14px;letter-spacing:1px;line-height:1.3;">BACK</span>
+  </button>
+  <span id="replay-step-label" style="color:#88ffff;font-size:12px;font-family:'Share Tech Mono',monospace;min-width:52px;text-align:center;flex-shrink:0;">0 / 0</span>
+  <button id="replay-next-btn" onclick="replayStepNext()" style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:4px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:0;min-width:42px;flex-shrink:0;">
+    <span style="font-size:14px;line-height:1.3;">»</span>
+    <span style="font-size:14px;letter-spacing:1px;line-height:1.3;">NEXT</span>
+  </button>
+  <button id="replay-auto-btn" onclick="replayAutoToggle()" style="background:rgba(0,40,20,0.85);border:1px solid rgba(0,220,120,0.6);color:#00dd88;padding:4px 10px;cursor:pointer;font-family:'Share Tech Mono',monospace;border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:0;min-width:42px;flex-shrink:0;">
+    <span id="replay-auto-icon" style="font-size:14px;line-height:1.3;">▶</span>
+    <span id="replay-auto-label" style="font-size:14px;letter-spacing:1px;line-height:1.3;">AUTO</span>
+  </button>
 </div>
 
 <!-- デバッグメニュー（設定アイコン→PAUSEDメニュー→DEBUG からタイル形式で開く） -->
@@ -630,6 +647,7 @@
       <div id="rescue-stats"></div>
     </div>
     <div id="rescue-action-row">
+      <button id="rescue-btn-savereplay" class="rescue-action-btn" onclick="manualSaveReplay('rescue-btn-savereplay')" style="display:none;">✦ SAVE REPLAY ✦</button>
       <button id="rescue-btn-novel"  class="rescue-action-btn" onclick="window.location.href=(window._novelAfterClear||'index.html')" style="display:none;">✦ NEXT ✦</button>
       <button id="rescue-btn-select" class="rescue-action-btn" onclick="window.location.href='index.html?select=1'" style="display:none;">✦ STAGE ✦</button>
       <button id="rescue-btn-retry"  class="rescue-action-btn" onclick="document.getElementById('rescue-screen').classList.remove('active');restartGame();" style="display:none;">✦ RETRY ✦</button>
@@ -653,8 +671,10 @@
   <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#00ffff;margin-bottom:18px;">CONFIG</h2>
   <button onclick="confirmSettingsAction('restart')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">RESTART</button>
   <button onclick="confirmSettingsAction('select')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">STAGE SELECT</button>
-  <button onclick="confirmSettingsAction('title')" style="display:block;width:100%;margin-bottom:14px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">TITLE</button>
+  <button onclick="confirmSettingsAction('title')" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">TITLE</button>
+  <button id="cfg-suspend-btn" onclick="suspendAndExit()" style="display:block;width:100%;margin-bottom:14px;background:rgba(20,40,0,0.8);border:1px solid rgba(150,255,0,0.5);color:#aaff44;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:13px;border-radius:2px;">中断してタイトルへ</button>
   <button onclick="openDebugMenu()" style="display:none;width:100%;margin-bottom:14px;background:rgba(40,0,60,0.8);border:1px solid rgba(170,0,255,0.5);color:#aa88ff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">🐞 DEBUG</button>
+  <button id="cfg-autosave-btn" onclick="toggleReplayAutoSave()" style="display:block;width:100%;margin-bottom:14px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#88aacc;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:12px;border-radius:2px;">REPLAY自動保存: OFF</button>
   <button onclick="openHelpModal()" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(255,220,0,0.5);color:#ffdd00;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">HELP</button>
   <button onclick="closeSettingsMenu()" style="display:block;width:100%;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#ff8800;padding:7px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">BACK</button>
 </div>
@@ -726,6 +746,7 @@
   <h2 id="msg-title"></h2>
   <div id="msg-time" style="display:none;font-family:'Orbitron',sans-serif;font-size:clamp(22px,6vw,36px);color:#00ff88;letter-spacing:.1em;margin:6px 0 10px;text-shadow:0 0 18px rgba(0,255,136,0.7);"></div>
   <p id="msg-body"></p>
+  <button id="msg-btn-savereplay" onclick="manualSaveReplay('msg-btn-savereplay')">SAVE REPLAY</button>
   <button id="msg-btn-check"  onclick="enterGameOverCheckMode()">CHECK</button>
   <button id="msg-btn-retry"  onclick="gameOverCheckMode=false;restartGame();document.getElementById('message').style.display='none'">RETRY</button>
   <button id="msg-btn-select" onclick="window.location.href='index.html?select=1'">STAGE SELECT</button>
@@ -733,6 +754,8 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/solver.js"></script>
+<script src="js/board-gen.js"></script>
 <script>
 // ===================== BOARD DIMENSIONS (変更可能定数) =====================
 // 難易度に応じて動的に変更される
@@ -850,9 +873,17 @@ let CHARACTER_LIST = [
 ];
 
 // JSON読み込み（非同期・失敗時はフォールバックを維持）
-fetch('./assets/images/characters/characters.json')
+// ★重要: 起動時ハンドオフ(resume/replay)や初回restartGameは、この完了(_charDataReady)を
+//   待ってからキャラ選択する。待たないと JSON到着前のフォールバック(旧名)で確定してしまう。
+const _charDataReady = fetch('./assets/images/characters/characters.json')
   .then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); })
-  .then(data=>{ if(Array.isArray(data)&&data.length>0) CHARACTER_LIST=data; })
+  .then(data=>{
+    if(Array.isArray(data)&&data.length>0){
+      CHARACTER_LIST=data;
+      // 既に選択済みなら新リストの同一idへ張り替え（表示名のズレ防止・安全網）
+      if(currentCharacter){ currentCharacter = CHARACTER_LIST.find(c=>c.id===currentCharacter.id) || currentCharacter; }
+    }
+  })
   .catch(()=>{ console.info('characters.json not found, using built-in data.'); });
 
 let currentCharacter = null;
@@ -926,6 +957,16 @@ function calcTotalNonMineCells(){
 let rescueBgCtx = null;
 let rescueParticles = [];
 
+// クリアタイム（ランキング・クリア画面共通の精密タイム）を算出する。
+// 周回モードは1周目開始〜最終周クリアまでのトータル時間を使う。ゲーム内で表示するタイムは全てこれに統一。
+function computeClearTimeSec(){
+  return loopMode && window._loopTotalStartMs
+    ? Math.round(performance.now() - window._loopTotalStartMs) / 1000
+    : window._timerStartMs
+      ? Math.round(performance.now() - window._timerStartMs) / 1000
+      : elapsed;
+}
+
 function showRescueScreen(){
   // 全外殻消滅後に呼ばれる
   const scr = document.getElementById('rescue-screen');
@@ -935,14 +976,15 @@ function showRescueScreen(){
   document.getElementById('rescue-title').textContent  = currentCharacter.name;
   document.getElementById('rescue-rarity').textContent = currentCharacter.rarity;
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
-  // 精密クリアタイム（コンマ3桁）
-  // 周回モードは1周目開始〜最終周クリアまでのトータル時間を使う
-  const clearTimeSec = loopMode && window._loopTotalStartMs
-    ? Math.round(performance.now() - window._loopTotalStartMs) / 1000
-    : window._timerStartMs
-      ? Math.round(performance.now() - window._timerStartMs) / 1000
-      : elapsed;
+  // 精密クリアタイム（コンマ3桁）。再生時は「実際にクリアした時のタイム」をrecordから表示する
+  // （再生セッションでは実タイマーが走らず0になるため、その場再計算はしない）。
+  const clearTimeSec = _isReplaySession
+    ? ((_replayRecord && _replayRecord.clearTime != null) ? _replayRecord.clearTime : 0)
+    : computeClearTimeSec();
   document.getElementById('rescue-time').textContent = formatRankingTime(clearTimeSec);
+  // 自動保存（クリア）：表示・ランキングと同一の clearTimeSec で保存し、ゲーム内の全タイムを一致させる。
+  if(!_isReplaySession && replayAutoSave && !_replaySavedThisGame) saveReplay('win', clearTimeSec);
+  refreshManualSaveBtn('rescue-btn-savereplay', 'win', clearTimeSec); // リプレイ保存ボタンの状態同期
 
   // ランキング保存・順位表示
   const stageId = new URLSearchParams(window.location.search).get('stage');
@@ -973,33 +1015,36 @@ function showRescueScreen(){
 }
 
 function updateRescueButtons(){
-  const isStageMode = !!new URLSearchParams(window.location.search).get('stage');
-  const isStoryMode = new URLSearchParams(window.location.search).get('mode') === 'story';
+  // resumeはURLにmode=storyを持てない（?boot=resumeのみ）ので、resumeSuspend が復元した
+  // window._resumeStoryMode も合わせて見る（元プレイがSTORYだったかの真の判定）。
+  const isStoryMode = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
   const btnNovel  = document.getElementById('rescue-btn-novel');
   const btnSelect = document.getElementById('rescue-btn-select');
   const btnTitle  = document.getElementById('rescue-btn-title');
   const btnRetry  = document.getElementById('rescue-btn-retry');
 
-  if(!isStageMode){
-    // デバッグ・ステージ指定なしの通常プレイ：もう一度のみ
+  if(_isReplaySession){
+    // リプレイ再生の終了：TITLE へ戻る手段のみ（RETRY/NEXT/STAGE は出さない）
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = 'none';
-    if(btnTitle)  btnTitle.style.display  = 'none';
-    if(btnRetry)  btnRetry.style.display  = '';
+    if(btnRetry)  btnRetry.style.display  = 'none';
+    if(btnTitle)  btnTitle.style.display  = '';
     return;
   }
-  if(btnRetry) btnRetry.style.display = 'none';
 
   if(isStoryMode){
-    // STORY：NEXT（次のノベルへ）＋ TITLE
+    // STORY（通常 or resume）：NEXT（次のノベルへ）＋ TITLE（RETRYは出さない。物語進行を明確にするため）
     if(btnNovel)  btnNovel.style.display  = '';
     if(btnSelect) btnSelect.style.display = 'none';
+    if(btnTitle)  btnTitle.style.display  = '';
+    if(btnRetry)  btnRetry.style.display  = 'none';
   } else {
-    // SIMPLE：STAGE（ステージ選択）＋ TITLE
+    // SIMPLE／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）＋TITLE
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = '';
+    if(btnTitle)  btnTitle.style.display  = '';
+    if(btnRetry)  btnRetry.style.display  = '';
   }
-  if(btnTitle) btnTitle.style.display = '';
 }
 
 // 救出画面の背景パーティクルアニメ
@@ -1492,21 +1537,30 @@ function initBoard() {
 }
 
 // ===================== MINE PLACEMENT =====================
+// 地雷配置は js/board-gen.js（決定論・共通生成器）に一本化。
+// placeMines は「新規seedを発行 → 生成器で盤面を作り、盤面の身元を記録」する薄いアダプタ。
+// 盤面の身元（seed/genVersion/start/params）は window._boardGen に記録され、
+// リプレイ・中断・盤面の再現に使う。
 function placeMines(excludeRow, excludeCol) {
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine=false;
-  const exclude=new Set();
-  for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
-    const nr=excludeRow+dr, nc=((excludeCol+dc)+COLS)%COLS;
-    if(nr>=0&&nr<ROWS) exclude.add(nr*COLS+nc);
-  }
-  // Clamp mineCount to max possible
-  const maxMines = ROWS*COLS - exclude.size;
-  const actualMines = Math.min(mineCount, maxMines);
-  let placed=0;
-  while(placed<actualMines){
-    const r=Math.floor(Math.random()*ROWS), c=Math.floor(Math.random()*COLS);
-    if(!board[r][c].isMine && !exclude.has(r*COLS+c)){ board[r][c].isMine=true; placed++; }
-  }
+  const seed = StellerBoardGen.randomSeed();
+  applyBoardFromSeed(seed, excludeRow, excludeCol);
+}
+
+// 指定 seed + 初手セルから盤面を決定論的に生成して board[][] に反映する。
+// リプレイ/中断からの復元でも同じ経路を使う（同じ身元 → 同じ盤面）。
+function applyBoardFromSeed(seed, excludeRow, excludeCol) {
+  const mineSet = StellerBoardGen.generateMineSet({
+    rows: ROWS, cols: COLS, mineCount,
+    start: { r: excludeRow, c: excludeCol },
+    seed, wrapCols: true, wrapRows: false
+  });
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine = mineSet.has(r*COLS+c);
+  // 盤面の身元を記録（seedだけでは再現できない。genVersion+params+startが揃って再現可能）
+  window._boardGen = {
+    seed, genVersion: StellerBoardGen.GEN_VERSION,
+    start: { r: excludeRow, c: excludeCol },
+    rows: ROWS, cols: COLS, mineCount, wrap: 'cyl'
+  };
   calcNeighbors();
 }
 
@@ -1607,6 +1661,7 @@ function triggerSearchButton(){
   });
   const target = tAdj||tAll;
   if(!target) return;
+  replayRecord('search', target.row, target.col); // リプレイ用（盤面は変えないがレーダー演出の再現に使う）
   _radarTarget   = target;
   _radarActive   = true;
   _radarProgress = 0;
@@ -1742,6 +1797,11 @@ function clearRadarCanvas(){
   _radarCtx.clearRect(0, 0, cv.width, cv.height);
 }
 let logicGuarantee = false;
+// Border（生成の入り口・振り分け）: 論理保証ONでも、この密度以上は保証を試みず保証なしで開始する。
+// 実測で高密度は保証盤面がほぼ出ない（例 72x144 20%→0.3%）ため、300回の無駄打ちを避ける。
+// ※将来 Factory盤面が入ればこの経路が Factory 行きになる（暫定は保証なし）。
+// TODO(density): サイズ非依存の暫定値。密度実測(etc/V2_board_density_data.csv)が揃ったらサイズ別に見直す。
+const GUARANTEE_SKIP_DENSITY = 0.22;
 let misclickGuard = false; // 誤操作防止モード（周囲が全て未開封/消滅のセルへの操作を無効化）
 let gamePaused = false; // 設定メニューによる一時停止（球体操作のみ無効化、タイマー/BGMは継続）
 
@@ -1843,96 +1903,27 @@ function toggleLogicGuarantee(){
 }
 
 // 現在の盤面がソルバーで完全に解けるか検証（小サイズ専用）
+// 実体は js/solver.js の完全シミュレーション。ここは盤面のアダプタ。
 function isSolvable(startRow, startCol){
-  // ソルバーを使って全セルが確定できるかシミュレート
-  const opened = new Set();
-  const flagged = new Set();
-
-  // 初手で開くセルをシミュレート（openCellの連鎖を模倣）
-  function simOpen(r, c){
-    const k = r*COLS+c;
-    if(opened.has(k)) return;
-    opened.add(k);
-    if(board[r][c].neighborMines === 0){
-      getNeighbors(r,c).forEach(n=>{
-        if(!n.isMine) simOpen(n.row, n.col);
-      });
-    }
-  }
-  simOpen(startRow, startCol);
-
-  // ソルバーループ：確定セルを開き続ける
-  const maxIter = ROWS * COLS;
-  for(let iter = 0; iter < maxIter; iter++){
-    const safe = new Set(), mines = new Set();
-    let flaggedCount = flagged.size;
-    const remaining = mineCount - flaggedCount;
-    const allUnknown = [];
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-      const cell = board[r][c];
-      const k = r*COLS+c;
-      if(!cell.isMine && !opened.has(k)) allUnknown.push(k);
-      if(cell.isMine && !flagged.has(k)) allUnknown.push(k);
-    }
-
-    // ローカル制約生成
-    const cons = [];
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-      if(!opened.has(r*COLS+c)) continue;
-      const nbrs = getNeighbors(r,c);
-      const unk = nbrs.filter(n=>{
-        const k=n.row*COLS+n.col;
-        return !opened.has(k)&&!flagged.has(k);
-      });
-      const km = nbrs.filter(n=>flagged.has(n.row*COLS+n.col)).length;
-      const eff = board[r][c].neighborMines - km;
-      if(unk.length===0||eff<0) continue;
-      cons.push({cells:unk.map(n=>n.row*COLS+n.col), mines:eff});
-    }
-    // 全体制約
-    const unkAll = [];
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-      const k=r*COLS+c;
-      if(!opened.has(k)&&!flagged.has(k)) unkAll.push(k);
-    }
-    if(unkAll.length>0&&remaining>=0) cons.push({cells:unkAll, mines:remaining});
-
-    // Rule1/2 + 部分集合
-    let changed = false;
-    for(const con of cons){
-      if(con.mines===con.cells.length) con.cells.forEach(k=>{if(!mines.has(k)){mines.add(k);changed=true;}});
-      if(con.mines===0)               con.cells.forEach(k=>{if(!safe.has(k)){safe.add(k);changed=true;}});
-    }
-    for(let i=0;i<cons.length;i++) for(let j=0;j<cons.length;j++){
-      if(i===j) continue;
-      const a=cons[i],b=cons[j];
-      if(b.cells.length===0||b.cells.length>=a.cells.length) continue;
-      const bSet=new Set(b.cells);
-      if(!b.cells.every(k=>a.cells.includes(k))) continue;
-      const diff=a.cells.filter(k=>!bSet.has(k));
-      const dm=a.mines-b.mines;
-      if(dm<0||dm>diff.length) continue;
-      if(dm===diff.length) diff.forEach(k=>{if(!mines.has(k)){mines.add(k);changed=true;}});
-      if(dm===0)           diff.forEach(k=>{if(!safe.has(k)){safe.add(k);changed=true;}});
-    }
-
-    if(!changed) break;
-
-    // 確定セルを反映
-    safe.forEach(k=>{
-      const r=Math.floor(k/COLS), c=k%COLS;
-      simOpen(r,c);
-    });
-    mines.forEach(k=>flagged.add(k));
-  }
-
-  // 全非地雷セルが開かれ、全地雷が旗で確定されたら解けた
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    const k=r*COLS+c;
-    if(board[r][c].isMine && !flagged.has(k)) return false;
-    if(!board[r][c].isMine && !opened.has(k)) return false;
-  }
-  return true;
+  return StellerSolver.isSolvable({
+    rows: ROWS, cols: COLS, mineCount,
+    wrapCols: true,
+    start: { r: startRow, c: startCol },
+    cellAt: (r,c)=>board[r][c]
+  });
+}
+// リプレイのステップ再構築中フラグ。true の間、通常は setTimeout で遅延させている
+// 「カスケード確定・0セル消滅」等の後処理を即時実行し、消滅演出もスキップする（replayTimeout/triggerVanish等）。
+// 理由：replaySubStepToは毎回盤面を全部作り直す＝過去の手をdigCell/flagCellで再実行するため、
+// 遅延・演出をそのままにすると「消滅済みのはずのセルが一瞬復活してから再度消滅する」ちらつきが起きる。
+// ただし「いま確定した一手」だけは _replayInstant=false で適用し、その手で消えるセルの演出は見せる。
+let _replayInstant = false;
+let _replayAnimTimers = [];            // 演出付き一手が張る setTimeout（次ステップ再構築時にまとめてクリア）
+function replayTimeout(fn, delay){
+  if(_replayInstant){ fn(); return null; }
+  const h = setTimeout(fn, delay);
+  if(_isReplaySession) _replayAnimTimers.push(h); // 再生セッション中のみ追跡（rapid Next/Prevで演出が重ならないよう）
+  return h;
 }
 function digCell(row,col){
   const cell=board[row][col];
@@ -1950,7 +1941,7 @@ function digCell(row,col){
       cell.isMine=false; cell.isRemoved=true; removedMines++;
       playSE('flag');
       triggerRemovalAnimation(cell);
-      setTimeout(()=>{
+      replayTimeout(()=>{
         calcNeighbors();
         for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
         checkCascade();
@@ -1964,7 +1955,7 @@ function digCell(row,col){
   }
   playSE('popen');
   openCell(row,col);
-  setTimeout(()=>{ updateStats(); checkWin(); }, 300);
+  replayTimeout(()=>{ updateStats(); checkWin(); }, 300);
 }
 
 function openCell(row,col){
@@ -1988,11 +1979,11 @@ let _vanishTimer=null;
 function scheduleVanish(cell){
   _vanishQueue.push(cell);
   if(_vanishTimer) clearTimeout(_vanishTimer);
-  _vanishTimer=setTimeout(()=>{
+  _vanishTimer=replayTimeout(()=>{
     const batch=[..._vanishQueue];
     _vanishQueue=[];
     batch.forEach((c,i)=>{
-      setTimeout(()=>vanishZeroCell(c), i*8);
+      replayTimeout(()=>vanishZeroCell(c), i*8);
     });
   }, 80);
 }
@@ -2024,7 +2015,7 @@ function flagCell(row,col){
       cell.hasFlag=false;
       playSE('popen');
       openCell(row,col);
-      setTimeout(()=>{ updateStats(); checkWin(); }, 300);
+      replayTimeout(()=>{ updateStats(); checkWin(); }, 300);
       return;
     }
     cell.hasFlag=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell);
@@ -2036,7 +2027,7 @@ function removeMine(row,col){
   cell.isMine=false; cell.isRemoved=true; removedMines++;
   playSE('flag');
   triggerRemovalAnimation(cell);
-  setTimeout(()=>{
+  replayTimeout(()=>{
     calcNeighbors();
     for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
     checkCascade();
@@ -2065,9 +2056,17 @@ function checkCascade(){
   }
 }
 
+// リプレイのステップ再構築中は、消滅演出を再生せずメッシュを即座に消す
+// （毎回盤面を作り直すため、演出を残すと「消滅済みセルが復活→再度フェードアウト」がちらつく）。
+function removeMeshInstant(cell){
+  if(cell.mesh){ boardGroup.remove(cell.mesh); scene.remove(cell.mesh); cell.mesh=null; }
+  cell.animating=false;
+}
+
 // 地雷除去アニメ（爆発的・橙色）
 function triggerRemovalAnimation(cell){
   if(!cell.mesh) return;
+  if(_replayInstant){ removeMeshInstant(cell); return; } // 再構築中は演出なしで即消去
   // ワールド座標で位置を取得してからscene直下に移動
   const worldPos = new THREE.Vector3();
   cell.mesh.getWorldPosition(worldPos);
@@ -2083,6 +2082,7 @@ function triggerRemovalAnimation(cell){
 // 0セル消滅アニメ（静かに散る・青色）
 function triggerVanishAnimation(cell){
   if(!cell.mesh) return;
+  if(_replayInstant){ removeMeshInstant(cell); return; } // 再構築中は演出なしで即消去
   const worldPos = new THREE.Vector3();
   cell.mesh.getWorldPosition(worldPos);
   boardGroup.remove(cell.mesh);
@@ -2193,6 +2193,8 @@ function showSaveToast(){
 let gameOverCheckMode = false;
 
 function triggerGameOverSequence(extraMsg, mistakeCell){
+  if(replayAutoSave && !_replayMode) saveReplay('lose', elapsed); // 自動保存ON時のみ（再生中は保存しない）
+  if(_isReplaySession){ _replayEnded = true; replayAutoStop(); } // 再生が終端（ゲームオーバー）に達した→操作バー全ボタン無効化
   gameState = 'lose'; // 即座に入力（掘削・旗）をブロック。カメラ回転/ズームは引き続き可能
   gamePaused = false;
   gameOverMistakeCell = mistakeCell || null;
@@ -2234,6 +2236,7 @@ function showGameOverDialog(extraMsg){
   document.getElementById('msg-title').textContent = 'ur GONE.';
   document.getElementById('msg-body').textContent  = 'あなたは消滅してしまった！';
   updateMsgButtons();
+  refreshManualSaveBtn('msg-btn-savereplay', 'lose', elapsed); // リプレイ保存ボタンの状態同期
   greyOutFloatButtons();
   gameOverCheckMode = false;
   // 同セッション内で複数回死んでもフェードイン演出が毎回再生されるよう、
@@ -2259,6 +2262,8 @@ function reopenGameOverDialog(){
 function checkWin(){
   if(removedMines!==mineCount) return;
   if(gameState!=='playing') return; // 既に遷移演出が進行中なら無視（連続操作による二重発火を防止）
+  // 自動保存（win）は showRescueScreen で行う（クリア画面と同一の精密タイムで保存し全タイムを統一するため）。
+  if(_isReplaySession){ _replayEnded = true; replayAutoStop(); } // 再生が終端に達した→操作バー全ボタン無効化
   gameState='idle'; // 演出完了まで入力を即座にブロック
   setTimeout(()=>{
     let pending=0;
@@ -2421,163 +2426,17 @@ function triggerRescueSequence(){
 let solverMode = 'full';
 function setSolverMode(v){ solverMode=v; if(debugMode) runSolverDebug(); }
 
+// ソルバー本体は js/solver.js（純関数・共通利用）に切り出し済み。
+// ここはゲーム盤面（board / グローバル）をソルバーへ橋渡しするアダプタ。
+// 隣接ルール: 円柱（列方向ラップ）= wrapCols:true。
 function runSolver(){
-  const safe=new Set(), mines=new Set();
-
-  // 旗セルは既知地雷として計上（isRemovedは除く：removedMinesに計上済み）
-  let flaggedCount=0;
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    const cell=board[r][c];
-    if(cell.hasFlag && !cell.isRemoved) flaggedCount++;
-  }
-  const allUnknown=[];
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    const cell=board[r][c];
-    if(!cell.isOpen&&!cell.hasFlag&&!cell.isRemoved) allUnknown.push(r*COLS+c);
-  }
-  const remaining = mineCount - removedMines - flaggedCount;
-
-  // ローカル制約のみ生成（全体制約を混ぜない ← バグ①④修正）
-  function buildLocalConstraints(){
-    const cons=[];
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-      const cell=board[r][c];
-      if(!cell.isOpen) continue;
-      const nbrs=getNeighbors(r,c);
-      const unk=nbrs.filter(n=>!n.isOpen&&!n.hasFlag&&!n.isRemoved
-        &&!mines.has(n.row*COLS+n.col)&&!safe.has(n.row*COLS+n.col));
-      // isRemovedセルはneighborMinesから除外済みなのでkmにも含めない
-      const km=nbrs.filter(n=>!n.isRemoved&&(mines.has(n.row*COLS+n.col)||n.hasFlag)).length;
-      const eff=cell.neighborMines-km;
-      if(unk.length===0||eff<0) continue;
-      cons.push({cells:unk.map(n=>n.row*COLS+n.col), mines:eff});
-    }
-    return cons;
-  }
-
-  // LOGIC/FULL用：全体制約を別途生成（ローカルと分離 ← バグ①修正）
-  function buildGlobalConstraint(){
-    if(solverMode==='basic') return null;
-    const unk=allUnknown.filter(k=>!mines.has(k)&&!safe.has(k));
-    const rem=remaining-mines.size; // ← バグ②：mines.sizeはループごとに正確
-    if(unk.length===0||rem<0) return null;
-    return {cells:unk, mines:rem};
-  }
-
-  // 確定ループ
-  const maxPass = solverMode==='full'?30:solverMode==='logic'?15:5;
-  let changed=true, pass=0;
-  while(changed && pass<maxPass){
-    changed=false; pass++;
-    const localCons = buildLocalConstraints();
-    const globalCon = buildGlobalConstraint();
-    // 全体制約をローカルに加えた合成リスト（部分集合推論用のみ）
-    const allCons = globalCon ? [...localCons, globalCon] : localCons;
-
-    // Rule1/2
-    for(const con of allCons){
-      if(con.mines===con.cells.length) con.cells.forEach(k=>{ if(!mines.has(k)){mines.add(k);changed=true;} });
-      if(con.mines===0)               con.cells.forEach(k=>{ if(!safe.has(k)){safe.add(k);changed=true;} });
-    }
-
-    // Rule3: 部分集合推論
-    // 全体制約はBセット（大きい方）にのみ使う：ローカル ⊂ 全体 の差分を推論
-    for(let i=0;i<allCons.length;i++) for(let j=0;j<allCons.length;j++){
-      if(i===j) continue;
-      const a=allCons[i], b=allCons[j];
-      if(b.cells.length===0||b.cells.length>=a.cells.length) continue;
-      const bSet=new Set(b.cells);
-      if(!b.cells.every(k=>a.cells.includes(k))) continue;
-      const diff=a.cells.filter(k=>!bSet.has(k));
-      const dm=a.mines-b.mines;
-      if(dm<0||dm>diff.length) continue;
-      if(dm===diff.length) diff.forEach(k=>{ if(!mines.has(k)){mines.add(k);changed=true;} });
-      if(dm===0)           diff.forEach(k=>{ if(!safe.has(k)){safe.add(k);changed=true;} });
-    }
-  }
-
-  // FULLモード: CSP全探索 - 連結成分ごとに分割して実行
-  if(solverMode==='full'){
-    const localCons=buildLocalConstraints();
-
-    // セルと制約の対応マップ
-    const cellToCons=new Map();
-    localCons.forEach((con,ci)=>{
-      con.cells.forEach(k=>{
-        if(!cellToCons.has(k)) cellToCons.set(k,[]);
-        cellToCons.get(k).push(ci);
-      });
-    });
-
-    // 制約グラフの連結成分に分割
-    const visited=new Set();
-    for(const startK of cellToCons.keys()){
-      if(visited.has(startK)) continue;
-      const compCells=[], compConsSet=new Set();
-      const queue=[startK];
-      while(queue.length){
-        const k=queue.pop();
-        if(visited.has(k)) continue;
-        visited.add(k); compCells.push(k);
-        (cellToCons.get(k)||[]).forEach(ci=>{
-          if(compConsSet.has(ci)) return;
-          compConsSet.add(ci);
-          localCons[ci].cells.forEach(k2=>{ if(!visited.has(k2)) queue.push(k2); });
-        });
-      }
-      const compCons=[...compConsSet].map(ci=>localCons[ci]);
-      if(compCells.length===0||compCells.length>24) continue;
-
-      const n=compCells.length;
-      const indexMap=new Map(compCells.map((k,i)=>[k,i]));
-      let validCount=0;
-      const safeCount=new Array(n).fill(0);
-      const mineCount_=new Array(n).fill(0);
-      for(let mask=0;mask<(1<<n);mask++){
-        let ok=true;
-        for(const con of compCons){
-          let cnt=0;
-          for(const k of con.cells){
-            const idx=indexMap.get(k);
-            if(idx!==undefined&&(mask>>idx&1)) cnt++;
-          }
-          if(cnt!==con.mines){ok=false;break;}
-        }
-        if(!ok) continue;
-        validCount++;
-        for(let i=0;i<n;i++){
-          if(mask>>i&1) mineCount_[i]++;
-          else safeCount[i]++;
-        }
-      }
-      if(validCount>0){
-        for(let i=0;i<n;i++){
-          const k=compCells[i];
-          if(mineCount_[i]===validCount&&!mines.has(k)) mines.add(k);
-          if(safeCount[i]===validCount&&!safe.has(k))   safe.add(k);
-        }
-      }
-    }
-  }
-
-  // 確率計算（ローカル制約のみ使用 ← バグ④修正）
-  const finalLocal=buildLocalConstraints();
-  const probCount=new Map(), probTotal=new Map();
-  for(const con of finalLocal){
-    if(con.cells.length===0) continue;
-    const p=con.mines/con.cells.length;
-    con.cells.forEach(k=>{ probCount.set(k,(probCount.get(k)||0)+1); probTotal.set(k,(probTotal.get(k)||0)+p); });
-  }
-  const unkLeft=allUnknown.filter(k=>!mines.has(k)&&!safe.has(k));
-  const globalProb=unkLeft.length>0?(remaining-mines.size)/unkLeft.length:0;
-  const probs=new Map();
-  allUnknown.forEach(k=>{
-    if(mines.has(k)){probs.set(k,1.0);return;}
-    if(safe.has(k)){probs.set(k,0.0);return;}
-    probs.set(k, probCount.has(k)?probTotal.get(k)/probCount.get(k):globalProb);
+  return StellerSolver.runSolver({
+    rows: ROWS, cols: COLS,
+    mineCount, removedMines,
+    mode: solverMode,
+    wrapCols: true,
+    cellAt: (r,c)=>board[r][c]
   });
-
-  return {safe,mines,probs};
 }
 
 function runSolverDebug(){
@@ -2644,6 +2503,7 @@ function giveHint(){
   }
   if(!target) return;
   hintCount++;
+  replayRecord('hint', target.row, target.col); // リプレイ用（盤面は変えないがhintCount/演出の再現に使う）
   const statHints=document.getElementById('stat-hints'); if(statHints) statHints.textContent=hintCount;
   updateHintGauge();
   hintTarget=target; hintAnimTime=0;
@@ -2807,6 +2667,7 @@ const mouse2=new THREE.Vector2();
 function handleMouseAction(cx,cy,action){
   if(gameState==='lose' && gameOverCheckMode){ reopenGameOverDialog(); return; }
   if(gameState==='win'||gameState==='lose'||gameState==='generating') return;
+  if(_replayMode) return; // 再生中はユーザー入力を無視
   if(gamePaused) return;
   mouse2.x=(cx/window.innerWidth)*2-1;
   mouse2.y=-(cy/window.innerHeight)*2+1;
@@ -2843,6 +2704,13 @@ function openSettingsMenu(){
   // idle・playing時のみ開ける（クリア後は不可）
   if(gameState !== 'idle' && gameState !== 'playing') return;
   gamePaused = true;
+  // リプレイ再生中は「中断」不可（保存すべきプレイ進行が無いため）＝グレーアウト
+  const suspendBtn = document.getElementById('cfg-suspend-btn');
+  if(suspendBtn){
+    suspendBtn.disabled = _isReplaySession;
+    suspendBtn.style.opacity = _isReplaySession ? '0.4' : '';
+    suspendBtn.style.cursor  = _isReplaySession ? 'default' : 'pointer';
+  }
   document.getElementById('pause-overlay').style.display = 'block';
   document.getElementById('settings-menu').style.display = 'block';
 }
@@ -2914,6 +2782,434 @@ function isSafeguardedCell(row,col){
   return neighbors.every(n => n.isRemoved || (!n.isOpen && !n.hasFlag));
 }
 
+// ===================== REPLAY RECORDER（操作ログ記録・共通インフラ）=====================
+// リプレイ(Stage3)と中断・再開(Stage4)の土台。
+// ゲーム開始時に盤面の身元（window._boardGen）を固定し、以降の入力操作を時刻付きで記録する。
+// 記録は「入力レベル」（プレイヤーが押した dig/flag/hint/search）。決定論生成＋決定論ゲーム進行の
+// 前提で、同じ身元＋同じ操作列を再適用すれば同じ結果になる（＝リプレイ／中断復元）。
+// dig/flag=盤面を変える。hint/search=盤面は変えない補助（hintCount/演出の再現用）。
+// → リプレイ再生では全種を再適用、中断復元では dig/flag のみ再適用（盤面のみ復元・hintCountはmetaで復元）。
+let _replay = null;
+
+// ゲーム開始時に呼ぶ：盤面の身元を固定し、操作ログを開始する。
+function replayReset(){
+  const g = window._boardGen || {};
+  _replay = {
+    genVersion: g.genVersion ?? null,
+    seed: g.seed ?? null,
+    start: g.start ? { r:g.start.r, c:g.start.c } : null,
+    rows: g.rows ?? ROWS, cols: g.cols ?? COLS,
+    mineCount: g.mineCount ?? mineCount, wrap: g.wrap || 'cyl',
+    startedAt: new Date().toISOString(),
+    startMs: performance.now(),
+    actions: []
+  };
+  _replaySavedThisGame = false; // 新しいゲーム＝未保存
+}
+
+// 入力操作を記録する（playing 中のみ）。t はゲーム開始からの経過ms。
+function replayRecord(action, row, col){
+  if(!_replay || gameState!=='playing') return;
+  _replay.actions.push({ a: action, r: row, c: col, t: Math.round(performance.now() - _replay.startMs) });
+}
+
+// シリアライズ可能なスナップショットを返す（Stage3/4 で localStorage 保存等に使う）。
+function replaySnapshot(){ return _replay ? JSON.parse(JSON.stringify(_replay)) : null; }
+
+// ===================== REPLAY (Stage3): 保存・一覧・再生 =====================
+const REPLAY_STORE_KEY = 'steller_replays';
+const REPLAY_MAX = 20;                 // 保存上限（古いものから破棄）
+let _replayMode = false;               // 再生中フラグ（入力ガード・自動保存の抑止に使う。セッション終了まで維持）
+let _isReplaySession = false;          // このゲームがリプレイ再生セッションか（終了画面のUI切替に使う。次のゲームまで保持）
+let _replayRecord = null;              // ステップ再生中の record（replaySubStepTo の身元復元に使う）
+// 1手 = 2サブステップ（奇数=次の一手をカメラ移動＋ハイライトで予告／偶数=それまでの手を確定適用）。
+// _replayPos の範囲は 0..actions.length*2。floor(_replayPos/2)=確定済みの手数。
+let _replayPos = 0;
+let _replayAutoTimer = null;           // AUTO再生（0.5秒間隔で次サブステップへ）の setInterval ハンドル
+const REPLAY_AUTO_INTERVAL_MS = 500;
+let _replayEnded = false;              // 再生が終端（クリア/ゲームオーバー画面）に達したか。true中は操作バー全ボタン無効
+
+// ゲームロジックのバージョン（互換契約）。掘削/フラッド/勝敗判定などロジックを変えたら +1。
+// リプレイ/中断は genVersion(生成) と gameVersion(ロジック) の両方が一致して初めて忠実再現できる。
+const GAME_VERSION = "1";
+// リプレイ自動保存（既定OFF＝手動保存）。設定で切替、localStorageに永続。
+const REPLAY_AUTOSAVE_KEY = 'steller_replay_autosave';
+let replayAutoSave = (localStorage.getItem(REPLAY_AUTOSAVE_KEY) === '1');
+let _replaySavedThisGame = false;      // このゲームを保存済みか（手動ボタンの出し分け用）
+function setReplayAutoSave(on){ replayAutoSave=!!on; try{ localStorage.setItem(REPLAY_AUTOSAVE_KEY, on?'1':'0'); }catch(e){} updateAutoSaveButton(); }
+function toggleReplayAutoSave(){ setReplayAutoSave(!replayAutoSave); }
+function updateAutoSaveButton(){
+  const b=document.getElementById('cfg-autosave-btn'); if(!b) return;
+  b.textContent = 'REPLAY自動保存: ' + (replayAutoSave ? 'ON' : 'OFF');
+  b.style.color = replayAutoSave ? '#00ffaa' : '#88aacc';
+  b.style.borderColor = replayAutoSave ? 'rgba(0,255,150,0.6)' : 'rgba(0,200,255,0.4)';
+}
+// リプレイ/中断データが現バージョンで再現可能か（生成＋ロジックの両バージョン一致）。
+function isReplayCompatible(rec){
+  if(!rec) return false;
+  if(rec.genVersion !== StellerBoardGen.GEN_VERSION) return false;
+  if(rec.gameVersion != null && rec.gameVersion !== GAME_VERSION) return false; // null=旧データは暫定許容
+  return true;
+}
+
+// 現在の操作ログを結果付きで localStorage に保存する。
+function saveReplay(result, clearTime){
+  const snap = replaySnapshot();
+  if(!snap || snap.seed==null || !snap.actions.length) return null;
+  const rec = {
+    formatVersion: 1, kind: 'replay',
+    genVersion: snap.genVersion, gameVersion: GAME_VERSION,
+    board: { seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
+    charId: (currentCharacter && currentCharacter.id) || null,
+    boardTheme: window._boardTheme ?? null,   // 盤面色テーマ
+    bg: getCanvasBackground(),                 // 背景画像(CSS)
+    actions: snap.actions,
+    result: result || 'unknown',
+    clearTime: (typeof clearTime==='number') ? clearTime : null, // 表示・ランキングと完全一致させるため丸めない
+    startedAt: snap.startedAt,
+    savedAt: new Date().toISOString()
+  };
+  let list = listReplays();
+  list.push(rec);
+  if(list.length > REPLAY_MAX) list = list.slice(list.length - REPLAY_MAX);
+  try { localStorage.setItem(REPLAY_STORE_KEY, JSON.stringify(list)); } catch(e){ console.warn('replay保存失敗', e); }
+  _replaySavedThisGame = true;
+  return rec;
+}
+function listReplays(){ try { return JSON.parse(localStorage.getItem(REPLAY_STORE_KEY) || '[]'); } catch(e){ return []; } }
+function getReplay(i){ const l=listReplays(); return l[i] || null; }
+function clearReplays(){ localStorage.removeItem(REPLAY_STORE_KEY); }
+
+// 背景画像（ステージ固有）の取得/適用。replay/resume はステージ読込を通らないので、
+// 記録した CSS背景を復元する（未設定なら none）。
+function getCanvasBackground(){ const cc=document.getElementById('canvas-container'); return cc ? cc.style.backgroundImage : ''; }
+function applyCanvasBackground(cssBg){
+  const cc=document.getElementById('canvas-container'); if(!cc) return;
+  if(cssBg && cssBg!=='none'){ cc.style.backgroundImage=cssBg; cc.style.backgroundSize='cover'; cc.style.backgroundPosition='center'; }
+  else { cc.style.backgroundImage='none'; }
+}
+
+// 再生：record の身元から盤面を再構築し、手ずつ進む/戻る ステップUIで可視化する。
+// 自動タイマー再生は廃止（速すぎてカメラ追従が弱い実機フィードバックのため）。
+// replaySubStepTo(pos) が身元から毎回作り直すので、Prev/Next とも同じ経路を通る。
+// 1手 = 予告（カメラ移動＋緑/赤ハイライト）→確定（実際に掘削/旗立て）の2サブステップ。
+const _REPLAY_BLOCK_IDS = [
+  'top-center-icons','mode-btns-float','mode-indicator',
+  'hint-btn-float','focus-btn-wrap','misclick-guard-wrap','search-btn-wrap'
+];
+function _setGameIconsBlocked(blocked){
+  _REPLAY_BLOCK_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.pointerEvents = blocked ? 'none' : '';
+    el.style.opacity       = blocked ? '0.25' : '';
+  });
+}
+
+function startReplay(record){
+  if(!record || !record.board) return;
+  if(!isReplayCompatible(record)){ console.warn('Replay: バージョン非互換のため再生不可', record.genVersion, record.gameVersion); return; }
+  stopReplay();
+  _replayRecord = record;
+  _replayMode = true;                    // セッション中は入力ガード・自動保存の抑止に使う（stopReplayまで維持）
+  _isReplaySession = true;               // 終了画面のUIを再生用に切替える
+  _replayEnded = false;                  // 新規再生開始：終端フラグをリセット
+  const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'flex';
+  _setGameIconsBlocked(true);
+  replaySubStepTo(0);
+  console.info(`Replay開始: ${record.actions.length}手 seed=${record.board.seed} ${record.board.rows}x${record.board.cols}`);
+}
+function stopReplay(){
+  if(_replayAutoTimer){ clearInterval(_replayAutoTimer); _replayAutoTimer = null; } // AUTO再生を止める
+  _replayMode = false;
+  _replayRecord = null; _replayPos = 0; _replayEnded = false;
+  const bar = document.getElementById('replay-controls'); if(bar) bar.style.display = 'none';
+  _setGameIconsBlocked(false);
+}
+
+// 指定サブステップまで盤面を作り直す（身元から再構築→確定済みの手を即時再適用→
+// 予告フェーズなら次の一手へカメラ移動＋色ハイライト）。
+// Prevは0から作り直すしかない（操作は逆再生できない）ので、Next/Prevとも本関数に統一する。
+function replaySubStepTo(pos){
+  if(!_replayRecord) return;
+  const rec = _replayRecord, b = rec.board, total = rec.actions.length;
+  const maxPos = total * 2;
+  pos = Math.max(0, Math.min(pos, maxPos));
+  const committedCount = Math.floor(pos / 2);
+  const isPreview = (pos % 2 === 1) && committedCount < total; // 奇数=次の一手を予告中（未実行）
+
+  ROWS = b.rows; COLS = b.cols; mineCount = b.mineCount;
+  clearInterval(timerInterval);
+  removedMines = 0; hintCount = 0; misclickGuard = false;
+  maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
+  hintTarget = null; autoRotating = false;
+  clearTimeout(_vanishTimer); _vanishTimer = null; _vanishQueue = []; // 前ステップの遅延演出を持ち越さない
+  _replayAnimTimers.forEach(clearTimeout); _replayAnimTimers = [];      // 前ステップの演出付き遅延を全キャンセル
+  // rapid Next/Prev対策：前ステップで演出中（scene直下へ移送済み）のメッシュを強制除去する。
+  // initBoardはboardGroupしか掃除しないため、これをしないとフェード途中のメッシュがsceneに取り残されて崩れる。
+  if(board && board.length){
+    for(let r=0;r<board.length;r++){
+      const row = board[r]; if(!row) continue;
+      for(let c=0;c<row.length;c++){
+        const cell = row[c];
+        if(cell && cell.animating && cell.mesh){
+          scene.remove(cell.mesh); boardGroup.remove(cell.mesh);
+          cell.mesh = null; cell.animating = false;
+        }
+      }
+    }
+  }
+  while(particleGroup.children.length) particleGroup.remove(particleGroup.children[0]); // 演出パーティクルも掃除
+  window._boardTheme = rec.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
+  initBoard();
+  applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+  calcTotalNonMineCells(); // 総非地雷数を確定＋vanishedNonMine=0リセット（RESCUE PROGRESS率の分母。これが無いと0除算回避で即100%になる）
+  if(rec.charId){ selectCharacter(rec.charId); setupCharacterPlane(); buildCageWire(); } // 元プレイと同じキャラ
+  applyCanvasBackground(rec.bg); // 背景画像復元
+
+  gameState = 'playing'; // digCell/flagCell を通すため（_replayModeはセッション中ずっとtrueのまま）
+  // 過去の手（確定済みだが今回の一手ではない）は即時実行・演出なしで再構築する。
+  // ただし確定フェーズ（偶数pos）の「いま確定した一手（=最後の手）」だけは演出ありで適用し、
+  // その手で消えるセルの消滅アニメを見せる。予告フェーズ（奇数pos）は全手を即時（見た手を再演出しない）。
+  const animateLast = !isPreview && committedCount > 0; // この一手だけ演出付きにするか
+  _replayInstant = true;
+  for(let i=0;i<committedCount;i++){
+    if(animateLast && i === committedCount - 1) _replayInstant = false; // 最後の手だけ演出ON
+    const a = rec.actions[i];
+    if(a.a==='dig') digCell(a.r, a.c);
+    else if(a.a==='flag') flagCell(a.r, a.c);
+    else if(a.a==='hint') giveHint();                                   // ヒント演出＋hintCountを再現
+    else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
+  }
+  _replayInstant = false;
+
+  _replayPos = pos;
+  updateStats(); updateHintGauge();
+  updateReplayStepUI();
+
+  if(isPreview){
+    // 次の一手を予告：カメラを移動し、掘削(緑)/旗立て(赤)をハイライト（盤面はまだ変えない）
+    const next = rec.actions[committedCount];
+    startAutoRotate(next.r, next.c);
+    const cell = board[next.r] && board[next.r][next.c];
+    if(cell && (next.a==='dig' || next.a==='flag')){
+      showReplayPreviewHighlight(cell, next.a==='dig' ? 0x00ff66 : 0xff2244);
+    }
+  }
+  // 確定フェーズはカメラを動かさない（直前の予告フェーズで既にその手のセルへ向いているため）
+}
+function replayStepNext(){ if(_replayRecord) replaySubStepTo(_replayPos + 1); }
+function replayStepPrev(){ if(_replayRecord) replaySubStepTo(_replayPos - 1); }
+
+// AUTO/STOP：1つのボタンでトグル。再生中でなければ開始、再生中なら停止。
+function replayAutoToggle(){
+  if(_replayAutoTimer) replayAutoStop();
+  else replayAutoPlay();
+}
+// AUTO：0.5秒間隔で自動的に「次へ」を進める。末尾に達したら自動停止。
+function replayAutoPlay(){
+  if(!_replayRecord || _replayAutoTimer) return;
+  if(_replayPos >= _replayRecord.actions.length * 2) return; // 末尾なら何もしない
+  _replayAutoTimer = setInterval(()=>{
+    if(!_replayRecord || _replayPos >= _replayRecord.actions.length * 2){ replayAutoStop(); return; }
+    replaySubStepTo(_replayPos + 1);
+  }, REPLAY_AUTO_INTERVAL_MS);
+  updateReplayStepUI();
+}
+function replayAutoStop(){
+  if(_replayAutoTimer){ clearInterval(_replayAutoTimer); _replayAutoTimer = null; }
+  updateReplayStepUI();
+}
+
+// 予告中のセルを色ハイライトする（掘削=緑／旗立て=赤）。パルスなしの静的表示で十分。
+function showReplayPreviewHighlight(cell, colorHex){
+  if(!cell || !cell.mesh) return;
+  cell.mesh.material.emissive.setHex(colorHex);
+  cell.mesh.material.emissiveIntensity = 1.4;
+  const brd = cell.mesh.children.find(c=>c.isLine);
+  if(brd) brd.material.color.setHex(colorHex);
+}
+
+function updateReplayStepUI(){
+  if(!_replayRecord) return;
+  const total = _replayRecord.actions.length;
+  const maxPos = total * 2;
+  const committedCount = Math.floor(_replayPos / 2);
+  const isPreview = (_replayPos % 2 === 1) && committedCount < total;
+  const label = document.getElementById('replay-step-label');
+  if(label){
+    // カウンタのみ表示。予告フェーズは文字色（掘削=緑/旗立て=赤）で種別を示す（テキストは出さない）。
+    label.textContent = `${committedCount} / ${total}`;
+    if(isPreview){
+      const next = _replayRecord.actions[committedCount];
+      label.style.color = next.a==='flag' ? '#ff6688' : '#66ff99';
+    } else {
+      label.style.color = '#88ffff';
+    }
+  }
+  const auto  = !!_replayAutoTimer;
+  const atEnd = (_replayPos >= maxPos);
+  const ended = _replayEnded; // クリア/ゲームオーバー画面到達後は全ボタン無効
+  const prevBtn = document.getElementById('replay-prev-btn');
+  const nextBtn = document.getElementById('replay-next-btn');
+  const autoBtn = document.getElementById('replay-auto-btn');
+  // 終端到達後は全無効。AUTO再生中は手動の前へ/次へを無効化。
+  if(prevBtn){ prevBtn.disabled = ended || auto || (_replayPos <= 0); prevBtn.style.opacity = prevBtn.disabled ? '0.4' : '1'; }
+  if(nextBtn){ nextBtn.disabled = ended || auto || atEnd;            nextBtn.style.opacity = nextBtn.disabled ? '0.4' : '1'; }
+  // AUTO/STOP トグルボタン：再生中は「■ STOP」（橙）、それ以外は「▶ AUTO」（緑）。末尾/終端では無効化。
+  if(autoBtn){
+    const autoIcon  = document.getElementById('replay-auto-icon');
+    const autoLabel = document.getElementById('replay-auto-label');
+    if(auto && !ended){
+      if(autoIcon)  autoIcon.textContent  = '■';
+      if(autoLabel) autoLabel.textContent = 'STOP';
+      autoBtn.style.background  = 'rgba(40,10,0,0.85)';
+      autoBtn.style.borderColor = 'rgba(255,120,60,0.6)';
+      autoBtn.style.color       = '#ff9955';
+      autoBtn.disabled = false; autoBtn.style.opacity = '1';
+    } else {
+      if(autoIcon)  autoIcon.textContent  = '▶';
+      if(autoLabel) autoLabel.textContent = 'AUTO';
+      autoBtn.style.background  = 'rgba(0,40,20,0.85)';
+      autoBtn.style.borderColor = 'rgba(0,220,120,0.6)';
+      autoBtn.style.color       = '#00dd88';
+      autoBtn.disabled = ended || atEnd; autoBtn.style.opacity = autoBtn.disabled ? '0.4' : '1';
+    }
+  }
+}
+
+// ===================== SUSPEND / RESUME (Stage4): 中断・再開 =====================
+// リプレイの仕組み（身元＋操作ログ）に、アクション由来でない「メタ状態」
+// （経過時間・ループ周回・制限時間・ヒント・モード等）の保存/復元を足したもの。
+// 再開＝盤面を身元から再構築 → 操作ログを"即時"再適用（途中盤面を復元）→ メタを上書き → タイマー再開。
+const SUSPEND_KEY = 'steller_suspend';
+
+// プレイ中の状態を丸ごと保存する（playing のときのみ）。
+function saveSuspend(){
+  if(gameState!=='playing') return null;
+  const snap = replaySnapshot();
+  if(!snap || snap.seed==null) return null;
+  const rec = {
+    formatVersion:1, kind:'suspend', genVersion:snap.genVersion, gameVersion:GAME_VERSION,
+    board:{ seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
+    actions: snap.actions,
+    meta: {
+      elapsed, removedMines, hintCount, maxHints,
+      currentLoop, loopCount, loopMode, exMode, stMode,
+      timeLimitMode, remainingTime, totalTime,
+      logicGuarantee, currentDiff,
+      charId: (currentCharacter && currentCharacter.id) || null,
+      stageMines: window._stageMines ?? null,
+      boardTheme: window._boardTheme ?? null,
+      bg: getCanvasBackground(),
+      isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
+      novelAfterClear: window._novelAfterClear ?? null
+    },
+    savedAt: new Date().toISOString()
+  };
+  try { localStorage.setItem(SUSPEND_KEY, JSON.stringify(rec)); } catch(e){ console.warn('中断保存失敗', e); }
+  return rec;
+}
+function hasSuspend(){ return !!localStorage.getItem(SUSPEND_KEY); }
+function loadSuspend(){ try { return JSON.parse(localStorage.getItem(SUSPEND_KEY) || 'null'); } catch(e){ return null; } }
+function clearSuspend(){ localStorage.removeItem(SUSPEND_KEY); }
+
+// ---- 手動リプレイ保存ボタン（クリア画面・ゲームオーバー窓）----
+// 終了画面が出るときに呼び、保存済み/未保存でボタンの見た目を切替える。
+function refreshManualSaveBtn(btnId, result, clearTime){
+  const btn = document.getElementById(btnId); if(!btn) return;
+  if(_isReplaySession){ btn.style.display='none'; return; } // 再生中はリプレイ保存不要
+  btn.dataset.result = result;
+  btn.dataset.clearTime = (clearTime!=null ? clearTime : elapsed);
+  if(_replaySavedThisGame){ btn.textContent='✦ 保存済 ✦'; btn.disabled=true; btn.style.opacity='0.5'; }
+  else { btn.textContent='✦ SAVE REPLAY ✦'; btn.disabled=false; btn.style.opacity=''; }
+  btn.style.display='';
+}
+function manualSaveReplay(btnId){
+  const btn = document.getElementById(btnId); if(!btn || _replaySavedThisGame) return;
+  const rec = saveReplay(btn.dataset.result || 'unknown', parseFloat(btn.dataset.clearTime) || elapsed);
+  if(rec){ btn.textContent='✦ 保存済 ✦'; btn.disabled=true; btn.style.opacity='0.5'; }
+}
+
+// ---- 中断してタイトルへ（CONFIGメニュー）----
+function suspendAndExit(){
+  if(_isReplaySession) return; // リプレイ再生中は中断不可（ボタンもグレーアウト済み）
+  const rec = saveSuspend();
+  if(rec){ window.location.href = 'index.html'; }
+  else { console.warn('中断できません（プレイ中のみ可）'); }
+}
+
+// タイマー再開（elapsed/remainingTime を保持したまま。startTimer はリセットするので使わない）。
+function resumeTimer(){
+  clearInterval(timerInterval);
+  startBGM();
+  updateCharacterReveal();
+  // cleartime/制限時間の基準を「途中状態」に合わせて逆算する。
+  if(timeLimitMode && totalTime > 0){
+    window._timerStartMs = performance.now() - (totalTime - remainingTime) * 1000;
+  } else {
+    window._timerStartMs = performance.now() - elapsed * 1000;
+  }
+  window._loopTotalStartMs = performance.now() - elapsed * 1000; // 通しタイムは近似（周回中断は限界あり）
+  if(timeLimitMode) syncTimeLimitGaugeSize();
+  timerInterval = setInterval(()=>{
+    elapsed++;
+    document.getElementById('stat-time').textContent = formatTime(elapsed);
+    updateDigitTimer(elapsed);
+  }, 1000);
+}
+
+// 中断データから再開する。
+function resumeSuspend(rec){
+  if(!rec || !rec.board) return false;
+  if(!isReplayCompatible(rec)){ console.warn('Suspend: バージョン非互換のため再開不可', rec.genVersion, rec.gameVersion); return false; }
+  const b = rec.board, m = rec.meta || {};
+
+  // モード・パラメータ復元（盤面/タイマーより先に）
+  ROWS=b.rows; COLS=b.cols; mineCount=b.mineCount;
+  clearInterval(timerInterval);
+  window._stageMines = m.stageMines ?? null;
+  window._boardTheme = m.boardTheme ?? null;
+  window._novelAfterClear = m.novelAfterClear ?? null; // STORYモードで中断した場合のNEXT遷移先を復元
+  window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
+  loopMode=!!m.loopMode; loopCount=m.loopCount ?? loopCount; currentLoop=m.currentLoop ?? 1;
+  if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
+  timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;
+  if(m.currentDiff) currentDiff=m.currentDiff;
+  maxHints = m.maxHints ?? maxHints;
+
+  // 盤面を身元から再構築（全セル閉じた状態＋地雷を同一配置）
+  initBoard();
+  applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+
+  // 操作ログを"即時"再適用して途中盤面を復元（アニメ待ちなし・自動保存/入力ガード抑止）
+  _replayMode = true; _replayInstant = true; gameState = 'playing'; removedMines = 0;
+  for(const a of rec.actions){ if(a.a==='dig') digCell(a.r,a.c); else if(a.a==='flag') flagCell(a.r,a.c); }
+  _replayMode = false; _replayInstant = false;
+
+  // アクション由来でないメタを上書き復元
+  elapsed   = m.elapsed ?? elapsed;
+  hintCount = m.hintCount ?? 0;
+  if(timeLimitMode){ totalTime = m.totalTime ?? 0; remainingTime = m.remainingTime ?? totalTime; }
+
+  // 操作ログの基準を「途中まで」に戻す（以降の操作は続きから追記される）
+  _replay = {
+    genVersion: rec.genVersion, seed:b.seed, start:b.start,
+    rows:b.rows, cols:b.cols, mineCount:b.mineCount, wrap:b.wrap,
+    startedAt: rec.savedAt, startMs: performance.now() - elapsed*1000,
+    actions: rec.actions.slice()
+  };
+
+  // キャラ復元（中断時と同じキャラにする。restartGameで選ばれたランダムキャラを上書き）
+  if(m.charId){ selectCharacter(m.charId); setupCharacterPlane(); buildCageWire(); }
+  applyCanvasBackground(m.bg); // 背景画像復元
+
+  resumeTimer();
+  gameState = 'playing';
+  updateStats(); updateHintGauge();
+  return true;
+}
+
 function handleCellAction(row,col,action){
   if(gameState==='playing' && misclickGuard){
     const cell = board[row][col];
@@ -2925,29 +3221,40 @@ function handleCellAction(row,col,action){
   if(gameState==='idle'){
     gameState='generating';
     placeMines(row,col);
-    if(logicGuarantee){
-      // 非同期で再生成（UIをブロックしない）
-      const maxAttempts = 300;
+
+    // 全経路共通の後処理：盤面確定後に playing へ遷移し、初手を実行する。
+    const finishFirstAction = ()=>{
+      gameState='playing';
+      replayReset();                 // 盤面の身元を固定し操作ログを開始（初手より前）
+      startTimer();
+      calcTotalNonMineCells();
+      autoEnableMisclickGuard();
+      if(action==='dig'){ replayRecord('dig',row,col); digCell(row,col); }
+      else if(action==='flag'){ replayRecord('flag',row,col); flagCell(row,col); }
+      updateStats();
+      if(debugMode) runSolverDebug();
+    };
+
+    // ===== Border（生成の入り口・振り分け）=====
+    // (logicGuarantee, 密度) で「保証あり / 保証なし」を決める。
+    //   保証あり : 論理保証ON かつ 密度 < GUARANTEE_SKIP_DENSITY
+    //             → seedを変えて最大300回リトライ（②:300回全滅なら保証なしで開始 ← asyncEnsureSolvable内）
+    //   保証なし : 論理保証OFF、または ①密度≧しきい値で保証スキップ（将来ここが Factory 行き）
+    const density = mineCount / (ROWS*COLS);
+    if(logicGuarantee && density < GUARANTEE_SKIP_DENSITY){
       showGenerating(true);
-      asyncEnsureSolvable(row, col, maxAttempts, ()=>{
-      showGenerating(false);
-        gameState='playing';
-        startTimer();
-        calcTotalNonMineCells();
-        autoEnableMisclickGuard();
-        if(action==='dig') digCell(row,col);
-        else if(action==='flag') flagCell(row,col);
-        updateStats();
-        if(debugMode) runSolverDebug();
-      });
-      return; // 非同期なので以降の処理はコールバックで実行
+      asyncEnsureSolvable(row, col, 300, ()=>{ showGenerating(false); finishFirstAction(); });
+    } else {
+      if(logicGuarantee){ // = 密度がしきい値以上：条件①（保証スキップ）
+        console.info(`Border: 密度 ${(density*100).toFixed(1)}% ≥ ${(GUARANTEE_SKIP_DENSITY*100)}% → 保証スキップ（保証なし・将来Factory）`);
+        setGuaranteeResult(false, 0);
+      }
+      finishFirstAction();
     }
-    startTimer();
-    calcTotalNonMineCells();
-    autoEnableMisclickGuard();
+    return; // idle の処理は finishFirstAction で完結（以降の共通処理は playing 中の操作用）
   }
-  if(action==='dig') digCell(row,col);
-  else if(action==='flag') flagCell(row,col);
+  if(action==='dig'){ replayRecord('dig',row,col); digCell(row,col); }
+  else if(action==='flag'){ replayRecord('flag',row,col); flagCell(row,col); }
   updateStats();
   if(debugMode) runSolverDebug();
 }
@@ -3599,6 +3906,8 @@ function restartGame(){
   }
 
   clearInterval(timerInterval);
+  stopReplay(); _isReplaySession=false; // リプレイ再生の後始末（通常ゲームに戻す）
+  window._resumeStoryMode = false; // 中断復元由来のSTORY判定フラグをリセット（resumeSuspendが必要なら再設定）
   stopBGM();
   SND.clear.pause(); SND.clear.currentTime=0;
   gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
@@ -4017,13 +4326,32 @@ if(window.visualViewport){
 // ===================== INIT =====================
 setMode('dig');
 updateMineCountLabel();
+updateAutoSaveButton(); // 設定トグルの表示を永続値に同期
 initRadarCanvas();
 // UIバー描画後にmode-indicator・expose-bar-wrapのtopを同期
 requestAnimationFrame(()=>requestAnimationFrame(()=>{ syncCharaLayerSize(); updateHintGauge(); }));
-// ステージモード時はapplyStageParam内のrestartGameに任せる
-if(!new URLSearchParams(window.location.search).get('stage')){
-  restartGame();
-}
+// タイトルからのハンドオフ（中断再開 / リプレイ再生）を優先処理。
+// steller_suspend / steller_replays は localStorage 共有。
+const _bootParams = new URLSearchParams(window.location.search);
+const _bootMode = _bootParams.get('boot');
+// キャラデータ(characters.json)の読み込み完了を待ってから起動する（旧名フォールバック回避）。
+_charDataReady.finally(()=>{
+  if(_bootMode === 'resume'){
+    restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
+    const _rec = loadSuspend();
+    if(_rec && resumeSuspend(_rec)){ clearSuspend(); }  // 再開したら中断データは消費
+    else { console.warn('中断再開に失敗（データ無し/非互換）'); }
+  } else if(_bootMode === 'replay'){
+    restartGame();
+    const _i = parseInt(_bootParams.get('i') || '0', 10);
+    const _rec = getReplay(_i);
+    if(_rec) startReplay(_rec);
+    else console.warn('リプレイが見つかりません', _i);
+  } else if(!_bootParams.get('stage')){
+    // ステージモード時はapplyStageParam内のrestartGameに任せる
+    restartGame();
+  }
+});
 // 最初のマスを開く前でも、ページへの最初の操作（クリック/タップ）でBGMを開始する
 // （ブラウザの自動再生制限対策。startTimer()内のstartBGM()は1手目専用で別途呼ばれる）
 document.addEventListener('pointerdown', function(){ startBGM(); }, { once: true });
