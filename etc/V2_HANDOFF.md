@@ -33,19 +33,44 @@ master
 
 ## いま何をしているフェーズか
 
-**設計はほぼ完了。今は「実測データ収集」フェーズ。** これ以上の机上設計は危険（solver実測を入れる段階）。
+**リプレイ/中断 機能を実装・実機テスト中（GitHub Pages）。** Stage1-4＋UI＋各種修正まで完了・push済み。
+実機で見つかった残不具合の対応が「いまここ」（下記「実機フィードバック 未対応」参照）。
 
 ```
-✓ データアーキテクチャ設計（七原則）
-✓ solver.js 切り出し（純関数・ゲーム/Factory/解析ツールで共通）
-✓ 実測ベンチ + 公開用 Board Hunter
-✓ 開始モデル・生成エンジン入替の設計
-▶ 密度別 保証成功率の実測 ← いまここ（ユーザーがデータ収集中）
-  ↓
-  BoardFormat を v1.0 に凍結
-  ↓
-  実装 Phase 1（js/board-gen.js 一本化）へ
+✓ Stage1-4（決定論生成/Border/ログ基盤/リプレイ/中断）
+✓ UI-1-3（自動保存トグル/gameVersion/ゲーム内ボタン/タイトルRESUME・REPLAY/ハンドオフ）
+✓ キャラ永続・replay-fidelity(hint/search)・キャラ名レース修正・背景/テーマ復元
+✓ GitHub Pages公開・実機テスト（volvic51-git.github.io/steller-delete）
+▶ 実機で見つかった残不具合3件 ← いまここ
 ```
+
+**別トラック（未着手・保留中）:** 盤面密度の実測（etc/V2_board_density_data.csv）→ BoardFormat v1.0凍結
+→ Board Factory 本体。リプレイ/中断が一段落したら戻る。
+
+---
+
+## ⚠️ 実機フィードバック 未対応（次セッションの最優先）
+
+GitHub Pages 実機テストで確認。**調査途中で引っ越し。**
+
+1. **resume で背景が出ない**（replay の背景はOK）
+   - 背景は `canvas-container.style.backgroundImage`。applyStageParam(4041)と
+     `applyCanvasBackground()`(2829)でのみ設定。restartGameは触らない。
+   - saveSuspend は `meta.bg = getCanvasBackground()`、resumeSuspend は `applyCanvasBackground(m.bg)` を呼ぶ**はず**。
+     replay(record.bg 直接)は動くのに resume(meta.bg)が出ない理由は未特定。
+   - **次アクション**: 実際に `?boot=resume` で navigate して canvas-container の backgroundImage を確認
+     （直接resumeSuspend呼び出しテストでは復元できていた＝boot経路 or 古いsuspendデータ疑い）。
+
+2. **resume クリア画面に「TITLE」ボタンが無い**
+   - `updateRescueButtons()`(982)は `isStageMode`(=?stageパラメータ有無)で分岐。resumeは`?boot=resume`で
+     stageパラメータ無し → `!isStageMode`枝 → RETRYのみ表示・TITLE非表示。
+   - **修正案**: 非stage枝でも TITLE を出す（resume/デバッグ両方に効く）。replayは`_isReplaySession`枝で対応済み。
+
+3. **replay のカメラ追従が弱い → 1手ずつ進む/戻る UI が欲しい（replay時のみ）**
+   - 現状 startReplay は setTimeout自動再生＋dig時 startAutoRotate。速くて追従が弱い。
+   - **要望**: ステップUI（«前へ / 次へ»、手数カウンタ）。
+   - **実装案**: `replayStepTo(index)` = 盤面を身元から再構築→actions[0..index-1]を即時再適用→
+     最後の手のセルへ startAutoRotate。Next=+1 / Prev=-1（Prevは0から作り直し）。再生セッション時のみ表示するコントロールバー。
 
 ---
 
@@ -176,8 +201,16 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ## 次セッションの入口
 
-1. ユーザーが密度データを収集中 → 揃ったら `etc/V2_board_density_data.csv` を集計
-2. `V2_BOARD_DENSITY_FINDINGS.md`（しきい値の文章化）を作成し、`V2_GENERATION_ENGINE.md` から参照
-3. 実測を反映して `docs/20-BoardFormat.md` を v1.0 に凍結
-4. 実装 Phase 1（`js/board-gen.js` 一本化）に着手
-5. 保留タスク：`tool/`/`tools/` 統一、未pushの解消
+**最優先: 上記「実機フィードバック 未対応」3件**（resume背景 / resume TITLEボタン / replayステップUI）。
+実装は全て `sphere-minesweeper.html`（`feature/solver-extraction` ブランチ）。
+実機確認は GitHub Pages（push→数分で反映、`volvic51-git.github.io/steller-delete`）。
+新しいプレイヤー操作を足すときの記録フック方針は memory [[project-replay-suspend]] を参照。
+
+**別トラック（リプレイ/中断が一段落したら）:**
+1. 盤面密度データを集計（`etc/V2_board_density_data.csv`）
+2. `V2_BOARD_DENSITY_FINDINGS.md`（しきい値の文章化）を作成
+3. 実測を反映して `docs/20-BoardFormat.md`（spec-foundationブランチ）を v1.0 に凍結
+4. Board Factory 本体
+
+**整理系（いつでも）:** `tool/`/`tools/` 統一、`docs/10-StellerDataSpec.md`のboardHash記述をv1.0(00-Architecture)へ整合、
+V2_HANDOFF.md のルート重複解消、spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）。
