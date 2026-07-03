@@ -836,6 +836,10 @@ SND.pin.volume=0.7;
 // 効果音は複数重ねられるようにクローン再生
 function playSE(key){
   if(audioMuted) return;
+  // リプレイの即時再構築中（過去の手を無音で再適用するフェーズ）はSEを鳴らさない。
+  // これをしないと、ステップが進むほど再適用する過去手が増え、cloneNodeした効果音（消滅音等）が
+  // 同時多重再生されて「だんだん大きくなる」。演出付きで適用する“いま確定した1手”は_replayInstant=falseなので鳴る。
+  if(_replayInstant) return;
   try{
     const s=SND[key].cloneNode();
     s.volume=SND[key].volume;
