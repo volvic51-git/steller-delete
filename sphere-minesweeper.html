@@ -1018,11 +1018,14 @@ function showRescueScreen(){
 function updateRescueButtons(){
   // resumeはURLにmode=storyを持てない（?boot=resumeのみ）ので、resumeSuspend が復元した
   // window._resumeStoryMode も合わせて見る（元プレイがSTORYだったかの真の判定）。
-  const isStoryMode = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+  const isStoryMode  = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+  const isNormalMode = (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode;
   const btnNovel  = document.getElementById('rescue-btn-novel');
   const btnSelect = document.getElementById('rescue-btn-select');
   const btnTitle  = document.getElementById('rescue-btn-title');
   const btnRetry  = document.getElementById('rescue-btn-retry');
+  // NORMAL は「STAGE」ボタンで NORMAL リスト（?normal=1）へ戻す。それ以外は従来のカルーセル（?select=1）。
+  if(btnSelect) btnSelect.onclick = ()=>{ window.location.href = isNormalMode ? 'index.html?normal=1' : 'index.html?select=1'; };
 
   if(_isReplaySession){
     // リプレイ再生の終了：TITLE へ戻る手段のみ（RETRY/NEXT/STAGE は出さない）
@@ -3107,6 +3110,7 @@ function saveSuspend(){
       boardTheme: window._boardTheme ?? null,
       bg: getCanvasBackground(),
       isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
+      isNormalMode: (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode,
       novelAfterClear: window._novelAfterClear ?? null
     },
     savedAt: new Date().toISOString()
@@ -3176,6 +3180,7 @@ function resumeSuspend(rec){
   window._boardTheme = m.boardTheme ?? null;
   window._novelAfterClear = m.novelAfterClear ?? null; // STORYモードで中断した場合のNEXT遷移先を復元
   window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
+  window._resumeNormalMode = !!m.isNormalMode;          // 終了画面のSTAGEボタンをNORMALリスト(?normal=1)へ戻すために使う
   loopMode=!!m.loopMode; loopCount=m.loopCount ?? loopCount; currentLoop=m.currentLoop ?? 1;
   if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
   timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;
@@ -3912,6 +3917,7 @@ function restartGame(){
   clearInterval(timerInterval);
   stopReplay(); _isReplaySession=false; // リプレイ再生の後始末（通常ゲームに戻す）
   window._resumeStoryMode = false; // 中断復元由来のSTORY判定フラグをリセット（resumeSuspendが必要なら再設定）
+  window._resumeNormalMode = false; // 中断復元由来のNORMAL判定フラグをリセット（resumeSuspendが必要なら再設定）
   stopBGM();
   SND.clear.pause(); SND.clear.currentTime=0;
   gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
@@ -4232,6 +4238,13 @@ if(window.visualViewport){
 
       // novelAfterClear 保存（クリア後「つづきを見る」ボタンの遷移先）
       window._novelAfterClear = stage.novelAfterClear || null;
+
+      // NORMAL MODE: 盤面等は stage-params を流用しつつ、キャラだけ 011-018（stage id+10）へ差し替え。
+      // 物語進行ではないので novelAfterClear は無効化（クリア画面に NEXT を出さない）。
+      if(urlParams.get('mode') === 'normal'){
+        window._stageCharId    = String(Number(stageId) + 10).padStart(3, '0');
+        window._novelAfterClear = null;
+      }
 
       // BGM 適用（指定が無ければ既定のSND_02_play.mp3のまま）
       if(stage.bgm){

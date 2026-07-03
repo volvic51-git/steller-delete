@@ -1,0 +1,18 @@
+[
+  {
+    "id": "normal",
+    "label": "NORMAL MODE",
+    "desc": "物語を進めながらステージをクリアしていく\nスタンダードなモードです。",
+    "image": "assets/images/etc/mod01.png",
+    "color": "blue",
+    "enabled": true
+  },
+  {
+    "id": "limit",
+    "label": "LIMIT MODE",
+    "desc": "一本道の航路を進み続けるチャレンジモード。\nレベルアップしながら、どこまで進めるか挑戦！",
+    "image": "assets/images/etc/mod02.png",
+    "color": "purple",
+    "enabled": false
+  }
+]
