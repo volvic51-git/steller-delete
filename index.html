@@ -1101,6 +1101,37 @@
     font-size: clamp(18px,2.6vw,26px);
     color: rgba(0,200,255,.7);
   }
+  /* 行内の🏆RECORDSボタン（行タップ＝ゲーム開始とは別の操作） */
+  .stage-row-records {
+    flex: 0 0 auto;
+    width: clamp(34px,7vw,42px);
+    height: clamp(34px,7vw,42px);
+    border-radius: 50%;
+    border: 1px solid rgba(0,200,255,.4);
+    background: rgba(0,20,50,.7);
+    color: #ffd23c;
+    font-size: clamp(15px,3vw,19px);
+    line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s, box-shadow .2s, border-color .2s;
+  }
+  .stage-row-records:hover { background: rgba(0,40,80,.9); border-color: var(--accent); box-shadow: 0 0 12px rgba(0,200,255,.4); }
+  /* RECORDS モーダルの行 */
+  .records-row {
+    display: flex; align-items: center; gap: .8em;
+    padding: 8px 10px; margin: 4px 0;
+    background: rgba(0,20,50,.5);
+    border: 1px solid rgba(0,200,255,.25);
+    border-radius: 4px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .records-row .rk { flex: 0 0 auto; width: 2.2em; text-align: center; font-family: 'Orbitron', sans-serif; font-weight: 700; }
+  .records-row.top1 .rk { color: #ffd700; }
+  .records-row.top2 .rk { color: #c8d4e0; }
+  .records-row.top3 .rk { color: #e0925a; }
+  .records-row .tm { flex: 1 1 auto; color: #00ffcc; font-size: clamp(13px,2vw,16px); letter-spacing: .04em; }
+  .records-row .dt { flex: 0 0 auto; color: #789; font-size: clamp(10px,1.5vw,12px); }
   @media (max-aspect-ratio: 1/1) {
     .stage-row-meta { font-size: 10px; }
     .mode-card-desc { font-size: 12px; }
@@ -1330,6 +1361,18 @@
     <div id="replay-list" style="max-height:52vh;overflow:auto;"></div>
     <div class="modal-btns" style="margin-top:10px;">
       <button class="modal-btn" id="replay-close">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECORDS（ステージ別 自己ベスト上位10件）モーダル -->
+<div id="records-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+  <div class="modal-box" style="max-width:min(420px,92vw);width:100%;">
+    <div class="modal-msg" style="font-family:'Orbitron',sans-serif;letter-spacing:.2em;color:#00ffff;margin-bottom:2px;">RECORDS</div>
+    <div id="records-stage-name" style="font-family:'Rajdhani',sans-serif;color:#aaccee;font-size:clamp(12px,2vw,15px);letter-spacing:.1em;margin-bottom:10px;"></div>
+    <div id="records-list" style="max-height:52vh;overflow:auto;width:100%;"></div>
+    <div class="modal-btns" style="margin-top:10px;">
+      <button class="modal-btn" id="records-close">CLOSE</button>
     </div>
   </div>
 </div>
@@ -1949,6 +1992,12 @@ function fmtLocalDateTime(v){
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+// 秒(float)を「X.XXX SEC」に整形（RECORDS一覧の各タイム用。fmtBestTimeと同一形式）。
+function fmtSecMs(sec){
+  const ms = Math.round(sec * 1000);
+  return Math.floor(ms/1000) + '.' + String(ms%1000).padStart(3,'0') + ' SEC';
+}
+
 // BEST TIME 文字列（既存のカルーセル表示と同じ「X.XXX SEC」形式）。未クリアは「-」。
 function fmtBestTime(stageId){
   try{
@@ -2012,9 +2061,17 @@ function renderNormalList(stages){
         </div>
         <div class="stage-row-best"><small>BEST</small>${best}</div>
       </div>
+      <button class="stage-row-records" data-id="${s.id}" title="RECORDS">🏆</button>
       <div class="stage-row-arrow">&#8250;</div>
     </div>`;
   }).join('');
+  // 🏆RECORDS：行タップ（ゲーム開始）と分離するため stopPropagation してからモーダルを開く
+  el.querySelectorAll('.stage-row-records').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openRecordsModal(btn.dataset.id);
+    });
+  });
   el.querySelectorAll('.stage-row').forEach(row=>{
     row.addEventListener('click', ()=>{
       if(_titleNavLocked) return;
@@ -2034,6 +2091,31 @@ function openNormalList(){
     _normalStagesCache = stages; renderNormalList(stages); normalListModal.classList.add('show');
   }).catch(()=>{ normalListModal.classList.add('show'); });
 }
+
+// RECORDS：ステージ別の自己ベスト上位10件（stellarDeleteRanking_stage_N、STORY/TOURと共有）。
+// 日時は ts(ISO UTC)をローカル整形、旧レコード（ts無し）は date にフォールバック。
+function openRecordsModal(stageId){
+  playSelect();
+  const stage = (_normalStagesCache || []).find(s => String(s.id) === String(stageId));
+  document.getElementById('records-stage-name').textContent =
+    'STAGE ' + String(stageId).padStart(2,'0') + (stage ? '　' + stage.name : '');
+  let records = [];
+  try{ records = JSON.parse(localStorage.getItem('stellarDeleteRanking_stage_' + stageId) || '[]'); }catch(e){}
+  records = records.slice().sort((a,b)=> a.time - b.time); // 保存側も昇順だが表示側でも念のためソート
+  const listEl = document.getElementById('records-list');
+  if(!records.length){
+    listEl.innerHTML = '<div style="color:#889;padding:16px;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:12px;">まだ記録がありません</div>';
+  } else {
+    listEl.innerHTML = records.slice(0,10).map((r,i)=>{
+      const rank = i+1;
+      const topCls = rank<=3 ? ' top'+rank : '';
+      const dt = r.ts ? fmtLocalDateTime(r.ts) : (r.date || '');
+      return `<div class="records-row${topCls}"><span class="rk">${rank}</span><span class="tm">${fmtSecMs(r.time)}</span><span class="dt">${dt}</span></div>`;
+    }).join('');
+  }
+  document.getElementById('records-modal').style.display = 'flex';
+}
+document.getElementById('records-close').addEventListener('click', ()=>{ document.getElementById('records-modal').style.display = 'none'; });
 
 // STORY MODE：現STORYアコーディオンと同じEPISODESを、キャラ画像(001-010)＋エピソード文(白字)のリストで表示。
 // 行タップは従来どおり該当novelへ遷移。未解放EPは非表示（EP.0は常時表示）。
