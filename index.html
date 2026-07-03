@@ -953,7 +953,7 @@
     </div>
 
     <button class="menu-btn" id="simple-btn">
-      SIMPLE
+      TOUR
       <span class="pulse-ring"></span>
     </button>
 
@@ -965,7 +965,7 @@
       REPLAY
     </button>
 
-    <button class="menu-btn" id="auction-btn" disabled aria-disabled="true">
+    <button class="menu-btn" id="auction-btn" disabled aria-disabled="true" style="display:none;">
       AUCTION
     </button>
 
@@ -1056,6 +1056,19 @@
     <div class="modal-btns">
       <button class="modal-btn" id="save-reset-cancel">CANCEL</button>
       <button class="modal-btn danger" id="save-reset-confirm">DELETE</button>
+    </div>
+  </div>
+</div>
+
+<!-- 中断データ破棄確認モーダル -->
+<div id="discard-suspend-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+  <div class="modal-box">
+    <div class="modal-msg" style="font-size:clamp(11px,2vw,14px);line-height:1.7;text-align:center;">
+      中断データが失われます。<br>よろしいですか？
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn" id="discard-suspend-no">NO</button>
+      <button class="modal-btn danger" id="discard-suspend-yes">YES</button>
     </div>
   </div>
 </div>
@@ -1489,24 +1502,26 @@ let _titleNavLocked = false;
 
 document.getElementById('simple-btn').addEventListener('click', function(){
   if (_titleNavLocked) return;
-  _titleNavLocked = true;
-  playSelect();
-  fetch('data/stages.json')
-    .then(r => r.json())
-    .then(data => {
-      stageData  = data;
-      currentIdx = 0;
-      resetStoryFixedFilter();
-      buildStageCards();
-      stageModal.classList.add('show');
-      playStage();
-      _titleNavLocked = false; // モーダル表示で完結する操作なので、ここで解除して再操作可能に
-    })
-    .catch(() => {
-      stageViewport.innerHTML = '<div style="color:#e8f4ff;font-family:Orbitron,sans-serif;letter-spacing:.2em;">stages.json not found</div>';
-      stageModal.classList.add('show');
-      _titleNavLocked = false;
-    });
+  withDiscardConfirm(function(){
+    _titleNavLocked = true;
+    playSelect();
+    fetch('data/stages.json')
+      .then(r => r.json())
+      .then(data => {
+        stageData  = data;
+        currentIdx = 0;
+        resetStoryFixedFilter();
+        buildStageCards();
+        stageModal.classList.add('show');
+        playStage();
+        _titleNavLocked = false;
+      })
+      .catch(() => {
+        stageViewport.innerHTML = '<div style="color:#e8f4ff;font-family:Orbitron,sans-serif;letter-spacing:.2em;">stages.json not found</div>';
+        stageModal.classList.add('show');
+        _titleNavLocked = false;
+      });
+  });
 });
 
 // ── STORY アコーディオン ──
@@ -1553,10 +1568,15 @@ function buildEpisodeList() {
 
 let _storyOpen = false;
 document.getElementById('story-btn').addEventListener('click', function(){
-  _storyOpen = !_storyOpen;
-  this.classList.toggle('open', _storyOpen);
-  document.getElementById('episode-list').classList.toggle('open', _storyOpen);
-  if (_storyOpen) buildEpisodeList(); // 毎回最新saveDataで再生成
+  const btn = this;
+  const doToggle = function(){
+    _storyOpen = !_storyOpen;
+    btn.classList.toggle('open', _storyOpen);
+    document.getElementById('episode-list').classList.toggle('open', _storyOpen);
+    if (_storyOpen) buildEpisodeList(); // 毎回最新saveDataで再生成
+  };
+  // アコーディオンを開く場合のみ中断データの破棄確認を挟む（閉じる動作は確認不要）
+  if (!_storyOpen) { withDiscardConfirm(doToggle); } else { doToggle(); }
 });
 
 function closeStoryAccordion() {
@@ -1604,6 +1624,29 @@ const RESUME_REPLAY_KEY  = 'steller_replays';
   if(localStorage.getItem(RESUME_SUSPEND_KEY)){ btn.style.display=''; }
   btn.addEventListener('click', ()=>{ window.location.href = 'sphere-minesweeper.html?boot=resume'; });
 })();
+
+// 中断データ破棄確認モーダル
+let _discardSuspendCallback = null;
+function _hasSuspendData(){ return !!localStorage.getItem(RESUME_SUSPEND_KEY); }
+function openDiscardSuspendModal(onConfirm){
+  _discardSuspendCallback = onConfirm;
+  document.getElementById('discard-suspend-modal').style.display = 'flex';
+}
+function closeDiscardSuspendModal(){
+  document.getElementById('discard-suspend-modal').style.display = 'none';
+  _discardSuspendCallback = null;
+}
+document.getElementById('discard-suspend-no').addEventListener('click', closeDiscardSuspendModal);
+document.getElementById('discard-suspend-yes').addEventListener('click', function(){
+  try{ localStorage.removeItem(RESUME_SUSPEND_KEY); }catch(e){}
+  document.getElementById('resume-btn').style.display = 'none';
+  const cb = _discardSuspendCallback;
+  closeDiscardSuspendModal();
+  if(cb) cb();
+});
+function withDiscardConfirm(fn){
+  if(_hasSuspendData()){ openDiscardSuspendModal(fn); } else { fn(); }
+}
 
 // REPLAY: 保存済み一覧モーダル → 選択でゲームを再生モードで起動
 (function(){
