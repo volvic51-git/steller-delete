@@ -651,6 +651,7 @@
       <button id="rescue-btn-novel"  class="rescue-action-btn" onclick="window.location.href=(window._novelAfterClear||'index.html')" style="display:none;">✦ NEXT ✦</button>
       <button id="rescue-btn-select" class="rescue-action-btn" onclick="window.location.href='index.html?select=1'" style="display:none;">✦ STAGE ✦</button>
       <button id="rescue-btn-retry"  class="rescue-action-btn" onclick="document.getElementById('rescue-screen').classList.remove('active');restartGame();" style="display:none;">✦ RETRY ✦</button>
+      <button id="rescue-btn-episode" class="rescue-action-btn" onclick="window.location.href='index.html?story=1'" style="display:none;">✦ EPISODE ✦</button>
       <button id="rescue-btn-title"  class="rescue-action-btn" onclick="window.location.href='index.html'" style="display:none;">✦ TITLE ✦</button>
     </div>
   </div>
@@ -1028,28 +1029,32 @@ function updateRescueButtons(){
   const btnSelect = document.getElementById('rescue-btn-select');
   const btnTitle  = document.getElementById('rescue-btn-title');
   const btnRetry  = document.getElementById('rescue-btn-retry');
+  const btnEpisode = document.getElementById('rescue-btn-episode');
   // NORMAL は「STAGE」ボタンで NORMAL リスト（?normal=1）へ戻す。それ以外は従来のカルーセル（?select=1）。
   if(btnSelect) btnSelect.onclick = ()=>{ window.location.href = isNormalMode ? 'index.html?normal=1' : 'index.html?select=1'; };
 
   if(_isReplaySession){
-    // リプレイ再生の終了：TITLE へ戻る手段のみ（RETRY/NEXT/STAGE は出さない）
+    // リプレイ再生の終了：TITLE へ戻る手段のみ（RETRY/NEXT/STAGE/EPISODE は出さない）
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = 'none';
     if(btnRetry)  btnRetry.style.display  = 'none';
+    if(btnEpisode) btnEpisode.style.display = 'none';
     if(btnTitle)  btnTitle.style.display  = '';
     return;
   }
 
   if(isStoryMode){
-    // STORY（通常 or resume）：NEXT（次のノベルへ）＋ TITLE（RETRYは出さない。物語進行を明確にするため）
+    // STORY（通常 or resume）：NEXT（次のノベルへ）＋ EPISODE（STORY MODE画面へ）＋ TITLE（RETRYは出さない。物語進行を明確にするため）
     if(btnNovel)  btnNovel.style.display  = '';
     if(btnSelect) btnSelect.style.display = 'none';
+    if(btnEpisode) btnEpisode.style.display = '';
     if(btnTitle)  btnTitle.style.display  = '';
     if(btnRetry)  btnRetry.style.display  = 'none';
   } else {
-    // SIMPLE／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）＋TITLE
+    // SIMPLE／NORMAL／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）＋TITLE
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = '';
+    if(btnEpisode) btnEpisode.style.display = 'none';
     if(btnTitle)  btnTitle.style.display  = '';
     if(btnRetry)  btnRetry.style.display  = '';
   }
@@ -2722,6 +2727,10 @@ function openSettingsMenu(){
     btn.style.opacity  = _isReplaySession ? '0.4' : '';
     btn.style.cursor   = _isReplaySession ? 'default' : '';
   });
+  // STORY（通常 or resume）は「STAGE SELECT」を「EPISODE」に（遷移先も STORY MODE 画面）。
+  const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+  const selBtn = document.getElementById('cfg-select-btn');
+  if(selBtn) selBtn.textContent = isStory ? 'EPISODE' : 'STAGE SELECT';
   document.getElementById('pause-overlay').style.display = 'block';
   document.getElementById('settings-menu').style.display = 'block';
 }
@@ -2744,9 +2753,10 @@ function closeHelpModal(){
 
 function confirmSettingsAction(action){
   _pendingConfirmAction = action;
+  const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
   const texts = {
     restart: 'リスタートします。\n本当に良いですか？',
-    select:  'ステージ選択に戻ります。\n本当に良いですか？',
+    select:  (isStory ? 'エピソード選択に戻ります。' : 'ステージ選択に戻ります。') + '\n本当に良いですか？',
     title:   'タイトルに戻ります。\n本当に良いですか？',
   };
   document.getElementById('confirm-dialog-text').textContent = texts[action] || '本当に良いですか？';
@@ -2766,7 +2776,9 @@ function executeConfirmedAction(){
     closeSettingsMenu();
     restartGame();
   } else if(action === 'select'){
-    window.location.href = 'index.html?select=1';
+    // STORY は STORY MODE 画面へ、それ以外は従来のステージ選択カルーセルへ。
+    const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+    window.location.href = isStory ? 'index.html?story=1' : 'index.html?select=1';
   } else if(action === 'title'){
     window.location.href = 'index.html';
   }

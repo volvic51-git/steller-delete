@@ -1,5 +1,13 @@
 [
   {
+    "id": "story",
+    "label": "STORY MODE",
+    "desc": "物語を読み進めながら、\n囚われた花嫁人形たちを救い出そう。",
+    "image": "assets/images/etc/mod003.png",
+    "color": "yellow",
+    "enabled": true
+  },
+  {
     "id": "normal",
     "label": "NORMAL MODE",
     "desc": "星の傷あつめて捕らわれた花嫁人形を集める\nスタンダードなモードです。",

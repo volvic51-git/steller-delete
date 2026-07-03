@@ -1105,6 +1105,34 @@
     .stage-row-meta { font-size: 10px; }
     .mode-card-desc { font-size: 12px; }
   }
+
+  /* ── MODE SELECT: 黄カード（STORY） ── */
+  .mode-card.yellow { border-color: rgba(255,210,60,.5); background: rgba(40,32,4,.55); }
+  .mode-card.yellow:hover { background: rgba(60,48,8,.7); box-shadow: 0 0 26px rgba(255,200,40,.3); }
+  .mode-card.yellow .mode-card-arrow { color: rgba(255,215,80,.8); }
+
+  /* ── STORY MODE リスト（黄テーマ／キャラ画像＋エピソード文＝白字） ── */
+  #story-list-modal .screen-title { color: #ffd23c; text-shadow: 0 0 12px rgba(255,200,40,.55); }
+  #story-list-modal .screen-footer button:hover { color: var(--ice-white); border-color: #ffd23c; }
+  .stage-row.story { border-color: rgba(255,210,60,.4); background: rgba(30,24,4,.5); }
+  .stage-row.story:hover { border-color: #ffd23c; background: rgba(52,42,8,.62); box-shadow: 0 0 22px rgba(255,200,40,.28); }
+  .stage-row.story .stage-row-img { box-shadow: 0 0 14px rgba(255,200,40,.3); object-position: top; }
+  .stage-row.story .stage-row-arrow { color: rgba(255,215,80,.8); }
+  .ep-row-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: clamp(16px,2.6vw,24px);
+    color: #ffffff;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ep-row-label span {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 400;
+    font-size: .62em;
+    letter-spacing: .12em;
+    color: rgba(255,255,255,.75);
+    margin-left: .6em;
+  }
 </style>
 </head>
 <body>
@@ -1130,7 +1158,7 @@
 
   <div class="menu-wrap">
 
-    <div class="story-accordion-wrap" id="story-accordion-wrap">
+    <div class="story-accordion-wrap" id="story-accordion-wrap" style="display:none;">
       <button class="menu-btn" id="story-btn">
         STORY
       </button>
@@ -1215,6 +1243,18 @@
   </div>
   <div class="screen-footer">
     <button id="mode-select-title-btn">← TITLE</button>
+  </div>
+</div>
+
+<!-- STORY MODE エピソードリスト画面 -->
+<div id="story-list-modal" class="screen-overlay">
+  <div class="screen-title">STORY MODE</div>
+  <div class="screen-scroll" id="story-list">
+    <!-- EPISODES から動的生成 -->
+  </div>
+  <div class="screen-footer">
+    <button id="story-list-mode-btn">← MODE</button>
+    <button id="story-list-title-btn">TITLE</button>
   </div>
 </div>
 
@@ -1677,6 +1717,8 @@ document.getElementById('stage-start-btn').addEventListener('click', () => {
 
 document.getElementById('stage-back-btn').addEventListener('click', () => {
   playSelect();
+  // STORY（novel→固定カルーセル）から来た場合は STORY MODE 画面へ戻す。それ以外はタイトルへ。
+  if(isStoryFixedSelect){ window.location.href = 'index.html?story=1'; return; }
   stageModal.classList.remove('show');
   playTitle();
 });
@@ -1898,6 +1940,7 @@ function withDiscardConfirm(fn){
 // ── PLAY → MODE SELECT → NORMAL / LIMIT ──
 const modeSelectModal = document.getElementById('mode-select-modal');
 const normalListModal = document.getElementById('normal-list-modal');
+const storyListModal  = document.getElementById('story-list-modal');
 let _modesCache = null;
 let _normalStagesCache = null;
 
@@ -1915,10 +1958,11 @@ function fmtBestTime(stageId){
 
 function renderModeSelect(modes){
   const el = document.getElementById('mode-select-list');
+  const colorCls = { purple:' purple', yellow:' yellow' };
   el.innerHTML = modes.map((m,i)=>{
-    const cls = 'mode-card' + (m.color==='purple'?' purple':'') + (m.enabled===false?' disabled':'');
+    const cls = 'mode-card' + (colorCls[m.color]||'') + (m.enabled===false?' disabled':'');
     return `<div class="${cls}" data-mode="${m.id}" data-enabled="${m.enabled!==false}">
-      <img class="mode-card-img" src="${m.image}" alt="">
+      <img class="mode-card-img" src="${m.image}" alt="" onerror="this.style.visibility='hidden'">
       <div class="mode-card-body">
         <div class="mode-card-title">${m.label}</div>
         <div class="mode-card-desc">${m.desc||''}</div>
@@ -1930,7 +1974,8 @@ function renderModeSelect(modes){
     card.addEventListener('click', ()=>{
       if(card.dataset.enabled !== 'true') return; // グレーアウト（LIMIT等）は無反応
       const id = card.dataset.mode;
-      if(id === 'normal'){ playSelect(); modeSelectModal.classList.remove('show'); openNormalList(); }
+      if(id === 'story'){ playSelect(); modeSelectModal.classList.remove('show'); openStoryList(); }
+      else if(id === 'normal'){ playSelect(); modeSelectModal.classList.remove('show'); openNormalList(); }
       // 将来モードを追加する場合はここに分岐を足す
     });
   });
@@ -1985,16 +2030,53 @@ function openNormalList(){
   }).catch(()=>{ normalListModal.classList.add('show'); });
 }
 
+// STORY MODE：現STORYアコーディオンと同じEPISODESを、キャラ画像(001-010)＋エピソード文(白字)のリストで表示。
+// 行タップは従来どおり該当novelへ遷移。未解放EPは非表示（EP.0は常時表示）。
+function renderStoryList(){
+  const el = document.getElementById('story-list');
+  el.innerHTML = EPISODES.map((ep, i)=>{
+    const unlocked = ep.always ? true : (saveData.unlockedEpisode || 0) >= ep.minEp;
+    if(!unlocked) return '';
+    const img = 'assets/images/characters/' + String(i).padStart(3,'0') + '.png';
+    const sub = ep.sub ? `<span>${ep.sub}</span>` : '';
+    return `<div class="stage-row story" data-href="${ep.novel}">
+      <img class="stage-row-img" src="${img}" alt="" onerror="this.style.visibility='hidden'">
+      <div class="stage-row-body">
+        <div class="ep-row-label">${ep.label}${sub}</div>
+      </div>
+      <div class="stage-row-arrow">&#8250;</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.stage-row.story').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      if(_titleNavLocked) return;
+      const href = row.dataset.href;
+      withDiscardConfirm(function(){
+        _titleNavLocked = true;
+        playSelect();
+        window.location.href = href;
+      });
+    });
+  });
+}
+
+function openStoryList(){
+  renderStoryList(); // saveDataの解放状況を毎回反映
+  storyListModal.classList.add('show');
+}
+
 document.getElementById('play-btn').addEventListener('click', ()=>{ if(_titleNavLocked) return; openModeSelect(); });
 document.getElementById('mode-select-title-btn').addEventListener('click', ()=>{ playSelect(); modeSelectModal.classList.remove('show'); });
 document.getElementById('normal-list-mode-btn').addEventListener('click', ()=>{ playSelect(); normalListModal.classList.remove('show'); openModeSelect(); });
 document.getElementById('normal-list-title-btn').addEventListener('click', ()=>{ playSelect(); normalListModal.classList.remove('show'); });
+document.getElementById('story-list-mode-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); openModeSelect(); });
+document.getElementById('story-list-title-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); });
 
-// ?normal=1 で NORMAL リストを直接開く（NORMAL クリア後の戻り先）。NORMALはタイトル階層なので title BGM のままでよい。
+// ?normal=1 / ?story=1 で各リストを直接開く（クリア後・ノベル戻り等の戻り先）。タイトル階層なので title BGM のままでよい。
 (function(){
   const p = new URLSearchParams(window.location.search);
-  if(p.get('normal') !== '1') return;
-  openNormalList();
+  if(p.get('normal') === '1') openNormalList();
+  if(p.get('story')  === '1') openStoryList();
 })();
 
 // RANKING RESET（隠しコマンド：長押し）
