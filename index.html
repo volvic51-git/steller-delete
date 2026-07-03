@@ -1111,13 +1111,8 @@
   .mode-card.yellow:hover { background: rgba(60,48,8,.7); box-shadow: 0 0 26px rgba(255,200,40,.3); }
   .mode-card.yellow .mode-card-arrow { color: rgba(255,215,80,.8); }
 
-  /* ── STORY MODE リスト（黄テーマ／キャラ画像＋エピソード文＝白字） ── */
-  #story-list-modal .screen-title { color: #ffd23c; text-shadow: 0 0 12px rgba(255,200,40,.55); }
-  #story-list-modal .screen-footer button:hover { color: var(--ice-white); border-color: #ffd23c; }
-  .stage-row.story { border-color: rgba(255,210,60,.4); background: rgba(30,24,4,.5); }
-  .stage-row.story:hover { border-color: #ffd23c; background: rgba(52,42,8,.62); box-shadow: 0 0 22px rgba(255,200,40,.28); }
-  .stage-row.story .stage-row-img { box-shadow: 0 0 14px rgba(255,200,40,.3); object-position: top; }
-  .stage-row.story .stage-row-arrow { color: rgba(255,215,80,.8); }
+  /* ── STORY MODE リスト（青テーマ＝NORMALと同じ／キャラ画像＋エピソード文＝白字） ── */
+  .stage-row.story .stage-row-img { object-position: top; } /* キャラ画像は縦長なので上（顔）を見せる */
   .ep-row-label {
     font-family: 'Rajdhani', sans-serif;
     font-weight: 600;
@@ -1924,7 +1919,7 @@ function withDiscardConfirm(fn){
         const size = r.board ? `${r.board.rows}×${r.board.cols}` : '';
         // クリア画面と同じ「X.XXX秒」形式に統一（recordのclearTimeはランキングと同一の精密タイム）
         const ct = (r.clearTime!=null) ? ` / ${Number(r.clearTime).toFixed(3)}秒` : '';
-        const t = r.savedAt ? r.savedAt.slice(0,16).replace('T',' ') : '';
+        const t = fmtLocalDateTime(r.savedAt); // ISO(UTC)を端末ローカル時刻に整形（旧: UTC文字列をそのまま表示していてJSTと9hズレていた）
         return `<button class="replay-item" data-i="${i}" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px 11px;background:rgba(0,20,50,.6);border:1px solid rgba(0,200,255,.35);color:#bfe;border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;">${res}　<span style="color:#8ac;">${size}${ct}</span><br><span style="color:#678;font-size:11px;">${t}</span></button>`;
       }).reverse().join('');
       listEl.querySelectorAll('.replay-item').forEach(b=>{
@@ -1943,6 +1938,16 @@ const normalListModal = document.getElementById('normal-list-modal');
 const storyListModal  = document.getElementById('story-list-modal');
 let _modesCache = null;
 let _normalStagesCache = null;
+
+// 日時表示は必ずこれを通す：保存はISO(UTC)のまま、表示だけ端末ローカル時刻に整形する。
+// ISO文字列/Date/タイムスタンプを "YYYY-MM-DD HH:MM"（ローカル）へ。空や不正値は素通り。
+function fmtLocalDateTime(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(isNaN(d.getTime())) return String(v);
+  const p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 // BEST TIME 文字列（既存のカルーセル表示と同じ「X.XXX SEC」形式）。未クリアは「-」。
 function fmtBestTime(stageId){

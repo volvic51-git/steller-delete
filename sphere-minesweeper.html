@@ -3347,7 +3347,9 @@ function addRankingRecord(stageId, timeSec){
   const date = now.getFullYear() + '/' +
     String(now.getMonth()+1).padStart(2,'0') + '/' +
     String(now.getDate()).padStart(2,'0');
-  const rec = { time: timeSec, date };
+  // date=ローカル年月日（後方互換）。ts=ISO(UTC)のフルタイムスタンプ。
+  // 表示側は ts をローカル整形して使う（旧レコードは ts が無いので date にフォールバック）。
+  const rec = { time: timeSec, date, ts: now.toISOString() };
   const records = loadRanking(stageId);
   records.push(rec);
   records.sort((a,b) => a.time - b.time);

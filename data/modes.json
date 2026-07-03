@@ -2,15 +2,15 @@
   {
     "id": "story",
     "label": "STORY MODE",
-    "desc": "物語を読み進めながら、\n囚われた花嫁人形たちを救い出そう。",
+    "desc": "物語を読み進めながら、\n囚われた花嫁たちを救い出そう。",
     "image": "assets/images/etc/mod003.png",
-    "color": "yellow",
+    "color": "blue",
     "enabled": true
   },
   {
     "id": "normal",
     "label": "NORMAL MODE",
-    "desc": "星の傷あつめて捕らわれた花嫁人形を集める\nスタンダードなモードです。",
+    "desc": "星の傷を集めながらアリスを助ける\nスタンダードなモードです。",
     "image": "assets/images/etc/mod01.png",
     "color": "blue",
     "enabled": true
@@ -20,7 +20,7 @@
     "label": "LIMIT MODE",
     "desc": "制限時間内に規定回数クリアしよう。\nレベルアップしながら、どこまで進めるか挑戦！",
     "image": "assets/images/etc/mod02.png",
-    "color": "purple",
+    "color": "blue",
     "enabled": false
   }
 ]
