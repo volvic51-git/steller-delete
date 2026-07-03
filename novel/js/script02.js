@@ -62,7 +62,7 @@ const SCRIPT = [
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
-  { speaker: 'アリス', portrait: 'normal1', text: 'これが二つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが二つ目の星の檻ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: '変な場所。こんなに緑ばかりだと、どれが景色でどれが緑なのかわからなくなるわ。' },
   { speaker: 'アリス', portrait: 'normal1', text: '葉っぱが風で揺れているのかしら。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'それとも緑全体が何か内緒話をしているのかしら。' },

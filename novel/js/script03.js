@@ -65,7 +65,7 @@ const SCRIPT = [
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
-  { speaker: 'アリス', portrait: 'normal1', text: 'これが三つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが三つ目の星の檻ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'もし私が誰かの夢なら、その人はずいぶん長い夢を見ているわね。' },
   { speaker: 'アリス', portrait: 'normal1', text: '起きる気がないのかしら。' },
   { speaker: 'アリス', portrait: 'normal1', text: '夢と幻の違いって、私にはわからないわ。' },

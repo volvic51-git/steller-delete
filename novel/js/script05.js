@@ -65,7 +65,7 @@ const SCRIPT = [
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
-  { speaker: 'アリス', portrait: 'normal1', text: 'これが5つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが5つ目の星の檻ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: '私の知らない夕焼けが、丸くなって浮かんでいるみたい。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'ああいう赤は、いつも何かを覚えていて、何も話してくれないのよ' },
   { speaker: 'アリス', portrait: 'normal1', text: 'けれど不思議ね。近づきたいのか逃げたいのか、自分でもわからないわ。' },

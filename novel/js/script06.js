@@ -69,7 +69,7 @@ const SCRIPT = [
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
-  { speaker: 'アリス', portrait: 'normal1', text: 'これが6つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが6つ目の星の檻ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: '海みたいだけど、底はあるのかしら。' },
   { speaker: 'アリス', portrait: 'normal1', text: '深さなんて関係ないわね。底よりもむしろ水面のほうが、ずっと隠し事が上手そうだわ。' },
   { speaker: 'アリス', portrait: 'normal1', text: '海は下にあるものだと思っていたけど、空の上にあるべきだったのかもね。' },

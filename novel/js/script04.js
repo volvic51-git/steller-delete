@@ -58,7 +58,7 @@ const SCRIPT = [
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
-  { speaker: 'アリス', portrait: 'normal1', text: 'これが４つ目の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが４つ目の星の檻ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'ピカピカの星って、まるで空に咲く花みたい。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'でも花と違って、手を伸ばしても摘むことができないのよね。' },
   { speaker: 'アリス', portrait: 'normal1', text: '見えるのに届かないなんて、なんとも不思議だわ。' },

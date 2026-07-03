@@ -65,7 +65,7 @@ const SCRIPT = [
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
-  { speaker: 'アリス', portrait: 'normal1', text: 'これが最後の星牢ね。' },
+  { speaker: 'アリス', portrait: 'normal1', text: 'これが最後の星の檻ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: 'こうして目の前にすると少し落ち着かないわ、ね。' },
   { speaker: 'アリス', portrait: 'normal1', text: '終わりというものは、だいたい後ろにあると思っていたけれど、' },
   { speaker: 'アリス', portrait: 'normal1', text: '最後の後ろには何かあるのかしらね。' },

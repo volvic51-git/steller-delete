@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "鬼骨の星牢",
+    "name": "鬼骨星の檻",
     "description": "深淵に眠る骨の星。",
     "image": "assets/images/stages/st01.png",
     "locked": false,
@@ -12,7 +12,7 @@
   },
   {
     "id": 2,
-    "name": "密林の星牢",
+    "name": "密林星の檻",
     "description": "緑に覆われた迷宮の星。",
     "image": "assets/images/stages/st02.png",
     "locked": false,
@@ -23,7 +23,7 @@
   },
   {
     "id": 3,
-    "name": "幻夢の星牢",
+    "name": "幻夢星の檻",
     "description": "夢と現実の狭間に浮かぶ星。",
     "image": "assets/images/stages/st03.png",
     "locked": false,
@@ -34,7 +34,7 @@
   },
   {
     "id": 4,
-    "name": "砂神の星牢",
+    "name": "砂神星の檻",
     "description": "砂嵐が支配する灼熱の星。",
     "image": "assets/images/stages/st04.png",
     "locked": false,
@@ -45,7 +45,7 @@
   },
   {
     "id": 5,
-    "name": "暗闇の星牢",
+    "name": "暗闇星の檻",
     "description": "光すら届かない暗黒の星。",
     "image": "assets/images/stages/st05.png",
     "locked": false,
@@ -56,7 +56,7 @@
   },
   {
     "id": 6,
-    "name": "魔海の星牢",
+    "name": "魔海星の檻",
     "description": "呪われた海に沈む星。",
     "image": "assets/images/stages/st06.png",
     "locked": false,
@@ -67,7 +67,7 @@
   },
   {
     "id": 7,
-    "name": "白銀の星牢",
+    "name": "白銀星の檻",
     "description": "永遠の氷雪に閉ざされた星。",
     "image": "assets/images/stages/st07.png",
     "locked": false,
@@ -78,7 +78,7 @@
   },
   {
     "id": 8,
-    "name": "冥府の星牢",
+    "name": "冥府星の檻",
     "description": "光さえ届かない終焉の星。",
     "image": "assets/images/stages/st08.png",
     "locked": false,
@@ -89,8 +89,8 @@
   },
   {
     "id": 9,
-    "name": "消滅の果て",
-    "description": "消滅した星屑は、どこへ行くのか",
+    "name": "消滅星",
+    "description": "消滅した星は、星屑となり、やがて果てる",
     "image": "assets/images/stages/st09.png",
     "locked": false,
     "difficulty": "消滅級",
