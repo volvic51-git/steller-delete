@@ -340,14 +340,14 @@
   .footer-info {
     position: fixed;
     bottom: clamp(14px, 3vh, 28px);
-    left: 50%;
-    transform: translateX(-50%);
+    right: clamp(14px, 3vw, 28px);
     z-index: 10;
     display: flex;
     gap: 2.5em;
     font-size: clamp(9px, 1.1vw, 11px);
     letter-spacing: .25em;
-    color: rgba(232,244,255,.3);
+    color: #00eeff;
+    text-shadow: 0 0 8px #00eeff;
     white-space: nowrap;
     opacity: 0;
     animation: fadeUp 1.0s 3.8s forwards;
@@ -1267,7 +1267,7 @@
 
 <!-- フッター -->
 <div class="footer-info">
-  <span>v1.0</span>
+  <span style="color:#00eeff;text-shadow:0 0 8px #00eeff;">V1.5</span>
   <span>© 2026 STELLAR DELETE</span>
 </div>
 
