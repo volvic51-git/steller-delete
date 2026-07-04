@@ -1544,8 +1544,31 @@ function createDebugMesh(cell, prob, type) {
 }
 
 // ===================== BOARD INIT =====================
+// Three.jsのGPUリソース（geometry/material/texture）を再帰的に解放する。
+// remove()はシーングラフから外すだけでVRAMのバッファ/テクスチャは残るため、
+// 盤面を作り直す（=initBoard/リプレイ再構築）たびにこれで確実にdisposeしないとリークして
+// 大盤面リプレイのステップを重ねるほど加速度的に重くなる。共有の_mineTextureは除外。
+function disposeObject3D(obj){
+  if(!obj) return;
+  if(obj.children){
+    for(let i=obj.children.length-1;i>=0;i--) disposeObject3D(obj.children[i]);
+  }
+  if(obj.geometry && obj.geometry.dispose) obj.geometry.dispose();
+  const mats = Array.isArray(obj.material) ? obj.material : (obj.material ? [obj.material] : []);
+  for(const m of mats){
+    if(!m) continue;
+    if(m.map && m.map !== _mineTexture && m.map.dispose) m.map.dispose(); // 共有テクスチャは残す
+    if(m.dispose) m.dispose();
+  }
+}
+
 function initBoard() {
-  while(boardGroup.children.length) boardGroup.remove(boardGroup.children[0]);
+  // 外す前に古いメッシュのGPUリソースを解放（remove単体ではリークする）
+  while(boardGroup.children.length){
+    const child = boardGroup.children[0];
+    disposeObject3D(child);
+    boardGroup.remove(child);
+  }
   board = [];
   for(let r=0;r<ROWS;r++){
     board[r]=[];
@@ -2094,7 +2117,7 @@ function checkCascade(){
 // リプレイのステップ再構築中は、消滅演出を再生せずメッシュを即座に消す
 // （毎回盤面を作り直すため、演出を残すと「消滅済みセルが復活→再度フェードアウト」がちらつく）。
 function removeMeshInstant(cell){
-  if(cell.mesh){ boardGroup.remove(cell.mesh); scene.remove(cell.mesh); cell.mesh=null; }
+  if(cell.mesh){ boardGroup.remove(cell.mesh); scene.remove(cell.mesh); disposeObject3D(cell.mesh); cell.mesh=null; }
   cell.animating=false;
 }
 
@@ -3022,13 +3045,13 @@ function replaySubStepTo(pos){
       for(let c=0;c<row.length;c++){
         const cell = row[c];
         if(cell && cell.animating && cell.mesh){
-          scene.remove(cell.mesh); boardGroup.remove(cell.mesh);
+          scene.remove(cell.mesh); boardGroup.remove(cell.mesh); disposeObject3D(cell.mesh);
           cell.mesh = null; cell.animating = false;
         }
       }
     }
   }
-  while(particleGroup.children.length) particleGroup.remove(particleGroup.children[0]); // 演出パーティクルも掃除
+  while(particleGroup.children.length){ const p=particleGroup.children[0]; disposeObject3D(p); particleGroup.remove(p); } // 演出パーティクルも掃除+解放
   window._boardTheme = rec.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
@@ -4156,7 +4179,7 @@ function animate(){
     const p=particleGroup.children[i];
     p.position.add(p._vel); p._vel.multiplyScalar(0.95);
     p._life-=dt*1.5; p.material.opacity=Math.max(0,p._life);
-    if(p._life<=0) particleGroup.remove(p);
+    if(p._life<=0){ disposeObject3D(p); particleGroup.remove(p); }
   }
 
   sphereWire.rotation.y+=dt*0.04;
