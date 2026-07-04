@@ -1609,6 +1609,8 @@ function applyStoryFixedFilter(stageId) {
   document.getElementById('stage-prev').style.display = 'none';
   document.getElementById('stage-next').style.display = 'none';
   stageDots.style.display = 'none';
+  // NOVEL後の固定カルーセル：戻り先は STORY MODE（エピソード一覧）なのでラベルを「EPISODE」に
+  document.getElementById('stage-back-btn').textContent = 'EPISODE';
 }
 
 function resetStoryFixedFilter() {
@@ -1616,6 +1618,7 @@ function resetStoryFixedFilter() {
   document.getElementById('stage-prev').style.display = '';
   document.getElementById('stage-next').style.display = '';
   stageDots.style.display = '';
+  document.getElementById('stage-back-btn').textContent = '← BACK';
 }
 
 function buildStageCards() {

@@ -1,67 +1,81 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-01
+作成日: 2026-06-30 / 最終更新: 2026-07-04
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：ブランチ構成（重要）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-04）
 
-今セッションで **設計（docs）と実装（code）を別ブランチに分けた**。ファイルが「無い」と感じたら
-まずブランチを疑うこと。
-
-```
-master
-├─ feature/spec-foundation   ← 設計文書。docs/ と etc/ の設計メモ・CSV
-│                               （00-Architecture / 10-DataSpec / 20-BoardFormat /
-│                                 V2_GENERATION_ENGINE / 密度CSV）
-└─ feature/solver-extraction ← 実装。js/solver.js / tools/board-benchmark.html /
-                                dist/board-hunter/ / この引き継ぎ書
-```
-
-- **docs/ は spec-foundation にしか無い**（solver-extraction には無い）
-- **tools/ と dist/ は solver-extraction にしか無い**
-- 両ブランチとも **master 未マージ**
-- **未push が残っている可能性**：`feature/spec-foundation` の密度CSVコミット（`59c2a28`）と
-  タグ `design/data-foundation-v0.9` は未push（GitHub Desktop でブランチ切替→Push、タグは別途）
+- **実装は全て `master` に集約済み**。V2エンジン（リプレイ/中断）＋その後のUI大改修
+  （MODE SELECT / SIMPLE MODE / STORY再編 / RECORDS / お気に入り / タイムゾーン修正）は
+  master にマージ・push済み。旧 `feature/solver-extraction` は master にマージ済み（no-ff）。
+- **GitHub Pages は master / (root) から配信**（`volvic51-git.github.io/steller-delete`、push→数分で反映）。
+  設定は Settings→Pages「Deploy from a branch = master /(root)」。gh-pagesブランチは無い。
+- **設計文書ブランチ `feature/spec-foundation` は未マージのまま**（docs/ はここにしか無い：
+  00-Architecture / 10-DataSpec / 20-BoardFormat / V2_GENERATION_ENGINE / 密度CSV）。
+  → Board Factory / 生成エンジンの設計を触るときはこのブランチを見る。
+- **⚠️ 引っ越し時の注意**：ローカル作業ツリーに**未コミットの変更が残っている場合あり**
+  （直近のUI微修正 = index.html / sphere-minesweeper.html）。新チャットの最初に
+  `git status` を見て commit + push すること。「Pagesが更新されない」の原因は大抵これかキャッシュ。
 
 > **既知の未処理**
-> - `tool/`（単数・既存）と `tools/`（複数・今回新規）が混在。将来 `tool/` に統一予定（solver-extraction上で）
-> - `feature/solver-extraction` に出自不明の `d0a480d「solver.js生成」` コミットあり（`git show d0a480d --stat` で確認）
+> - `tool/`（単数・既存）と `tools/`（複数）が混在。将来 `tool/` に統一予定。
+> - `feature/solver-extraction` に出自不明の `d0a480d「solver.js生成」` コミットあり。
+> - spec-foundation側の未push（密度CSV `59c2a28`・タグ `design/data-foundation-v0.9`）。
 
 ---
 
 ## いま何をしているフェーズか
 
-**リプレイ/中断 機能を実装・実機テスト中（GitHub Pages）。** Stage1-4＋UI＋各種修正まで完了・push済み。
-実機フィードバック3件（背景/TITLEボタン/ステップUI）はローカル検証済みで実装完了。**未push**。
-実機（GitHub Pages）での最終確認が「いまここ」（下記「実機フィードバック 対応済み」参照）。
+**V2エンジン（リプレイ/中断）は完成・masterマージ済み。** 以降は「遊び方（モード構成）」のUI大改修フェーズ。
+2026-07-03〜04 でタイトル導線を再編：PLAY→MODE SELECT ハブを新設し STORY/SIMPLE/LIMIT を配置。
+実機（スマホ/GitHub Pages）で確認しながら細かな表示調整を継続中。
 
-```
-✓ Stage1-4（決定論生成/Border/ログ基盤/リプレイ/中断）
-✓ UI-1-3（自動保存トグル/gameVersion/ゲーム内ボタン/タイトルRESUME・REPLAY/ハンドオフ）
-✓ キャラ永続・replay-fidelity(hint/search)・キャラ名レース修正・背景/テーマ復元
-✓ GitHub Pages公開・実機テスト（volvic51-git.github.io/steller-delete）
-✓ 実機フィードバック3件をローカル検証・実装（TITLE表示／リプレイstep UI／背景はコード上問題なし）
-✓ リプレイstep UIを予告→確定の2サブステップ化＋消滅演出のちらつき修正（当該手のみ演出）
-✓ クリアタイム統一：全表示を computeClearTimeSec()（=ランキングタイム）に統一。自動保存も同値で保存。
-  再生クリア画面はrecordのclearTimeを表示（0.000秒バグ修正）。タイトル一覧もX.XXX秒に統一
-✓ プレイ画面の❓チュートリアルアイコンを常時非表示／リプレイ中は設定の「中断」をグレーアウト
-✓ リプレイ連打で画面が崩れる問題を修正（replaySubStepTo冒頭で演出中メッシュ/パーティクルを掃除＝冪等な再構築）
-✓ リプレイUI微調整：予告ラベルのテキスト削除（色で種別表示）＋AUTO/STOP（1ボタントグル・0.5秒間隔自動再生）
-✓ リプレイがクリア/GO画面に到達したら操作バー全ボタンを無効化（_replayEnded）
-▶ push→実機（GitHub Pages）で最終確認 ← いまここ
-```
-
-**別トラック（未着手・保留中）:** 盤面密度の実測（etc/V2_board_density_data.csv）→ BoardFormat v1.0凍結
-→ Board Factory 本体。リプレイ/中断が一段落したら戻る。
+詳細は下記「2026-07-03〜04 実装サマリ」と memory を参照。memory が一次情報：
+[[project-mode-select]] / [[project-replay-suspend]] / [[feedback-dev]] / [[feedback-preview-audio]] / [[project-overview]]
 
 ---
 
-## ✅ 実機フィードバック 対応済み（2026-07-02 セッションで実装。要実機再確認）
+## 2026-07-03〜04 実装サマリ（memory に詳細。ここは索引）
 
-GitHub Pages 実機テストで確認された3件。ローカル(`.claude/launch.json`の`static`サーバ)で
-preview_evalによる実操作シミュレーションで検証済みだが、**実機（GitHub Pages）での最終確認はまだ**。
+**モード選択ハブ（[[project-mode-select]]）**
+- タイトル：「PLAY」追加。旧「STORY」アコーディオン・「TOUR」（旧SIMPLE）・「AUCTION」は `display:none`。
+- PLAY → **MODE SELECT**（上部見出し「PLAY MODE SELECT」、`data/modes.json` 駆動＝ラベル/説明/画像/color/enabled）。
+  カード：STORY / SIMPLE / LIMIT(enabled:false=グレーアウト)。表示色は全て青(blue)に統一。ユーザーがJSON編集で変更可。
+- **STORY MODE 画面**：旧アコーディオンの EPISODES をリスト表示。キャラ画像 `characters/000〜009.png`
+  （=エピソードindex順、EP.0→000）、白字ラベル、行タップで該当 novel へ。`?story=1` で直接オープン。
+- **SIMPLE MODE 画面**（旧NORMAL。**内部id/URLは `normal` のまま**、表示名だけ「SIMPLE MODE」）：
+  stages.json の stage01-08 をリスト表示（惑星画像/名前/○×○/CELLS/星傷/BEST TIME、未クリア「-」）。
+  `?normal=1` で直接オープン。キャラは **011〜020 からランダム**（applyStageParamでページ読込時に確定、
+  RETRYは同一、replay/resumeは記録charIdを復元。characters.jsonに011-020のデータ要）。
+- フッターは全画面「MODE SELECT / TITLE」で**等幅グリッド統一**（`.screen-footer` を grid-auto-columns:1fr）。
+  ステージ/エピソード行**右端の「>」矢印は削除**。
+- 戻り導線：novel→固定カルーセルのBACK（ラベルを「EPISODE」に）／プレイ中設定「EPISODE」／クリア画面
+  「EPISODE」＝全て `?story=1`（STORY時のみ）。クリア画面のEPISODEボタンはNEXTと同じ**紫**。
+
+**RECORDS（自己ベスト上位10表示）**：SIMPLE各行の🏆→ステージ別TOP10モーダル（順位/タイム/日時、
+  top1-3金銀銅、記録なし表示）。ランキングは `stellarDeleteRanking_stage_N`（STORY/TOURと共有）。
+  モーダルは z-index=400（オーバーレイ300より上。＝トロフィー押下でモーダルが裏に隠れるバグは修正済み）。
+
+**REPLAY お気に入り（[[project-replay-suspend]]）**：一覧に★トグル＋🗑削除。★は自動プルーニング
+  （REPLAY_MAX=20）から**除外して常に保持**、非★のみ最新20件。★を先頭ソート。★/🗑は枠なしアイコン。
+  スクロールバーを宇宙ブルー配色に（index.html全体：webkit＋Firefox）。
+
+**日時タイムゾーン修正（[[feedback-dev]]）**：保存はISO(UTC)のまま、表示だけ端末ローカルに整形する原則に統一。
+  index.htmlに `fmtLocalDateTime()`。ランキングレコードに `ts`(ISO UTC)追加（旧`date`は後方互換）。
+
+**プレビュー検証の運用（[[feedback-preview-audio]]）**：dev server起動は許可不要、検証後は必ず音停止＋停止。
+
+**別トラック（未着手・保留中）:** 盤面密度の実測（etc/V2_board_density_data.csv）→ BoardFormat v1.0凍結
+→ Board Factory 本体。UI改修が一段落したら戻る（spec-foundationブランチ）。
+
+---
+
+## ✅ 実機フィードバック3件（2026-07-02）＝完了・masterマージ済み（履歴として保存）
+
+GitHub Pages 実機テストで確認された3件。すべて実装・実機確認・マージ済み。以下は経緯の記録。
+（リプレイstep UI／消滅音の多重再生ちらつき等の詳細は memory [[project-replay-suspend]] が一次情報）
 
 1. **resume で背景が出ない** → ローカルでは再現せず（コードは正しく動作）
    - `?stage=1`で開始→suspend→`index.html`のRESUMEボタン→`?boot=resume`の完全な実ナビゲーションで
@@ -250,20 +264,24 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口
+## 次セッション（引っ越し先）の入口
 
-**最優先: 上記「実機フィードバック 対応済み」3件を push して実機確認。**
-実装は全て `sphere-minesweeper.html`（`feature/solver-extraction` ブランチ、未push）。
-実機確認は GitHub Pages（push→数分で反映、`volvic51-git.github.io/steller-delete`）。
-特に1（resume背景）はローカルで再現しなかった＝古いsuspendデータが原因の可能性が高いという仮説なので、
-実機で新規に中断→再開して確認すること。まだ直らなければ再調査が必要。
-新しいプレイヤー操作を足すときの記録フック方針は memory [[project-replay-suspend]] を参照。
+0. **まず `git status`**：未コミットの index.html / sphere-minesweeper.html があれば commit + push。
+   （直近作業＝クリア画面EPISODEボタンの紫化・novel後カルーセルBACKの「EPISODE」ラベル化 等）。
+   「Pagesが更新されない」の原因は大抵これ（未push）かCDN/ブラウザキャッシュ。
+1. 作業対象は基本 **master 上の index.html / sphere-minesweeper.html / data/*.json**。
+   モード/画面まわりは memory [[project-mode-select]]、リプレイ/中断/お気に入りは [[project-replay-suspend]] が一次情報。
+2. **検証運用**：dev server（`.claude/launch.json` の `static`）は許可不要で起動可。検証後は
+   **必ず音を止める＋サーバー停止**（[[feedback-preview-audio]]）。index.htmlはパーティクル常時描画で
+   `preview_screenshot` がtimeoutしやすい→ `preview_eval`＋`btn.click()` 合成クリックで検証（preview_clickは
+   タイトル入場アニメと干渉して不発のことがある）。
+3. **未実装/保留（モード系）**：LIMIT MODE（modes.jsonでenabled:false、画面はSIMPLE同型でグレーアウト予定）。
+   周回モードもここに乗せる想定。index.htmlが複雑化したら story-select等への分離を検討（[[project-overview]]）。
 
-**別トラック（リプレイ/中断が一段落したら）:**
-1. 盤面密度データを集計（`etc/V2_board_density_data.csv`）
-2. `V2_BOARD_DENSITY_FINDINGS.md`（しきい値の文章化）を作成
-3. 実測を反映して `docs/20-BoardFormat.md`（spec-foundationブランチ）を v1.0 に凍結
-4. Board Factory 本体
+**別トラック（生成エンジン。UI改修が一段落したら / spec-foundationブランチ）:**
+1. 盤面密度データ集計（`etc/V2_board_density_data.csv`）→ しきい値文章化
+2. `docs/20-BoardFormat.md` を v1.0 に凍結 → Board Factory 本体（Judge開始モデル / Board JSON読込）
 
-**整理系（いつでも）:** `tool/`/`tools/` 統一、`docs/10-StellerDataSpec.md`のboardHash記述をv1.0(00-Architecture)へ整合、
-V2_HANDOFF.md のルート重複解消、spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）。
+**整理系（いつでも）:** `tool/`/`tools/` 統一、`docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
+V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在）、
+spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）。
