@@ -10,7 +10,7 @@
   {
     "id": "normal",
     "label": "SIMPLE MODE",
-    "desc": "星の傷を集めながらアリスを助ける\nスタンダードなモードです。",
+    "desc": "StellarDelete版マインスイーパーを遊べる\nシンプルなモードです。",
     "image": "assets/images/etc/mod01.png",
     "color": "blue",
     "enabled": true
@@ -18,7 +18,7 @@
   {
     "id": "limit",
     "label": "LIMIT MODE",
-    "desc": "制限時間内に規定回数クリアしよう。\nレベルアップしながら、どこまで進めるか挑戦！",
+    "desc": "開発中",
     "image": "assets/images/etc/mod02.png",
     "color": "blue",
     "enabled": false
