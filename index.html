@@ -1240,10 +1240,9 @@
       RESUME
     </button>
 
-    <button class="menu-btn" id="replay-btn" disabled>
+    <button class="menu-btn" id="replay-btn" style="display:none;">
       REPLAY
     </button>
-    <div class="coming-soon">↑↑ 修理中m(_ _)m ↑↑</div>
 
     <button class="menu-btn" id="auction-btn" disabled aria-disabled="true" style="display:none;">
       AUCTION
@@ -2080,7 +2079,6 @@ function renderModeSelect(modes){
         <div class="mode-card-title">${m.label}</div>
         <div class="mode-card-desc">${m.desc||''}</div>
       </div>
-      <div class="mode-card-arrow">&#8250;</div>
     </div>`;
   }).join('');
   el.querySelectorAll('.mode-card').forEach(card=>{

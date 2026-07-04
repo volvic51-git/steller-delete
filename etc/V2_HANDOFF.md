@@ -1,11 +1,11 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-04
+作成日: 2026-06-30 / 最終更新: 2026-07-05
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-04）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-05）
 
 - **実装は全て `master` に集約済み**。V2エンジン（リプレイ/中断）＋その後のUI大改修
   （MODE SELECT / SIMPLE MODE / STORY再編 / RECORDS / お気に入り / タイムゾーン修正）は
@@ -28,11 +28,24 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ## いま何をしているフェーズか
 
-**V2エンジン（リプレイ/中断）は完成・masterマージ済み。** 以降は「遊び方（モード構成）」のUI大改修フェーズ。
-2026-07-03〜04 でタイトル導線を再編：PLAY→MODE SELECT ハブを新設し STORY/SIMPLE/LIMIT を配置。
-実機（スマホ/GitHub Pages）で確認しながら細かな表示調整を継続中。
+**Phase 3 Factory盤面の実装を開始する直前（計画書作成完了・実装未着手）。**
 
-詳細は下記「2026-07-03〜04 実装サマリ」と memory を参照。memory が一次情報：
+### 2026-07-05 完了した作業
+- **リプレイUI非表示化**：REPLAYボタン（タイトル）・SAVE REPLAYボタン（クリア/GO画面）・
+  REPLAY AUTO SAVEスイッチ（設定メニュー）を非表示。リプレイ機能は性能改善中のため一時無効。
+  Factory完成後に再設計予定。
+- **MODE SELECT「>」削除**：各パネル右の矢印（&#8250;）を削除。
+- **Board Hunter改良**（`tool/boadHunter/index.html`）：メール送信ボタン・リセットボタン・
+  発見者名フォーム・22%キャンペーン追加。
+- **Board Factory新規作成**（`tool/board-factory.html`）：boardhunter JSON → Board JSON生成ツール。
+  mulberry32+SHA-256+solver再検証。
+- **Phase 3計画書作成**（`etc/V2_PHASE3_FACTORY_PLAN.md`）：Step 1〜6の詳細設計、確定事項整理済み。
+  Step 5（リプレイ整合）はPhase 3対象外と明記。
+- **その他**：index.html バージョン表示V1.5・蛍光青・右寄せ。tool/とtools/を`tool/`に統合。
+  設定メニューリデザイン。ミュートボタン1.5倍。itch.io ZIP作成（stellar-delete-v1.5.zip）。
+  REPLAY B案凍結メモ作成（`etc/REPLAY_B_PLAN_MEMO.md`）。
+
+詳細は memory を参照：
 [[project-mode-select]] / [[project-replay-suspend]] / [[feedback-dev]] / [[feedback-preview-audio]] / [[project-overview]]
 
 ---
@@ -264,24 +277,32 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッション（引っ越し先）の入口
+## 次セッション（2026-07-10 木曜）の入口
 
-0. **まず `git status`**：未コミットの index.html / sphere-minesweeper.html があれば commit + push。
-   （直近作業＝クリア画面EPISODEボタンの紫化・novel後カルーセルBACKの「EPISODE」ラベル化 等）。
+0. **まず `git status`**：未コミットがあれば commit + push（直近＝リプレイUI非表示化・MODE SELECT「>」削除）。
    「Pagesが更新されない」の原因は大抵これ（未push）かCDN/ブラウザキャッシュ。
-1. 作業対象は基本 **master 上の index.html / sphere-minesweeper.html / data/*.json**。
-   モード/画面まわりは memory [[project-mode-select]]、リプレイ/中断/お気に入りは [[project-replay-suspend]] が一次情報。
-2. **検証運用**：dev server（`.claude/launch.json` の `static`）は許可不要で起動可。検証後は
-   **必ず音を止める＋サーバー停止**（[[feedback-preview-audio]]）。index.htmlはパーティクル常時描画で
-   `preview_screenshot` がtimeoutしやすい→ `preview_eval`＋`btn.click()` 合成クリックで検証（preview_clickは
-   タイトル入場アニメと干渉して不発のことがある）。
-3. **未実装/保留（モード系）**：LIMIT MODE（modes.jsonでenabled:false、画面はSIMPLE同型でグレーアウト予定）。
-   周回モードもここに乗せる想定。index.htmlが複雑化したら story-select等への分離を検討（[[project-overview]]）。
 
-**別トラック（生成エンジン。UI改修が一段落したら / spec-foundationブランチ）:**
-1. 盤面密度データ集計（`etc/V2_board_density_data.csv`）→ しきい値文章化
-2. `docs/20-BoardFormat.md` を v1.0 に凍結 → Board Factory 本体（Judge開始モデル / Board JSON読込）
+1. **Phase 3 Factory盤面の実装を開始する**。計画書は `etc/V2_PHASE3_FACTORY_PLAN.md`。
+   実装順（§7.5）：
+   1. `tool/board-factory.html` に「▶ プレイ」ボタン（localStorage書込 + `../sphere-minesweeper.html?boot=factory` を新規タブで開く）
+   2. `sphere-minesweeper.html` に `?boot=factory` 起動枝（dims設定→restartGame→applyBoardFromFactory→calcTotalNonMineCells）
+   3. hash再検証 + フォールバック（正規形をboard-gen.jsに集約）
+   4. Judge分岐（handleCellAction idle枝）+ `judgeReveal()` 演出（visual+SE）
+   5. **Step 5はPhase 3対象外**（リプレイ整合はFactory完成後に再設計）
+   6. テスト（§6）を dev server で通す
 
-**整理系（いつでも）:** `tool/`/`tools/` 統一、`docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
+2. **検証はdev server経由**（Q1確定）。`tool/board-factory.html`（`tool/`配下）と
+   `sphere-minesweeper.html`（ルート）が同一オリジンで localStorage を共有するために必須。
+   dev server起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
+
+3. **コード挿入点（sphere-minesweeper.html）**：
+   - `let COLS=24, ROWS=12;` L769 / `let mineCount=30;` L789（`let`なので再代入可）
+   - `applyBoardFromFactory(fb)` L1568（実装済み・未接続）
+   - `handleCellAction` idle枝 L3268〜3301（Judge挿入点）
+   - `_charDataReady.finally` L4398（factory起動枝の追加点）
+
+4. **未実装/保留**：LIMIT MODE（modes.jsonでenabled:false）。リプレイ整合（Phase 3対象外）。
+
+**整理系（いつでも）:** `docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
 V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在）、
 spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）。

@@ -130,15 +130,15 @@ board-factory.html                     sphere-minesweeper.html
 - board-factory.html の `sha256(canonical)` と**同一の正規形定義**を game 側にも置く必要がある
   （現状 game には無い）。→ 共通化は `js/board-gen.js` に `canonicalBoard()`/`hashBoard()` を追加するのが筋。
 
-### Step 5. リプレイ/中断の整合（要判断・後回し可）
-- `_boardGen` は factory時 `factoryHash` を持つ（実装済み）が、`seed`+`genVersion` も入る。
-- **論点**: factory盤面のリプレイ復元を
-  - (A) seed+genVersion から `generateMineSet` で再生成（genVersion一致なら同一盤面のはず）
-  - (B) 保存済み `mines[]` をそのまま再適用（確実だがデータが重い）
-  のどちらにするか。Immutability を厳格に守るなら (B) が安全。Phase 4 の設計とセットで決める。
-- **初版スコープでは**: factory盤面のプレイは可能にするが、そのリプレイ保存は
-  「seedベースで復元」に一旦寄せる（=既存 applyBoardFromSeed 経路）か、
-  factory由来はリプレイ非対応にして後続で対応、のどちらかを選ぶ。→ **要判断**。
+### Step 5. リプレイ/中断との整合（Phase 3対象外）
+
+**方針変更（2026-07-05確定）**: リプレイ機能は現在性能改善中のため、本フェーズでは対象外とする。
+
+- REPLAYボタンはタイトル・クリア画面から非表示化済み（2026-07-05実施）。
+- REPLAY AUTO SAVEスイッチも非表示化済み。
+- Factory盤面のプレイ完成を最優先とする。
+- リプレイ方式（seed再生成・差分更新・Renderer改善を含む）はFactory完成後に腰を据えて再設計する。
+- **スコープ膨張防止**: Factory実装中にリプレイ整合を「ついでに直す」対象にしない。
 
 ---
 
@@ -149,7 +149,7 @@ board-factory.html                     sphere-minesweeper.html
 |---|------|------|
 | Q1 | ブリッジのオリジン問題 | **dev server 経由で検証**（launch.json `static`）。同一オリジンで localStorage 共有を保証 |
 | Q2 | Judge 開始演出 | **visual+SE 付き**（startCell が開く瞬間に光る演出＋効果音）。初版から実装 |
-| Q3 | リプレイ復元方式 | **seed再生成(A)**。既存 `applyBoardFromSeed`(seed+genVersion) 経路で復元。genVersion一致が前提 |
+| Q3 | リプレイ復元方式 | **Phase 3対象外**。REPLAYボタン非表示化済み。Factory完成後に再設計 |
 
 ### なお未決（実装中に確定でよい）
 | # | 論点 | 選択肢 | 暫定案 |
@@ -188,10 +188,10 @@ board-factory.html                     sphere-minesweeper.html
 - **含める**:
   - Step 1〜4（ブリッジ / 起動 / Judge / hash検証＋フォールバック）
   - **Judge演出（visual+SE）**（Q2確定）
-  - **リプレイ = seedベース(A)で対応**（Q3確定）。startCell を replay record に正しく載せる改修を含む
   - 検証は **dev server 経由**（Q1確定）
-- **含めない（後続）**: 物語フック、mines直保存(B)、ステージ情報（背景/キャラ/BGM）、
-  複数盤面のキャンペーン供給（data/boards 同梱）、Hunter/Factory/game のパリティ自動テスト。
+- **含めない（後続）**: リプレイ整合（Q3: Phase 3対象外）、物語フック、mines直保存(B)、
+  ステージ情報（背景/キャラ/BGM）、複数盤面のキャンペーン供給（data/boards 同梱）、
+  Hunter/Factory/game のパリティ自動テスト。
 - これで「Factoryで生成した1枚を、その場でプレイ・リプレイ保存でき、改竄は弾ける」状態になる。
 
 ## 7.5 実装順（着手時）
