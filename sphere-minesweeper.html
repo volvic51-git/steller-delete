@@ -671,6 +671,8 @@
 ">
   <h2 style="font-family:'Orbitron',sans-serif;font-size:14px;letter-spacing:3px;color:#00ffff;margin-bottom:18px;">CONFIG</h2>
   <button onclick="closeSettingsMenu()" style="display:block;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(255,140,0,0.8);color:#ff8800;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">BACK</button>
+  <!-- リプレイ再生時のみ表示：タイトルへ戻る（openSettingsMenuで表示切替） -->
+  <button id="cfg-title-btn" onclick="window.location.href='index.html'" style="display:none;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.5);color:#00ccff;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:14px;border-radius:2px;">TITLE</button>
   <button id="cfg-suspend-btn" onclick="suspendAndExit()" style="display:block;width:100%;margin-bottom:10px;background:rgba(20,40,0,0.8);border:1px solid rgba(150,255,0,0.5);color:#aaff44;padding:9px 0;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:13px;border-radius:2px;">中断</button>
   <button id="cfg-autosave-btn" onclick="toggleReplayAutoSave()" style="display:flex;flex-direction:column;align-items:center;gap:5px;width:100%;margin-bottom:10px;background:rgba(0,20,50,0.8);border:1px solid rgba(0,200,255,0.4);color:#88aacc;padding:9px 12px;cursor:pointer;font-family:'Orbitron',sans-serif;font-size:10px;border-radius:2px;box-sizing:border-box;">
     <span style="letter-spacing:.15em;">REPLAY AUTO SAVE</span>
@@ -1563,6 +1565,20 @@ function initBoard() {
 function placeMines(excludeRow, excludeCol) {
   const seed = StellerBoardGen.randomSeed();
   applyBoardFromSeed(seed, excludeRow, excludeCol);
+}
+
+// Factory 盤面（Board JSON）をそのまま board[][] に反映する。
+// 地雷位置は事前生成済みなので generateMineSet は呼ばない。
+function applyBoardFromFactory(fb){
+  const { mines, rows, cols, startCell, wrap, hash } = fb.board;
+  const mineSet = new Set(mines.map(m => m.r * cols + m.c));
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine = mineSet.has(r*COLS+c);
+  window._boardGen = {
+    seed: fb.identity.seed, genVersion: fb.identity.genVersion,
+    start: startCell, rows: ROWS, cols: COLS, mineCount, wrap: wrap||'cyl',
+    factoryHash: hash
+  };
+  calcNeighbors();
 }
 
 // 指定 seed + 初手セルから盤面を決定論的に生成して board[][] に反映する。
@@ -2737,6 +2753,9 @@ function openSettingsMenu(){
   const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
   const selBtn = document.getElementById('cfg-select-btn');
   if(selBtn) selBtn.textContent = isStory ? 'EPISODE' : 'STAGE';
+  // リプレイ再生時のみ「TITLE」を表示（BACKの下、タイトルへ戻る手段）。通常プレイでは非表示。
+  const titleBtn = document.getElementById('cfg-title-btn');
+  if(titleBtn) titleBtn.style.display = _isReplaySession ? 'block' : 'none';
   document.getElementById('pause-overlay').style.display = 'block';
   document.getElementById('settings-menu').style.display = 'block';
 }
@@ -2903,6 +2922,8 @@ function saveReplay(result, clearTime){
     charId: (currentCharacter && currentCharacter.id) || null,
     boardTheme: window._boardTheme ?? null,   // 盤面色テーマ
     bg: getCanvasBackground(),                 // 背景画像(CSS)
+    exMode: !!exMode,                          // ゲームルール：地雷即GO(true) / ゲージで受ける(false)。再生時の判定に必須
+    stMode: !!stMode,                          // STモード（サーチ確定セル使用でGO）。再生時の判定に必須
     actions: snap.actions,
     result: result || 'unknown',
     clearTime: (typeof clearTime==='number') ? clearTime : null, // 表示・ランキングと完全一致させるため丸めない
@@ -2987,6 +3008,9 @@ function replaySubStepTo(pos){
   clearInterval(timerInterval);
   removedMines = 0; hintCount = 0; misclickGuard = false;
   maxHints = 9999; // 再生時はヒント上限を実質無効化（記録済みhintは元々上限内で有効だったもの）
+  // ゲームルールを記録から復元。exModeは既定true（地雷即GO）なので、復元しないと NORMAL/STORY(exMode=false)の
+  // 記録された地雷掘りを再適用した瞬間に誤って即ゲームオーバーになる。旧記録(フィールド無し)はfalse=ゲージ方式。
+  exMode = !!rec.exMode; stMode = !!rec.stMode;
   hintTarget = null; autoRotating = false;
   clearTimeout(_vanishTimer); _vanishTimer = null; _vanishQueue = []; // 前ステップの遅延演出を持ち越さない
   _replayAnimTimers.forEach(clearTimeout); _replayAnimTimers = [];      // 前ステップの演出付き遅延を全キャンセル
@@ -3775,7 +3799,9 @@ function consumeNormalGauge(amount){
   updateHintGauge();
   const statHints = document.getElementById('stat-hints');
   if(statHints) statHints.textContent = hintCount;
-  SND.damage.currentTime=0; SND.damage.play().catch(()=>{});
+  // ダメージ音は playSE を通さない直接再生なので、リプレイの即時再構築中（過去手の再適用）は
+  // 明示的に抑止する。これをしないと、ミス手より後のステップで過去手を再適用するたびに毎回鳴る。
+  if(!_replayInstant){ SND.damage.currentTime=0; SND.damage.play().catch(()=>{}); }
   if(hintCount > maxHints){
     return true; // ゲージ切れ→ゲームオーバー
   }

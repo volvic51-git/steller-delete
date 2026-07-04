@@ -62,8 +62,10 @@
       <div class="stat"><b id="elapsed">0:00</b><span>経過</span></div>
     </div>
 
+    <input id="reporter" type="text" placeholder="発見者名（任意）" style="width:100%;margin-bottom:8px;background:#11152a;color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font-size:13px;box-sizing:border-box;">
     <button id="toggle">▶ 探索スタート</button>
     <div class="sub">
+      <button id="reset">↺ リセット</button>
       <button id="email" disabled>📧 メールで送る</button>
       <button id="save" disabled>JSONを保存</button>
       <button id="copy" disabled>コピー</button>
@@ -73,7 +75,7 @@
 
   <div class="card">
     <div class="how">
-      <b>あそびかた</b>　① <b>スタート</b>を押して放置　② 見つかった <span class="pill">seed</span> が自動でたまる　③ ときどき <b>結果を保存</b>して開発者に送る<br>
+      <b>あそびかた</b>　① <b>スタート</b>を押して放置　② 見つかった <span class="pill">seed</span> が自動でたまる　③ ときどき <b>JSONを保存（ダウンロード）</b>して開発者に送る<br>
       送るのは <b>seedの数字だけ</b>（盤面は含まない）。開発者が同じseedから再生成して検証します。<span class="campaign">※タブを開いている間だけ探索が進みます。</span>
     </div>
   </div>
@@ -93,6 +95,7 @@ const GEN_VERSION = "1";
 const CAMPAIGNS = [
   // ── 特大（72×144）──
   { id:"C1-72x144-18", label:"特大 72×144 / 18%（円柱）", rows:72, cols:144, density:0.18, wrap:"cyl", start:"center" },
+  { id:"C1-72x144-22", label:"特大 72×144 / 22%（円柱）", rows:72, cols:144, density:0.22, wrap:"cyl", start:"center" },
   { id:"C1-72x144-30", label:"特大 72×144 / 30%（円柱）", rows:72, cols:144, density:0.30, wrap:"cyl", start:"center" },
   { id:"C1-72x144-40", label:"特大 72×144 / 40%（円柱）", rows:72, cols:144, density:0.40, wrap:"cyl", start:"center" },
   { id:"C1-72x144-50", label:"特大 72×144 / 50%（円柱）", rows:72, cols:144, density:0.50, wrap:"cyl", start:"center" },
@@ -181,7 +184,8 @@ function selectCampaign(){
     ` ・ <span class="pill">${cur.id}</span>`;
   resetStats();
 }
-function resetStats(){ attempts=0; found=[]; render(); $('save').disabled=true; $('copy').disabled=true; $('msg').textContent=''; }
+function resetStats(){ attempts=0; found=[]; startMs=0; render(); $('email').disabled=true; $('save').disabled=true; $('copy').disabled=true; $('msg').textContent=''; }
+function resetAll(){ if(running){ running=false; $('toggle').textContent='▶ 探索スタート'; $('toggle').classList.remove('running'); $('campaign').disabled=false; } resetStats(); }
 
 function oneAttempt(){
   const seed = (Math.random()*4294967296) >>> 0;
@@ -232,9 +236,11 @@ function toggle(){
 
 // ---- 出力（seedのみ） ----
 function buildResult(){
+  const reporter = ($('reporter').value || '').trim();
   return {
     tool:"board-hunter", toolVersion:TOOL_VERSION,
     campaignId:cur.id, genVersion:GEN_VERSION,
+    reporter: reporter || null,
     params:{ rows:cur.rows, cols:cur.cols, density:cur.density, mineCount:cur.mineCount,
              wrap:cur.wrap, start:{r:cur.sr,c:cur.sc} },
     startedAt:new Date(Date.now()-(performance.now()-startMs)).toISOString(),
@@ -299,6 +305,7 @@ if(typeof StellerSolver==='undefined'){
   $('campaign').onchange = selectCampaign;
   selectCampaign();
   $('toggle').onclick = toggle;
+  $('reset').onclick = resetAll;
   $('email').onclick = sendByEmail;
   $('save').onclick = save;
   $('copy').onclick = copySeeds;
