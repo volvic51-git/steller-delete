@@ -4257,10 +4257,13 @@ if(window.visualViewport){
       // novelAfterClear 保存（クリア後「つづきを見る」ボタンの遷移先）
       window._novelAfterClear = stage.novelAfterClear || null;
 
-      // NORMAL MODE: 盤面等は stage-params を流用しつつ、キャラだけ 011-018（stage id+10）へ差し替え。
+      // NORMAL MODE: 盤面等は stage-params を流用しつつ、キャラは 011〜020 からランダムに差し替え。
       // 物語進行ではないので novelAfterClear は無効化（クリア画面に NEXT を出さない）。
+      // ランダム値はページ読込時にここで一度だけ確定し、以降は currentCharacter に保持される
+      // （RETRYでも同一）。?boot=replay/resume ではこのブロックは走らず、記録済み charId を復元するので再現も一致。
       if(urlParams.get('mode') === 'normal'){
-        window._stageCharId    = String(Number(stageId) + 10).padStart(3, '0');
+        const n = 11 + Math.floor(Math.random() * 10); // 11..20
+        window._stageCharId     = String(n).padStart(3, '0'); // "011".."020"
         window._novelAfterClear = null;
       }
 
