@@ -9,7 +9,7 @@
   },
   {
     "id": "normal",
-    "label": "NORMAL MODE",
+    "label": "SIMPLE MODE",
     "desc": "星の傷を集めながらアリスを助ける\nスタンダードなモードです。",
     "image": "assets/images/etc/mod01.png",
     "color": "blue",

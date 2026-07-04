@@ -956,7 +956,9 @@
   /* 画面下の戻る系ボタン列 */
   .screen-footer {
     flex: 0 0 auto;
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;   /* 全ボタンを等幅に（広い方＝MODE SELECT の幅に揃える） */
     gap: clamp(14px,3vw,28px);
     margin-top: clamp(16px,3vh,26px);
   }
@@ -969,7 +971,9 @@
     color: rgba(232,244,255,.6);
     background: transparent;
     border: 1px solid rgba(0,200,255,.3);
-    padding: clamp(8px,1.2vh,12px) clamp(20px,3.4vw,34px);
+    padding: clamp(8px,1.2vh,12px) clamp(16px,3vw,28px);
+    white-space: nowrap;
+    text-align: center;
     cursor: pointer;
     outline: none;
     transition: color .2s, border-color .2s;
@@ -1260,12 +1264,12 @@
 
 <!-- MODE SELECT 画面 -->
 <div id="mode-select-modal" class="screen-overlay">
-  <div class="screen-title">MODE SELECT</div>
+  <div class="screen-title">PLAY MODE SELECT</div>
   <div class="screen-scroll" id="mode-select-list">
     <!-- modes.json から動的生成 -->
   </div>
   <div class="screen-footer">
-    <button id="mode-select-title-btn">← TITLE</button>
+    <button id="mode-select-title-btn">TITLE</button>
   </div>
 </div>
 
@@ -1276,19 +1280,19 @@
     <!-- EPISODES から動的生成 -->
   </div>
   <div class="screen-footer">
-    <button id="story-list-mode-btn">← MODE</button>
+    <button id="story-list-mode-btn">MODE SELECT</button>
     <button id="story-list-title-btn">TITLE</button>
   </div>
 </div>
 
 <!-- NORMAL MODE ステージリスト画面 -->
 <div id="normal-list-modal" class="screen-overlay">
-  <div class="screen-title" id="normal-list-title">NORMAL MODE</div>
+  <div class="screen-title" id="normal-list-title">SIMPLE MODE</div>
   <div class="screen-scroll" id="normal-list">
     <!-- stages.json から動的生成 -->
   </div>
   <div class="screen-footer">
-    <button id="normal-list-mode-btn">← MODE</button>
+    <button id="normal-list-mode-btn">MODE SELECT</button>
     <button id="normal-list-title-btn">TITLE</button>
   </div>
 </div>
@@ -2059,7 +2063,6 @@ function renderNormalList(stages){
         <div class="stage-row-best"><small>BEST</small>${best}</div>
       </div>
       <button class="stage-row-records" data-id="${s.id}" title="RECORDS">🏆</button>
-      <div class="stage-row-arrow">&#8250;</div>
     </div>`;
   }).join('');
   // 🏆RECORDS：行タップ（ゲーム開始）と分離するため stopPropagation してからモーダルを開く
@@ -2128,7 +2131,6 @@ function renderStoryList(){
       <div class="stage-row-body">
         <div class="ep-row-label">${ep.label}${sub}</div>
       </div>
-      <div class="stage-row-arrow">&#8250;</div>
     </div>`;
   }).join('');
   el.querySelectorAll('.stage-row.story').forEach(row=>{
