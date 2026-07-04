@@ -226,7 +226,8 @@ function toggle(){
   $('toggle').textContent = running ? '■ 停止' : '▶ 探索スタート';
   $('toggle').classList.toggle('running', running);
   $('campaign').disabled = running;
-  if(running){ if(!startMs) startMs=performance.now(); loop(); }
+  if(running){ startMs=performance.now(); loop(); }
+  else{ startMs=0; render(); }
 }
 
 // ---- 出力（seedのみ） ----
