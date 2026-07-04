@@ -2894,7 +2894,12 @@ function saveReplay(result, clearTime){
   };
   let list = listReplays();
   list.push(rec);
-  if(list.length > REPLAY_MAX) list = list.slice(list.length - REPLAY_MAX);
+  // お気に入り(fav)は上限から除外して常に保持。非お気に入りだけ最新 REPLAY_MAX 件に収める。
+  const nonFavs = list.filter(r => !r.fav);
+  if(nonFavs.length > REPLAY_MAX){
+    const keep = new Set(nonFavs.slice(nonFavs.length - REPLAY_MAX)); // 新しい非お気に入りを残す
+    list = list.filter(r => r.fav || keep.has(r));
+  }
   try { localStorage.setItem(REPLAY_STORE_KEY, JSON.stringify(list)); } catch(e){ console.warn('replay保存失敗', e); }
   _replaySavedThisGame = true;
   return rec;

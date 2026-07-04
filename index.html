@@ -1136,6 +1136,38 @@
   .records-row.top3 .rk { color: #e0925a; }
   .records-row .tm { flex: 1 1 auto; color: #00ffcc; font-size: clamp(13px,2vw,16px); letter-spacing: .04em; }
   .records-row .dt { flex: 0 0 auto; color: #789; font-size: clamp(10px,1.5vw,12px); }
+  /* REPLAY一覧の行（★お気に入り / 本体 / 🗑削除） */
+  .replay-row { display: flex; align-items: stretch; gap: 6px; margin: 6px 0; }
+  .replay-fav, .replay-del {
+    flex: 0 0 auto; width: 40px;
+    background: transparent; border: none; border-radius: 0;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; line-height: 1; padding: 0; color: #5a6a80;
+    transition: color .15s, transform .1s, text-shadow .15s;
+  }
+  .replay-fav.on { color: #ffd23c; text-shadow: 0 0 8px rgba(255,200,40,.6); }
+  .replay-fav:hover { color: #ffd23c; transform: scale(1.15); }
+  .replay-del { color: #b56; font-size: 16px; }
+  .replay-del:hover { color: #ff6a6a; transform: scale(1.15); }
+  .replay-item {
+    flex: 1 1 auto; min-width: 0; text-align: left; padding: 9px 11px;
+    background: rgba(0,20,50,.6); border: 1px solid rgba(0,200,255,.35); color: #bfe; border-radius: 3px;
+    cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: 12px;
+  }
+  .replay-item:hover { background: rgba(0,40,80,.75); border-color: var(--accent); }
+
+  /* ── スクロールバー（世界観に合わせた宇宙ブルー）── */
+  * { scrollbar-width: thin; scrollbar-color: rgba(0,200,255,.5) rgba(3,12,32,.5); } /* Firefox */
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track { background: rgba(3,12,32,.5); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(0,200,255,.55), rgba(26,111,255,.6));
+    border-radius: 8px; border: 2px solid rgba(3,8,24,.55);
+    box-shadow: 0 0 6px rgba(0,200,255,.25) inset;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, rgba(0,224,255,.85), rgba(40,130,255,.85)); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+
   @media (max-aspect-ratio: 1/1) {
     .stage-row-meta { font-size: 10px; }
     .mode-card-desc { font-size: 12px; }
@@ -1952,22 +1984,44 @@ function withDiscardConfirm(fn){
   const closeBtn = document.getElementById('replay-close');
   if(!modal || !openBtn) return;
   function loadList(){ try { return JSON.parse(localStorage.getItem(RESUME_REPLAY_KEY) || '[]'); } catch(e){ return []; } }
+  function saveList(list){ try { localStorage.setItem(RESUME_REPLAY_KEY, JSON.stringify(list)); } catch(e){} }
+  function toggleFav(idx){ const list = loadList(); if(list[idx]){ list[idx].fav = !list[idx].fav; saveList(list); } }
+  function deleteReplay(idx){ const list = loadList(); if(idx>=0 && idx<list.length){ list.splice(idx,1); saveList(list); } }
   function open(){
     const list = loadList();
     if(!list.length){
       listEl.innerHTML = '<div style="color:#889;padding:14px;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:12px;">保存されたリプレイはありません</div>';
     } else {
-      // 新しい順に表示（data-i は元の配列インデックスを保持）
-      listEl.innerHTML = list.map((r,i)=>{
+      // 表示順：お気に入り(★)を先頭、各グループ内は新しい順。data-i は保存配列のindexを保持（再生/★/削除で使用）。
+      const items = list.map((r,i)=>({r,i}));
+      items.sort((a,b)=>{
+        const fa = a.r.fav?1:0, fb = b.r.fav?1:0;
+        if(fa!==fb) return fb-fa;   // ★を先頭
+        return b.i - a.i;           // 新しい順（indexが大きいほど新しい）
+      });
+      listEl.innerHTML = items.map(({r,i})=>{
         const res = r.result==='win' ? '🏆 CLEAR' : (r.result==='lose' ? '💥 LOSE' : (r.result||'—'));
         const size = r.board ? `${r.board.rows}×${r.board.cols}` : '';
         // クリア画面と同じ「X.XXX秒」形式に統一（recordのclearTimeはランキングと同一の精密タイム）
         const ct = (r.clearTime!=null) ? ` / ${Number(r.clearTime).toFixed(3)}秒` : '';
-        const t = fmtLocalDateTime(r.savedAt); // ISO(UTC)を端末ローカル時刻に整形（旧: UTC文字列をそのまま表示していてJSTと9hズレていた）
-        return `<button class="replay-item" data-i="${i}" style="display:block;width:100%;text-align:left;margin:5px 0;padding:9px 11px;background:rgba(0,20,50,.6);border:1px solid rgba(0,200,255,.35);color:#bfe;border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;">${res}　<span style="color:#8ac;">${size}${ct}</span><br><span style="color:#678;font-size:11px;">${t}</span></button>`;
-      }).reverse().join('');
+        const t = fmtLocalDateTime(r.savedAt); // ISO(UTC)を端末ローカル時刻に整形
+        return `<div class="replay-row" data-i="${i}">`+
+          `<button class="replay-fav${r.fav?' on':''}" data-i="${i}" title="お気に入り（自動削除されない）">${r.fav?'★':'☆'}</button>`+
+          `<button class="replay-item" data-i="${i}">${res}　<span style="color:#8ac;">${size}${ct}</span><br><span style="color:#678;font-size:11px;">${t}</span></button>`+
+          `<button class="replay-del" data-i="${i}" title="削除">🗑</button>`+
+        `</div>`;
+      }).join('');
       listEl.querySelectorAll('.replay-item').forEach(b=>{
         b.addEventListener('click', ()=>{ window.location.href = 'sphere-minesweeper.html?boot=replay&i=' + b.dataset.i; });
+      });
+      listEl.querySelectorAll('.replay-fav').forEach(b=>{
+        b.addEventListener('click', (e)=>{ e.stopPropagation(); toggleFav(+b.dataset.i); open(); });
+      });
+      listEl.querySelectorAll('.replay-del').forEach(b=>{
+        b.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          if(confirm('このリプレイを削除しますか？')){ deleteReplay(+b.dataset.i); open(); }
+        });
       });
     }
     modal.style.display = 'flex';
