@@ -1,13 +1,17 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-05
+作成日: 2026-06-30 / 最終更新: 2026-07-08
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-05）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-08）
 
-- **実装は全て `master` に集約済み**。V2エンジン（リプレイ/中断）＋その後のUI大改修
+- **作業ブランチ `feature/factory-board`（master から分岐・未コミット）**。
+  Phase 3（Factory盤面）実装＋描画性能改善A/B案が working tree に載っている。
+  変更ファイル: `sphere-minesweeper.html` / `js/board-gen.js` / `tool/board-factory.html`
+  （＋盤面データ `data/board/` は未追跡）。**commit / push はユーザーが行う**（Claudeはgit操作しない約束）。
+- それ以前の実装は全て `master` に集約済み。V2エンジン（リプレイ/中断）＋UI大改修
   （MODE SELECT / SIMPLE MODE / STORY再編 / RECORDS / お気に入り / タイムゾーン修正）は
   master にマージ・push済み。旧 `feature/solver-extraction` は master にマージ済み（no-ff）。
 - **GitHub Pages は master / (root) から配信**（`volvic51-git.github.io/steller-delete`、push→数分で反映）。
@@ -28,7 +32,52 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ## いま何をしているフェーズか
 
-**Phase 3 Factory盤面の実装を開始する直前（計画書作成完了・実装未着手）。**
+**Phase 3 Factory盤面の実装完了（2026-07-08、feature/factory-board・未コミット）。
+実機での体感確認と、マージ判断が次の入口。**
+
+### 2026-07-08 完了した作業（詳細は memory [[project-factory-board]] / [[project-perf-zoomout]]）
+
+**① Phase 3 Factory盤面（計画書 §7.5 の Step 1〜4＋テスト。Step 5=リプレイ整合は予定通り対象外）**
+- `js/board-gen.js`：`canonicalBoard()` / `hashBoard()`（SHA-256正規形。キー順
+  rows,cols,mineCount,wrap,startCell,mines 固定・**変更禁止**）を追加。Factory出力と
+  ゲーム側再検証で同一コードを共用（Q4確定案どおり集約）。
+- `tool/board-factory.html`：生成・hashを board-gen.js に一本化（ローカルの
+  mulberry32/generateMines/sha256 を削除＝パリティが構造的に保証される）。seed行に
+  **「▶ プレイ」ボタン**（Board JSON を `localStorage['steller_factory_board']` に書いて
+  `?boot=factory` を新規タブで開く）。genVersion不一致時はピルに赤警告。
+- `sphere-minesweeper.html`：
+  - `?boot=factory` 起動枝（`_charDataReady.finally` 内）。**mineCount は
+    `window._stageMines` 経由で渡す**（restartGame が密度プルダウンから再計算して
+    直接代入を上書きする罠がある）。
+  - `verifyFactoryBoard()`：genVersion＋hash 再検証。NGは console 警告して通常生成へ
+    自動フォールバック（Q5）。検証完了前クリックは `_factoryVerified` ガードで無視。
+  - **Judge開始モデル**：idle枝の先頭で分岐。クリック位置は開始合図として無視し、
+    `judgeReveal()`（カメラ回転＋シアンハイライト＋SE bell1、650ms）→ startCell を dig。
+    **`applyBoardFromFactory` はクリック時に毎回呼ぶ**（RETRYのinitBoardで地雷が消えるため）。
+  - 検証済み（dev server）：72×144/1866地雷 seed 3297795212 で Judge起動・RETRY・
+    分母8502・hash/genVersion改竄フォールバック すべてOK。
+
+**② 描画性能改善（ズームアウトが重い問題。A/B案実装・C案未着手）**
+- 原因: 個別オブジェクト約43,000個による draw call 爆発（ズームアウトで全てが視錐台に入る）。
+- **A案**: cage wire 22,112本の個別Line → 不透明度クラス別の LineSegments **5本**に統合。
+  裏半球は `cageOccluder`（r=1.5球・colorWrite:false・深度のみ書く）で隠す。
+  sphereWire(1.55) は depthWrite:false 必須（cage線が交差部で点欠けする）。
+  旧実装のdispose漏れ（リスタート毎に22kオブジェクトVRAMリーク）も修正。
+- **B案**: セル枠線 10,368本の子Line → 頂点カラー付き LineSegments **1本**に統合。
+  API: `buildCellBorderSegs()`（initBoard末尾）/ `setCellBorderColor(cell,hex)`（同色なら
+  再転送しない）/ `hideCellBorder(cell)`（消滅演出開始時に8頂点を原点へ退化）/
+  `writeCellBorderGeometry(cell)`（周回出現アニメ完了時）。cageOccluder は renderOrder=0.5
+  に移動して cage と枠線の両方を担当。
+- **実測**: zoom-out **21,386→5,193 draw call・135→45.6ms**、zoom-in 736→205call・31.8→16.8ms。
+  Factory盤面＋通常stage=1 の両経路で描画検証済み。
+- **C案（未着手・大改修）**: セル本体10,368 Mesh の InstancedMesh 化＋数字テクスチャアトラス＋
+  解析的ピッキング。やる場合は別途計画書を作る（updateCellVisual/演出/raycast全域に影響）。
+  効果は数十call・リプレイ全再構築の激速化（REPLAY B案が不要になる可能性）。
+
+**③ 仕様確認（バグではないと確定）**
+- 「未開封マスに隣接して数字を挟まず消滅している穴」は**旗で除去した地雷の跡**（V1からの仕様）。
+  消滅ロジックの不変条件（消滅する非地雷セルの隣は必ず開封済み）は Factory盤面の正解データで
+  機械検証済み・違反0件。気になるなら「除去済みマーカーを残す」等の設計変更は別途。
 
 ### 2026-07-05 完了した作業
 - **リプレイUI非表示化**：REPLAYボタン（タイトル）・SAVE REPLAYボタン（クリア/GO画面）・

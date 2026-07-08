@@ -1156,9 +1156,11 @@ const rimLight = new THREE.DirectionalLight(0x0044ff, 0.8);
 rimLight.position.set(-5,-3,-5); scene.add(rimLight);
 
 // Sphere wireframe
+// depthWrite:false — cage wire が depthTest:true になったため、この装飾ワイヤーが深度を書くと
+// 1.55 > 1.52 の位置関係で cage wire の線がワイヤー交差部分だけ点状に欠ける。
 const sphereWire = new THREE.Mesh(
   new THREE.SphereGeometry(1.55, 48, 24),
-  new THREE.MeshBasicMaterial({color:0x004466,wireframe:true,transparent:true,opacity:0.1})
+  new THREE.MeshBasicMaterial({color:0x004466,wireframe:true,transparent:true,opacity:0.1,depthWrite:false})
 );
 scene.add(sphereWire);
 
@@ -1178,17 +1180,36 @@ scene.add(particleGroup);
 const cageWireGroup = new THREE.Group();
 scene.add(cageWireGroup);
 let cageWireLines = [];
-let cageWirePositions = [];
 let cageWireFading = false;
 let cageWireFadeProgress = 0;
 
+// cage wire とセル統合枠線の裏半球を隠す深度オクルーダ球（色は描かず深度のみ書く）。
+// 旧実装は 22,112本の cage Line＋10,368本の枠線を JS の visible 切替・親子関係で隠していた
+// （ズームアウト時に2万draw callの主因）。統合後は個別カリングができないため、この球の深度で
+// 裏側の線を隠す。transparent:true で透明キューに乗せ、renderOrder=0.5 で「内壁球(0)の後・
+// セル枠線(1)/cage wire(4)の前」に深度を書く → 先に描かれる内壁球・パーティクルには影響しない。
+// 数字(2)・デバッグ(3)は depthTest:false なので影響なし。
+// 半径1.5：セルパネル(1.5〜)と同じだがパネルは不透明パスで先に描画済みなので干渉しない。
+// 枠線は1.501、cage線は1.52 でいずれもこの球の外側。
+const cageOccluder = new THREE.Mesh(
+  new THREE.SphereGeometry(1.5, 64, 32),
+  new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true })
+);
+cageOccluder.renderOrder = 0.5;
+scene.add(cageOccluder);
+
 function buildCageWire(){
-  while(cageWireGroup.children.length) cageWireGroup.remove(cageWireGroup.children[0]);
+  // 旧オブジェクトはGPUリソースごと解放（remove単体だとテーマ変更・リスタートのたびにVRAMリーク）
+  while(cageWireGroup.children.length){
+    const child = cageWireGroup.children[0];
+    disposeObject3D(child);
+    cageWireGroup.remove(child);
+  }
   cageWireLines = [];
-  cageWirePositions = [];
   cageWireFading = false;
   cageWireFadeProgress = 0;
   cageWireGroup.visible = true;
+  cageOccluder.visible = true;
 
   const R = 1.52;
   const phiStart = Math.PI * 0.10; // パネル上端
@@ -1219,20 +1240,16 @@ function buildCageWire(){
 
   const baseOp = 0.65;
   const _wc = buildThemeColors(window._boardTheme);
-  function makeMat(op){
-    return new THREE.LineBasicMaterial({
-      color: _wc.border, transparent: true, opacity: op||baseOp,
-      depthTest: false, depthWrite: false,
-    });
-  }
 
+  // 不透明度クラス（基本0.65／極側の減衰3段／極側経線）ごとに頂点を溜めて、
+  // クラスにつき1つの LineSegments にまとめる（72×144で 22,112 Line → 5オブジェクト）。
+  // 裏半球のカリングは cageOccluder の深度が担うため、セグメント単位の情報は持たない。
+  const _segBuckets = new Map(); // opacity値 → 頂点座標のフラット配列
   function addSeg(p0, p1, op){
-    const geo = new THREE.BufferGeometry().setFromPoints([p0, p1]);
-    const line = new THREE.Line(geo, makeMat(op));
-    line.renderOrder = 4;
-    cageWireGroup.add(line);
-    cageWireLines.push(line);
-    cageWirePositions.push(p0.clone().add(p1).normalize());
+    const key = op || baseOp;
+    let arr = _segBuckets.get(key);
+    if(!arr){ arr = []; _segBuckets.set(key, arr); }
+    arr.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z);
   }
 
   // ── 横線（緯度線）──
@@ -1281,6 +1298,20 @@ function buildCageWire(){
       }
     }
   }
+
+  // ── 溜めた頂点を不透明度クラスごとに1つの LineSegments へ ──
+  for(const [op, arr] of _segBuckets){
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(arr), 3));
+    const seg = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+      color: _wc.border, transparent: true, opacity: op,
+      depthTest: true,  // 裏半球は cageOccluder の深度で隠す（旧: depthTest:false＋JSカリング）
+      depthWrite: false,
+    }));
+    seg.renderOrder = 4;
+    cageWireGroup.add(seg);
+    cageWireLines.push(seg);
+  }
 }
 
 function startCageWireFade(){
@@ -1291,12 +1322,7 @@ function startCageWireFade(){
 function updateCageWire(dt){
   if(!cageWireLines.length) return;
   cageWireGroup.quaternion.copy(boardGroup.quaternion);
-
-  if(_backCullCamDir){
-    for(let i = 0; i < cageWireLines.length; i++){
-      cageWireLines[i].visible = cageWirePositions[i].dot(_backCullCamDir) > 0;
-    }
-  }
+  // 裏半球の非表示は cageOccluder の深度が担う（旧: ここで22,112本のdot積を毎フレーム実行）
 
   // フェードアウト（ちらつき消灯）
   if(cageWireFading){
@@ -1306,8 +1332,8 @@ function updateCageWire(dt){
       ? 0.7 * (1 - p) * (0.5 + 0.5 * Math.sin(p * 80))
       : 0.7 * (1 - p) / 0.3;
     const op = Math.max(0, flicker);
-    for(const line of cageWireLines) line.material.opacity = op;
-    if(p >= 1){ cageWireGroup.visible = false; cageWireFading = false; }
+    for(const line of cageWireLines) line.material.opacity = op; // 旧実装と同じく全クラス同一の絶対値
+    if(p >= 1){ cageWireGroup.visible = false; cageOccluder.visible = false; cageWireFading = false; }
   }
 }
 
@@ -1438,16 +1464,90 @@ function createCellMesh(cell) {
   mesh.position.copy(pos);
   mesh.lookAt(pos.clone().add(pos.clone().normalize()));
 
-  const bw=w*0.5, bh=h*0.5;
-  const bverts = new Float32Array([-bw,-bh,0.001, bw,-bh,0.001, bw,bh,0.001, -bw,bh,0.001, -bw,-bh,0.001]);
-  const bgeo = new THREE.BufferGeometry();
-  bgeo.setAttribute('position', new THREE.BufferAttribute(bverts,3));
-  const borderLine = new THREE.Line(bgeo, new THREE.LineBasicMaterial({color:buildThemeColors(window._boardTheme).border,transparent:true,opacity:0.7}));
-  borderLine.renderOrder = 1;
-  mesh.add(borderLine);
+  // 枠線はセルごとの子Lineではなく、盤面全体で1本の LineSegments に統合（buildCellBorderSegs）
 
   boardGroup.add(mesh);
   cell.mesh = mesh;
+}
+
+// ===================== CELL BORDER（統合枠線） =====================
+// 旧実装はセルごとに子Line（72×144で10,368オブジェクト＝ズームアウト時に約5,200 draw call）。
+// 頂点カラー付きの LineSegments 1本（セルごとに4辺×2頂点=8頂点）に統合した。
+// - 色変更: setCellBorderColor（旧 border.material.color.setHex 相当。同色ならGPU再転送しない）
+// - 非表示: hideCellBorder（消滅・演出開始時に8頂点を原点へ退化させる。セルmeshのvisible切替には
+//   追従できないため、裏半球は cageOccluder の深度で隠す）
+let cellBorderSegs = null;
+let _cellBorderPos = null;
+let _cellBorderCol = null;
+const _borderTmpColor = new THREE.Color();
+const _borderTmpVec = new THREE.Vector3();
+
+// initBoard の後（全セルmesh生成後）に呼ぶ。旧バッファは initBoard の boardGroup 掃除で解放済み。
+function buildCellBorderSegs(){
+  if(cellBorderSegs){ boardGroup.remove(cellBorderSegs); disposeObject3D(cellBorderSegs); cellBorderSegs = null; }
+  const n = ROWS * COLS;
+  _cellBorderPos = new Float32Array(n * 8 * 3);
+  _cellBorderCol = new Float32Array(n * 8 * 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(_cellBorderPos, 3));
+  geo.setAttribute('color',    new THREE.BufferAttribute(_cellBorderCol, 3));
+  cellBorderSegs = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.7, depthWrite: false
+  }));
+  cellBorderSegs.renderOrder = 1;   // 旧borderLineと同じ（数字(2)より下）
+  cellBorderSegs.frustumCulled = false; // 頂点を書き換えるためboundingSphereを当てにしない
+  boardGroup.add(cellBorderSegs);
+
+  const _bc = buildThemeColors(window._boardTheme);
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell = board[r][c];
+    // 周回モードの出現アニメ中は非表示のまま（完了時にanimate側でwriteCellBorderGeometryする）
+    if(!(cell.mesh && cell.mesh.userData._appearAnimating)) writeCellBorderGeometry(cell);
+    setCellBorderColor(cell, _bc.border);
+  }
+}
+
+// セルmeshのローカル行列から4隅を計算して8頂点を書き込む（座標・zオフセットは旧borderLineと同一）
+function writeCellBorderGeometry(cell){
+  if(!cellBorderSegs || !cell.mesh) return;
+  const {w, h} = cellSize(cell.row);
+  const bw = w*0.5, bh = h*0.5;
+  cell.mesh.updateMatrix();
+  const m = cell.mesh.matrix; // mesh も LineSegments も boardGroup 直下なのでローカル行列でよい
+  const corners = [[-bw,-bh],[bw,-bh],[bw,bh],[-bw,bh]];
+  const segIdx = [0,1, 1,2, 2,3, 3,0]; // 4辺
+  const base = (cell.row*COLS + cell.col) * 8 * 3;
+  for(let i=0;i<8;i++){
+    const cn = corners[segIdx[i]];
+    _borderTmpVec.set(cn[0], cn[1], 0.001).applyMatrix4(m);
+    _cellBorderPos[base+i*3]   = _borderTmpVec.x;
+    _cellBorderPos[base+i*3+1] = _borderTmpVec.y;
+    _cellBorderPos[base+i*3+2] = _borderTmpVec.z;
+  }
+  cellBorderSegs.geometry.attributes.position.needsUpdate = true;
+}
+
+// 8頂点を原点に退化させて枠線を消す（消滅アニメ開始・即時除去時）
+function hideCellBorder(cell){
+  if(!cellBorderSegs) return;
+  const base = (cell.row*COLS + cell.col) * 8 * 3;
+  for(let i=0;i<24;i++) _cellBorderPos[base+i] = 0;
+  cellBorderSegs.geometry.attributes.position.needsUpdate = true;
+}
+
+// 枠線色の変更。毎フレーム同色で呼ばれるパルス処理があるため、同色ならバッファを触らない
+function setCellBorderColor(cell, hex){
+  if(!cellBorderSegs) return;
+  if(cell._borderHex === hex) return;
+  cell._borderHex = hex;
+  _borderTmpColor.setHex(hex);
+  const base = (cell.row*COLS + cell.col) * 8 * 3;
+  for(let i=0;i<8;i++){
+    _cellBorderCol[base+i*3]   = _borderTmpColor.r;
+    _cellBorderCol[base+i*3+1] = _borderTmpColor.g;
+    _cellBorderCol[base+i*3+2] = _borderTmpColor.b;
+  }
+  cellBorderSegs.geometry.attributes.color.needsUpdate = true;
 }
 
 function makeTextCanvas(text, color, fontSize, useEmojiFont) {
@@ -1578,6 +1678,7 @@ function initBoard() {
       createCellMesh(cell);
     }
   }
+  buildCellBorderSegs(); // 全セルの枠線を1本のLineSegmentsとして構築
 }
 
 // ===================== MINE PLACEMENT =====================
@@ -1593,15 +1694,67 @@ function placeMines(excludeRow, excludeCol) {
 // Factory 盤面（Board JSON）をそのまま board[][] に反映する。
 // 地雷位置は事前生成済みなので generateMineSet は呼ばない。
 function applyBoardFromFactory(fb){
-  const { mines, rows, cols, startCell, wrap, hash } = fb.board;
+  const { mines, rows, cols, startCell, wrap, hash, mineCount: fbMines } = fb.board;
   const mineSet = new Set(mines.map(m => m.r * cols + m.c));
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) board[r][c].isMine = mineSet.has(r*COLS+c);
   window._boardGen = {
     seed: fb.identity.seed, genVersion: fb.identity.genVersion,
-    start: startCell, rows: ROWS, cols: COLS, mineCount, wrap: wrap||'cyl',
+    start: startCell, rows, cols, mineCount: fbMines, wrap: wrap||'cyl',
     factoryHash: hash
   };
   calcNeighbors();
+}
+
+// ===================== FACTORY BOARD (?boot=factory) =====================
+// Board Factory（tool/board-factory.html）が localStorage に書いた Board JSON を読む。
+// tool/ とルートの同一オリジン共有が前提（dev server 経由。file:// は不可）。
+const FACTORY_STORE_KEY = 'steller_factory_board';
+function loadFactoryBoard(){
+  try{
+    const raw = localStorage.getItem(FACTORY_STORE_KEY);
+    if(!raw) return null;
+    const fb = JSON.parse(raw);
+    if(!fb || !fb.identity || !fb.board) return null;
+    const b = fb.board;
+    if(!(b.rows > 0 && b.cols > 0 && b.mineCount > 0)) return null;
+    if(!Array.isArray(b.mines) || !b.startCell || typeof b.hash !== 'string') return null;
+    return fb;
+  }catch(e){ return null; }
+}
+
+// 改竄・生成器バージョン不一致の検出。正規形hashの定義は board-gen.js に集約（Factory出力と同一）。
+async function verifyFactoryBoard(fb){
+  if(String(fb.identity.genVersion) !== StellerBoardGen.GEN_VERSION){
+    console.warn(`Factory盤面: genVersion不一致 (board=${fb.identity.genVersion} / game=${StellerBoardGen.GEN_VERSION})`);
+    return false;
+  }
+  try{
+    const h = await StellerBoardGen.hashBoard(fb.board);
+    if(h !== fb.board.hash){ console.warn('Factory盤面: hash不一致（改竄または破損）'); return false; }
+    return true;
+  }catch(e){
+    console.warn('Factory盤面: hash計算に失敗', e);
+    return false;
+  }
+}
+
+// Judge 開始演出：カメラを startCell へ向け、セルをハイライト＋SE → 演出後に done() で開く。
+// クリック位置は「開始合図」なので使わない（不変盤面では初手安全のための地雷移動ができないため）。
+const JUDGE_COLOR = 0x00ffcc;
+const JUDGE_REVEAL_MS = 650; // startAutoRotate の回転(約455ms)を覆う長さ
+function judgeReveal(row, col, done){
+  const cell = board[row] && board[row][col];
+  startAutoRotate(row, col);
+  if(cell && cell.mesh){
+    cell.mesh.material.emissive.setHex(JUDGE_COLOR);
+    cell.mesh.material.emissiveIntensity = 1.6;
+    setCellBorderColor(cell, JUDGE_COLOR);
+  }
+  playSE('bell1');
+  setTimeout(()=>{
+    if(cell) clearHintHighlight(cell); // digCell の開封・消滅演出の前にテーマ色へ戻す
+    done();
+  }, JUDGE_REVEAL_MS);
 }
 
 // 指定 seed + 初手セルから盤面を決定論的に生成して board[][] に反映する。
@@ -2118,6 +2271,7 @@ function checkCascade(){
 // （毎回盤面を作り直すため、演出を残すと「消滅済みセルが復活→再度フェードアウト」がちらつく）。
 function removeMeshInstant(cell){
   if(cell.mesh){ boardGroup.remove(cell.mesh); scene.remove(cell.mesh); disposeObject3D(cell.mesh); cell.mesh=null; }
+  hideCellBorder(cell);
   cell.animating=false;
 }
 
@@ -2132,6 +2286,7 @@ function triggerRemovalAnimation(cell){
   cell.mesh.position.copy(worldPos);
   cell.mesh.rotation.set(0,0,0);
   scene.add(cell.mesh);
+  hideCellBorder(cell); // 統合枠線はmeshに追従できないため演出開始時に消す
   cell.animating=true; cell.animProgress=0; cell._animSpeed=2.5; cell._animType='mine';
   cell.animPos=worldPos.clone();
   spawnParticles(worldPos.clone(), [0xff6600,0xff3300,0xffaa00,0xffffff], 12);
@@ -2147,6 +2302,7 @@ function triggerVanishAnimation(cell){
   cell.mesh.position.copy(worldPos);
   cell.mesh.rotation.set(0,0,0);
   scene.add(cell.mesh);
+  hideCellBorder(cell); // 統合枠線はmeshに追従できないため演出開始時に消す
   cell.animating=true; cell.animProgress=0; cell._animSpeed=1.8; cell._animType='zero';
   cell.animPos=worldPos.clone();
   spawnParticles(worldPos.clone(), [0x00ccff,0x0066ff,0x88ffff,0xffffff], 5);
@@ -2177,8 +2333,7 @@ function revealAllMines(){
       if(cell === gameOverMistakeCell && cell.mesh){
         cell.mesh.material.color.setHex(0xff2200);
         cell.mesh.material.emissive.setHex(0x661100);
-        const border = cell.mesh.children.find(c=>c.isLine);
-        if(border) border.material.color.setHex(0xff4400);
+        setCellBorderColor(cell, 0xff4400);
       }
     }
   }
@@ -2196,12 +2351,9 @@ function updateCellVisual(cell){
   } else {
     mat.color.setHex(_vc.cell); mat.emissive.setHex(_vc.cellEmit);
   }
-  const border=cell.mesh.children.find(c=>c.isLine);
-  if(border){
-    if(cell.hasFlag) border.material.color.setHex(0xff4444);
-    else if(cell.isOpen) border.material.color.setHex(_vc.openBorder);
-    else border.material.color.setHex(_vc.border);
-  }
+  if(cell.hasFlag) setCellBorderColor(cell, 0xff4444);
+  else if(cell.isOpen) setCellBorderColor(cell, _vc.openBorder);
+  else setCellBorderColor(cell, _vc.border);
   createNumberMesh(cell);
 }
 
@@ -2523,8 +2675,7 @@ function clearHintHighlight(cell){
   const _hc = buildThemeColors(window._boardTheme);
   cell.mesh.material.emissive.setHex(cell.isOpen?_hc.openEmit:_hc.cellEmit);
   cell.mesh.material.emissiveIntensity=1;
-  const brd=cell.mesh.children.find(c=>c.isLine);
-  if(brd) brd.material.color.setHex(cell.isOpen?_hc.openBorder:_hc.border);
+  setCellBorderColor(cell, cell.isOpen?_hc.openBorder:_hc.border);
 }
 
 function giveHint(){
@@ -3118,8 +3269,7 @@ function showReplayPreviewHighlight(cell, colorHex){
   if(!cell || !cell.mesh) return;
   cell.mesh.material.emissive.setHex(colorHex);
   cell.mesh.material.emissiveIntensity = 1.4;
-  const brd = cell.mesh.children.find(c=>c.isLine);
-  if(brd) brd.material.color.setHex(colorHex);
+  setCellBorderColor(cell, colorHex);
 }
 
 function updateReplayStepUI(){
@@ -3313,6 +3463,30 @@ function handleCellAction(row,col,action){
     }
   }
   if(gameState==='idle'){
+    // ===== Factory 盤面（Judge 開始モデル）=====
+    // 盤面は事前生成・不変。クリックは開始合図として扱い、Judge が唯一の startCell を開く。
+    // placeMines / Border 振り分けは通らない（生成も保証リトライも不要）。
+    if(window._factoryMode && window._factoryBoard){
+      if(window._factoryVerified !== true) return;   // hash検証完了前（数ms）のクリックは無視
+      gameState='generating';                        // Judge 演出中の入力を無視（digCell/flagCell は playing ガードで弾かれる）
+      applyBoardFromFactory(window._factoryBoard);   // RETRY で initBoard が盤面を作り直すため、開始のたびに地雷を流し込む
+      const gr=document.getElementById('guarantee-result');
+      if(gr){ gr.textContent='✅ FACTORY'; gr.style.color='#00ff88'; }
+      const s = window._factoryBoard.board.startCell;
+      judgeReveal(s.r, s.c, ()=>{
+        gameState='playing';
+        replayReset();
+        startTimer();
+        calcTotalNonMineCells();
+        autoEnableMisclickGuard();
+        replayRecord('dig', s.r, s.c);
+        digCell(s.r, s.c);
+        updateStats();
+        if(debugMode) runSolverDebug();
+      });
+      return;
+    }
+
     gameState='generating';
     placeMines(row,col);
 
@@ -3946,6 +4120,7 @@ function debugClear(){
     if(cell.isMine&&!cell.isRemoved){
       cell.isMine=false; cell.isRemoved=true; removedMines++;
       if(cell.mesh){ boardGroup.remove(cell.mesh); cell.mesh=null; }
+      hideCellBorder(cell);
     }
   }
   // 全非地雷セルを開放・即消滅
@@ -3955,6 +4130,7 @@ function debugClear(){
       cell.isOpen=true; cell.isRemoved=true;
       vanishedNonMine++;
       if(cell.mesh){ boardGroup.remove(cell.mesh); cell.mesh=null; }
+      hideCellBorder(cell);
     }
   }
   calcNeighbors();
@@ -4126,8 +4302,7 @@ function animate(){
       const pulse=0.5+0.5*Math.sin(hintAnimTime*2*Math.PI);
     hintTarget.mesh.material.emissive.setHex(hintTarget.isMine?0x441100:0x004422);
       hintTarget.mesh.material.emissiveIntensity=0.5+pulse*1.5;
-      const brd=hintTarget.mesh.children.find(c=>c.isLine);
-      if(brd) brd.material.color.setHex(hintTarget.isMine?0xff6600:0x00ff88);
+      setCellBorderColor(hintTarget, hintTarget.isMine?0xff6600:0x00ff88); // 同色なら内部で何もしない
       // ハイライトはセルが開かれるまで維持（時間による自動消灯なし）
     }
   }
@@ -4138,8 +4313,7 @@ function animate(){
     const mpulse=0.5+0.5*Math.sin(gameOverMistakeAnimTime*2*Math.PI);
     gameOverMistakeCell.mesh.material.emissive.setHex(0xff0044);
     gameOverMistakeCell.mesh.material.emissiveIntensity=0.6+mpulse*1.8;
-    const mbrd=gameOverMistakeCell.mesh.children.find(c=>c.isLine);
-    if(mbrd) mbrd.material.color.setHex(0xffffff);
+    setCellBorderColor(gameOverMistakeCell, 0xffffff); // 同色なら内部で何もしない
   }
 
   // Cell removal animations
@@ -4151,7 +4325,10 @@ function animate(){
       const p = Math.min(1, cell.mesh.userData._appearProgress);
       const ease = easeInOut(p);
       cell.mesh.scale.setScalar(Math.max(0.001, ease));
-      if(p >= 1){ cell.mesh.userData._appearAnimating = false; }
+      if(p >= 1){
+        cell.mesh.userData._appearAnimating = false;
+        writeCellBorderGeometry(cell); // 出現完了と同時に統合枠線を表示（アニメ中は非表示）
+      }
     }
     if(cell.animating&&cell.mesh){
       const speed = cell._animSpeed||2.5;
@@ -4456,6 +4633,30 @@ _charDataReady.finally(()=>{
     const _rec = getReplay(_i);
     if(_rec) startReplay(_rec);
     else console.warn('リプレイが見つかりません', _i);
+  } else if(_bootMode === 'factory'){
+    // Board Factory からの起動。dims は initBoard が参照するため restartGame より前に確定。
+    // mineCount は restartGame 内で _stageMines/密度プルダウンから再計算されるので _stageMines 経由で渡す。
+    const _fb = loadFactoryBoard();
+    if(_fb){
+      ROWS = _fb.board.rows; COLS = _fb.board.cols;
+      window._stageMines = _fb.board.mineCount;
+      window._factoryBoard = _fb;
+      window._factoryMode = true;
+      window._factoryVerified = false;  // 検証完了までは Judge 経路がクリックを無視する
+      restartGame();
+      // hash/genVersion 再検証（非同期・数ms）。NGなら通常のリアルタイム生成にフォールバック（Q5確定）。
+      verifyFactoryBoard(_fb).then(ok=>{
+        if(ok){
+          window._factoryVerified = true;
+        } else {
+          console.warn('Factory盤面の検証NG → 通常生成にフォールバック');
+          window._factoryMode = false; window._factoryBoard = null;
+        }
+      });
+    } else {
+      console.warn('Factory盤面が見つかりません（steller_factory_board）→ 通常生成');
+      restartGame();
+    }
   } else if(!_bootParams.get('stage')){
     // ステージモード時はapplyStageParam内のrestartGameに任せる
     restartGame();
