@@ -246,10 +246,11 @@ GitHub Pages 実機テストで確認された3件。すべて実装・実機確
 ## 実装ロードマップ（`etc/V2_GENERATION_ENGINE.md §3` に詳細）
 
 ```
-Phase 1  js/board-gen.js 一本化（決定論化 / seed記録 / genVersion導入 / パリティテスト）
-Phase 2  Judge 開始モデル（単一startCellを開く演出）
-Phase 3  Factory 盤面の Board JSON 読込（＝ゴール。既存生成はフォールバック）
-Phase 4  リプレイ / 中断（seed+genVersion+params+操作ログ。startが1個なので再現がシンプル）
+Phase 1  js/board-gen.js 一本化（決定論化 / seed記録 / genVersion導入）        ✅ 完了
+Phase 2  Judge 開始モデル（単一startCellを開く演出）                          ✅ 完了（2026-07-08）
+Phase 3  Factory 盤面の Board JSON 読込（既存生成はフォールバック）           ✅ 完了（2026-07-08）
+Phase 4  リプレイ / 中断の再設計（seed+genVersion+params+操作ログ。start1個で再現シンプル）← 次
+※ パリティ自動テスト（Hunter/Factory/game の generateMineSet 一致）は未着手のまま
 ```
 
 ### 実装着手前に詰める未決（`V2_GENERATION_ENGINE.md §5`）
@@ -326,31 +327,33 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッション（2026-07-10 木曜）の入口
+## 次セッションの入口（2026-07-08 更新）
 
-0. **まず `git status`**：未コミットがあれば commit + push（直近＝リプレイUI非表示化・MODE SELECT「>」削除）。
-   「Pagesが更新されない」の原因は大抵これ（未push）かCDN/ブラウザキャッシュ。
+0. **まず `git status`**：`feature/factory-board` に Phase 3＋性能改善A/B が**未コミット**で
+   載っている。ユーザーが commit + push（Claudeはgit操作しない）。`data/board/` は未追跡なので
+   リポジトリに含めるかどうかを判断（Hunter結果JSONの置き場）。
 
-1. **Phase 3 Factory盤面の実装を開始する**。計画書は `etc/V2_PHASE3_FACTORY_PLAN.md`。
-   実装順（§7.5）：
-   1. `tool/board-factory.html` に「▶ プレイ」ボタン（localStorage書込 + `../sphere-minesweeper.html?boot=factory` を新規タブで開く）
-   2. `sphere-minesweeper.html` に `?boot=factory` 起動枝（dims設定→restartGame→applyBoardFromFactory→calcTotalNonMineCells）
-   3. hash再検証 + フォールバック（正規形をboard-gen.jsに集約）
-   4. Judge分岐（handleCellAction idle枝）+ `judgeReveal()` 演出（visual+SE）
-   5. **Step 5はPhase 3対象外**（リプレイ整合はFactory完成後に再設計）
-   6. テスト（§6）を dev server で通す
+1. **実機で体感確認**：
+   - Factory盤面のプレイ（Board Factory「▶ プレイ」→ Judge開始 → 通常プレイ）
+   - ズームアウトの軽さ（改善前135ms→45.6ms。まだ重ければC案へ）
+   - Judge演出（650ms・シアン・bell1）の感触。長い/短い/色/音は `judgeReveal()` と
+     `JUDGE_REVEAL_MS` / `JUDGE_COLOR`（sphere-minesweeper.html）で調整可。
 
-2. **検証はdev server経由**（Q1確定）。`tool/board-factory.html`（`tool/`配下）と
-   `sphere-minesweeper.html`（ルート）が同一オリジンで localStorage を共有するために必須。
-   dev server起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
+2. **master へのマージ判断**：問題なければ feature/factory-board → master（no-ff推奨）→ push。
+   GitHub Pages は master /(root) 配信なので push で公開に反映される点に注意
+   （Factory盤面は localStorage ブリッジ経由なので一般ユーザーの動線には影響しない）。
 
-3. **コード挿入点（sphere-minesweeper.html）**：
-   - `let COLS=24, ROWS=12;` L769 / `let mineCount=30;` L789（`let`なので再代入可）
-   - `applyBoardFromFactory(fb)` L1568（実装済み・未接続）
-   - `handleCellAction` idle枝 L3268〜3301（Judge挿入点）
-   - `_charDataReady.finally` L4398（factory起動枝の追加点）
+3. **次の開発候補（優先度はユーザー判断）**：
+   - **C案**（セルInstancedMesh化・大改修）：ズームアウトを60fpsへ。計画書を作ってから。
+     リプレイ全再構築も激速化するので Phase 4 の前にやる価値あり（[[project-perf-zoomout]]）。
+   - **Phase 4**（リプレイ/中断の再設計・REPLAY UI復活）：Factory盤面の startCell を
+     record の start に載せる整合を含む（計画書 §5 Q3 の整合メモ参照）。
+   - **複数盤面の供給**（data/boards 同梱・キャンペーン選択UI）＋ Hunter/Factory/game の
+     パリティ自動テスト。
+   - LIMIT MODE（modes.json enabled:false のまま保留中）。
 
-4. **未実装/保留**：LIMIT MODE（modes.jsonでenabled:false）。リプレイ整合（Phase 3対象外）。
+4. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
+   起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
 
 **整理系（いつでも）:** `docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
 V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在）、

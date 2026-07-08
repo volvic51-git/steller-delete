@@ -3,6 +3,13 @@
 作成日: 2026-07-04 / 対象: `sphere-minesweeper.html` + `tool/board-factory.html`
 前提: [[etc/V2_HANDOFF.md]] のロードマップ Phase 3。Board Hunter → Board Factory の生成パイプは完成済み。
 
+> **ステータス: ✅ 実装完了（2026-07-08、feature/factory-board）**
+> Step 1〜4＋テスト（§6）実施済み。Step 5（リプレイ整合）は計画どおり対象外のまま。
+> 実装時の差分: mineCount は `window._stageMines` 経由で渡す（restartGame が再計算するため
+> §4 Step 2 の直接代入では上書きされる）／`applyBoardFromFactory` は boot 時ではなく
+> idle枝（クリック時）に毎回呼ぶ（RETRY の initBoard で地雷が消えるため）。
+> 詳細は memory [[project-factory-board]] と `etc/V2_HANDOFF.md` を参照。
+
 ---
 
 ## 0. ゴール
