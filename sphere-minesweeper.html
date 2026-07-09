@@ -1474,7 +1474,11 @@ const NUMBER_COLORS_DARK = [
 ];
 
 function getNumberColor(idx, paletteIndex){
-  const hex = paletteColor(paletteIndex);
+  // 2色（東西）パレットの場合、セルごとの背景明度で配色を切り替えると片側だけ数字がくすんで見える
+  // （黄=明るい→暗色セット、紫=暗い→鮮やかセット、のように左右で見た目が揃わない）。
+  // 単色ステージ（従来通り）は背景の明暗に応じた自動切替を維持し、2色ステージは常に鮮やかセットに統一する。
+  const multiTone = window._boardPalette && window._boardPalette.length > 1;
+  const hex = (!multiTone) ? paletteColor(paletteIndex) : null;
   const lum = hex ? hexLuminance(hex) : 0;
   const arr = lum > 0.35 ? NUMBER_COLORS_DARK : NUMBER_COLORS;
   return arr[idx] || (lum > 0.35 ? '#333333' : '#ffffff');
