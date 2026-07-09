@@ -109,7 +109,29 @@
     };
   }
 
-  const StellerBoardGen = { GEN_VERSION, mulberry32, randomSeed, excludeZone, generateMineSet, generateBoard };
+  // ---- Board JSON の正規形とSHA-256（Factory出力とゲーム側の再検証で共用） ----
+  // 正規形: キー順 rows, cols, mineCount, wrap, startCell, mines 固定。
+  // mines は r*cols+c 昇順のインデックス配列。JSON.stringify のキー順（=挿入順）に依存するため、
+  // ここを変えると既存 Board JSON の hash が全て不一致になる。変更禁止。
+  // b = Board JSON の board ブロック（{rows, cols, mineCount, wrap, startCell, mines:[{r,c}...]}）
+  function canonicalBoard(b) {
+    const mines = b.mines.map(m => m.r * b.cols + m.c).sort((x, y) => x - y);
+    return {
+      rows: b.rows, cols: b.cols, mineCount: b.mineCount, wrap: b.wrap,
+      startCell: { r: b.startCell.r, c: b.startCell.c },
+      mines
+    };
+  }
+
+  // 正規形の SHA-256 を返す（hex文字列）。b.hash 自体は正規形に含まれないので、
+  // hash 検証は「hashBoard(b) === b.hash」の完全一致で行う。
+  async function hashBoard(b) {
+    const canonical = JSON.stringify(canonicalBoard(b));
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonical));
+    return Array.from(new Uint8Array(buf)).map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  const StellerBoardGen = { GEN_VERSION, mulberry32, randomSeed, excludeZone, generateMineSet, generateBoard, canonicalBoard, hashBoard };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = StellerBoardGen;
   global.StellerBoardGen = StellerBoardGen;

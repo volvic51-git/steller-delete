@@ -1,13 +1,17 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-05
+作成日: 2026-06-30 / 最終更新: 2026-07-08
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-05）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-08）
 
-- **実装は全て `master` に集約済み**。V2エンジン（リプレイ/中断）＋その後のUI大改修
+- **作業ブランチ `feature/factory-board`（master から分岐・未コミット）**。
+  Phase 3（Factory盤面）実装＋描画性能改善A/B案が working tree に載っている。
+  変更ファイル: `sphere-minesweeper.html` / `js/board-gen.js` / `tool/board-factory.html`
+  （＋盤面データ `data/board/` は未追跡）。**commit / push はユーザーが行う**（Claudeはgit操作しない約束）。
+- それ以前の実装は全て `master` に集約済み。V2エンジン（リプレイ/中断）＋UI大改修
   （MODE SELECT / SIMPLE MODE / STORY再編 / RECORDS / お気に入り / タイムゾーン修正）は
   master にマージ・push済み。旧 `feature/solver-extraction` は master にマージ済み（no-ff）。
 - **GitHub Pages は master / (root) から配信**（`volvic51-git.github.io/steller-delete`、push→数分で反映）。
@@ -28,7 +32,52 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ## いま何をしているフェーズか
 
-**Phase 3 Factory盤面の実装を開始する直前（計画書作成完了・実装未着手）。**
+**Phase 3 Factory盤面の実装完了（2026-07-08、feature/factory-board・未コミット）。
+実機での体感確認と、マージ判断が次の入口。**
+
+### 2026-07-08 完了した作業（詳細は memory [[project-factory-board]] / [[project-perf-zoomout]]）
+
+**① Phase 3 Factory盤面（計画書 §7.5 の Step 1〜4＋テスト。Step 5=リプレイ整合は予定通り対象外）**
+- `js/board-gen.js`：`canonicalBoard()` / `hashBoard()`（SHA-256正規形。キー順
+  rows,cols,mineCount,wrap,startCell,mines 固定・**変更禁止**）を追加。Factory出力と
+  ゲーム側再検証で同一コードを共用（Q4確定案どおり集約）。
+- `tool/board-factory.html`：生成・hashを board-gen.js に一本化（ローカルの
+  mulberry32/generateMines/sha256 を削除＝パリティが構造的に保証される）。seed行に
+  **「▶ プレイ」ボタン**（Board JSON を `localStorage['steller_factory_board']` に書いて
+  `?boot=factory` を新規タブで開く）。genVersion不一致時はピルに赤警告。
+- `sphere-minesweeper.html`：
+  - `?boot=factory` 起動枝（`_charDataReady.finally` 内）。**mineCount は
+    `window._stageMines` 経由で渡す**（restartGame が密度プルダウンから再計算して
+    直接代入を上書きする罠がある）。
+  - `verifyFactoryBoard()`：genVersion＋hash 再検証。NGは console 警告して通常生成へ
+    自動フォールバック（Q5）。検証完了前クリックは `_factoryVerified` ガードで無視。
+  - **Judge開始モデル**：idle枝の先頭で分岐。クリック位置は開始合図として無視し、
+    `judgeReveal()`（カメラ回転＋シアンハイライト＋SE bell1、650ms）→ startCell を dig。
+    **`applyBoardFromFactory` はクリック時に毎回呼ぶ**（RETRYのinitBoardで地雷が消えるため）。
+  - 検証済み（dev server）：72×144/1866地雷 seed 3297795212 で Judge起動・RETRY・
+    分母8502・hash/genVersion改竄フォールバック すべてOK。
+
+**② 描画性能改善（ズームアウトが重い問題。A/B案実装・C案未着手）**
+- 原因: 個別オブジェクト約43,000個による draw call 爆発（ズームアウトで全てが視錐台に入る）。
+- **A案**: cage wire 22,112本の個別Line → 不透明度クラス別の LineSegments **5本**に統合。
+  裏半球は `cageOccluder`（r=1.5球・colorWrite:false・深度のみ書く）で隠す。
+  sphereWire(1.55) は depthWrite:false 必須（cage線が交差部で点欠けする）。
+  旧実装のdispose漏れ（リスタート毎に22kオブジェクトVRAMリーク）も修正。
+- **B案**: セル枠線 10,368本の子Line → 頂点カラー付き LineSegments **1本**に統合。
+  API: `buildCellBorderSegs()`（initBoard末尾）/ `setCellBorderColor(cell,hex)`（同色なら
+  再転送しない）/ `hideCellBorder(cell)`（消滅演出開始時に8頂点を原点へ退化）/
+  `writeCellBorderGeometry(cell)`（周回出現アニメ完了時）。cageOccluder は renderOrder=0.5
+  に移動して cage と枠線の両方を担当。
+- **実測**: zoom-out **21,386→5,193 draw call・135→45.6ms**、zoom-in 736→205call・31.8→16.8ms。
+  Factory盤面＋通常stage=1 の両経路で描画検証済み。
+- **C案（未着手・大改修）**: セル本体10,368 Mesh の InstancedMesh 化＋数字テクスチャアトラス＋
+  解析的ピッキング。やる場合は別途計画書を作る（updateCellVisual/演出/raycast全域に影響）。
+  効果は数十call・リプレイ全再構築の激速化（REPLAY B案が不要になる可能性）。
+
+**③ 仕様確認（バグではないと確定）**
+- 「未開封マスに隣接して数字を挟まず消滅している穴」は**旗で除去した地雷の跡**（V1からの仕様）。
+  消滅ロジックの不変条件（消滅する非地雷セルの隣は必ず開封済み）は Factory盤面の正解データで
+  機械検証済み・違反0件。気になるなら「除去済みマーカーを残す」等の設計変更は別途。
 
 ### 2026-07-05 完了した作業
 - **リプレイUI非表示化**：REPLAYボタン（タイトル）・SAVE REPLAYボタン（クリア/GO画面）・
@@ -197,10 +246,11 @@ GitHub Pages 実機テストで確認された3件。すべて実装・実機確
 ## 実装ロードマップ（`etc/V2_GENERATION_ENGINE.md §3` に詳細）
 
 ```
-Phase 1  js/board-gen.js 一本化（決定論化 / seed記録 / genVersion導入 / パリティテスト）
-Phase 2  Judge 開始モデル（単一startCellを開く演出）
-Phase 3  Factory 盤面の Board JSON 読込（＝ゴール。既存生成はフォールバック）
-Phase 4  リプレイ / 中断（seed+genVersion+params+操作ログ。startが1個なので再現がシンプル）
+Phase 1  js/board-gen.js 一本化（決定論化 / seed記録 / genVersion導入）        ✅ 完了
+Phase 2  Judge 開始モデル（単一startCellを開く演出）                          ✅ 完了（2026-07-08）
+Phase 3  Factory 盤面の Board JSON 読込（既存生成はフォールバック）           ✅ 完了（2026-07-08）
+Phase 4  リプレイ / 中断の再設計（seed+genVersion+params+操作ログ。start1個で再現シンプル）← 次
+※ パリティ自動テスト（Hunter/Factory/game の generateMineSet 一致）は未着手のまま
 ```
 
 ### 実装着手前に詰める未決（`V2_GENERATION_ENGINE.md §5`）
@@ -277,31 +327,33 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッション（2026-07-10 木曜）の入口
+## 次セッションの入口（2026-07-08 更新）
 
-0. **まず `git status`**：未コミットがあれば commit + push（直近＝リプレイUI非表示化・MODE SELECT「>」削除）。
-   「Pagesが更新されない」の原因は大抵これ（未push）かCDN/ブラウザキャッシュ。
+0. **まず `git status`**：`feature/factory-board` に Phase 3＋性能改善A/B が**未コミット**で
+   載っている。ユーザーが commit + push（Claudeはgit操作しない）。`data/board/` は未追跡なので
+   リポジトリに含めるかどうかを判断（Hunter結果JSONの置き場）。
 
-1. **Phase 3 Factory盤面の実装を開始する**。計画書は `etc/V2_PHASE3_FACTORY_PLAN.md`。
-   実装順（§7.5）：
-   1. `tool/board-factory.html` に「▶ プレイ」ボタン（localStorage書込 + `../sphere-minesweeper.html?boot=factory` を新規タブで開く）
-   2. `sphere-minesweeper.html` に `?boot=factory` 起動枝（dims設定→restartGame→applyBoardFromFactory→calcTotalNonMineCells）
-   3. hash再検証 + フォールバック（正規形をboard-gen.jsに集約）
-   4. Judge分岐（handleCellAction idle枝）+ `judgeReveal()` 演出（visual+SE）
-   5. **Step 5はPhase 3対象外**（リプレイ整合はFactory完成後に再設計）
-   6. テスト（§6）を dev server で通す
+1. **実機で体感確認**：
+   - Factory盤面のプレイ（Board Factory「▶ プレイ」→ Judge開始 → 通常プレイ）
+   - ズームアウトの軽さ（改善前135ms→45.6ms。まだ重ければC案へ）
+   - Judge演出（650ms・シアン・bell1）の感触。長い/短い/色/音は `judgeReveal()` と
+     `JUDGE_REVEAL_MS` / `JUDGE_COLOR`（sphere-minesweeper.html）で調整可。
 
-2. **検証はdev server経由**（Q1確定）。`tool/board-factory.html`（`tool/`配下）と
-   `sphere-minesweeper.html`（ルート）が同一オリジンで localStorage を共有するために必須。
-   dev server起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
+2. **master へのマージ判断**：問題なければ feature/factory-board → master（no-ff推奨）→ push。
+   GitHub Pages は master /(root) 配信なので push で公開に反映される点に注意
+   （Factory盤面は localStorage ブリッジ経由なので一般ユーザーの動線には影響しない）。
 
-3. **コード挿入点（sphere-minesweeper.html）**：
-   - `let COLS=24, ROWS=12;` L769 / `let mineCount=30;` L789（`let`なので再代入可）
-   - `applyBoardFromFactory(fb)` L1568（実装済み・未接続）
-   - `handleCellAction` idle枝 L3268〜3301（Judge挿入点）
-   - `_charDataReady.finally` L4398（factory起動枝の追加点）
+3. **次の開発候補（優先度はユーザー判断）**：
+   - **C案**（セルInstancedMesh化・大改修）：ズームアウトを60fpsへ。計画書を作ってから。
+     リプレイ全再構築も激速化するので Phase 4 の前にやる価値あり（[[project-perf-zoomout]]）。
+   - **Phase 4**（リプレイ/中断の再設計・REPLAY UI復活）：Factory盤面の startCell を
+     record の start に載せる整合を含む（計画書 §5 Q3 の整合メモ参照）。
+   - **複数盤面の供給**（data/boards 同梱・キャンペーン選択UI）＋ Hunter/Factory/game の
+     パリティ自動テスト。
+   - LIMIT MODE（modes.json enabled:false のまま保留中）。
 
-4. **未実装/保留**：LIMIT MODE（modes.jsonでenabled:false）。リプレイ整合（Phase 3対象外）。
+4. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
+   起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
 
 **整理系（いつでも）:** `docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
 V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在）、
