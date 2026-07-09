@@ -1108,7 +1108,7 @@ const NovelEngine = (() => {
     try {
       _bgmAudio        = new Audio(_config.bgmPath + filename);
       _bgmAudio.loop   = loop;
-      _bgmAudio.volume = 0.6;
+      _bgmAudio.volume = 0.6 * window.AudioSettings.getBgmVolume();
       _bgmAudio.play().catch(function(e) {
         console.warn('[NovelEngine] BGM再生失敗:', e.message);
       });
@@ -1147,9 +1147,16 @@ const NovelEngine = (() => {
     if (!filename) return;
     try {
       const se    = new Audio(_config.sePath + filename);
-      se.volume   = 0.8;
+      se.volume   = 0.8 * window.AudioSettings.getSeVolume();
       se.play().catch(function() {});
     } catch(e) {}
+  }
+
+  // BGMスライダー操作中、再生中のBGM音量へ即時反映する
+  if (window.AudioSettings) {
+    window.AudioSettings.subscribe(function(s) {
+      if (_bgmAudio) _bgmAudio.volume = 0.6 * s.bgm;
+    });
   }
 
   /* ============================================

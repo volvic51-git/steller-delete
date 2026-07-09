@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="js/tab-guard.js"></script>
+<script src="js/audio-settings.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>STELLAR DELETE — ENDING</title>
 <link rel="icon" href="assets/images/etc/favicon.ico">
@@ -373,6 +374,8 @@
   const outroEl   = document.getElementById('outro');
   const loadingEl = document.getElementById('loading');
   const audio     = document.getElementById('ed-audio');
+  audio.volume = AudioSettings.getBgmVolume();
+  AudioSettings.subscribe(function(s){ audio.volume = s.bgm; });
 
   let blocks   = [];
   let scrollY  = 0;   // outerEl.scrollTop と同期

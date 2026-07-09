@@ -1,39 +1,64 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-08
+作成日: 2026-06-30 / 最終更新: 2026-07-09
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-08）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-09）
 
-- **作業ブランチ `feature/factory-board`（master から分岐・未コミット）**。
-  Phase 3（Factory盤面）実装＋描画性能改善A/B案が working tree に載っている。
-  変更ファイル: `sphere-minesweeper.html` / `js/board-gen.js` / `tool/board-factory.html`
-  （＋盤面データ `data/board/` は未追跡）。**commit / push はユーザーが行う**（Claudeはgit操作しない約束）。
-- それ以前の実装は全て `master` に集約済み。V2エンジン（リプレイ/中断）＋UI大改修
-  （MODE SELECT / SIMPLE MODE / STORY再編 / RECORDS / お気に入り / タイムゾーン修正）は
-  master にマージ・push済み。旧 `feature/solver-extraction` は master にマージ済み（no-ff）。
+- **`feature/factory-board` は `master` にマージ済み・push済み**（2026-07-09、no-ff、
+  コンフリクトなし）。GitHub Pages（master/(root)配信）にも反映済み。
+  作業ブランチは今後 `master` から都度切る運用でよい（`feature/factory-board` は役目を終えたので
+  削除しても問題ない想定。念のためユーザー判断）。
+- 直近まとまった変更（Phase 3 Factory盤面〜stageEX〜盤面2色化）は全て
+  **§「2026-07-09 完了した作業」**（下記）参照。
+- **git運用**：commit / push はユーザーが行う。**マージはClaudeが実行してよい**（2026-07-09に分担確定。
+  ただしマージ前にワーキングツリーがクリーンであることを確認する）。push後の反映はユーザー確認。
 - **GitHub Pages は master / (root) から配信**（`volvic51-git.github.io/steller-delete`、push→数分で反映）。
   設定は Settings→Pages「Deploy from a branch = master /(root)」。gh-pagesブランチは無い。
 - **設計文書ブランチ `feature/spec-foundation` は未マージのまま**（docs/ はここにしか無い：
   00-Architecture / 10-DataSpec / 20-BoardFormat / V2_GENERATION_ENGINE / 密度CSV）。
   → Board Factory / 生成エンジンの設計を触るときはこのブランチを見る。
-- **⚠️ 引っ越し時の注意**：ローカル作業ツリーに**未コミットの変更が残っている場合あり**
-  （直近のUI微修正 = index.html / sphere-minesweeper.html）。新チャットの最初に
-  `git status` を見て commit + push すること。「Pagesが更新されない」の原因は大抵これかキャッシュ。
 
 > **既知の未処理**
 > - `tool/`（単数・既存）と `tools/`（複数）が混在。将来 `tool/` に統一予定。
 > - `feature/solver-extraction` に出自不明の `d0a480d「solver.js生成」` コミットあり。
 > - spec-foundation側の未push（密度CSV `59c2a28`・タグ `design/data-foundation-v0.9`）。
+> - `tool/boadHunter/`（typo）は現状維持でよいとユーザー確認済み（2026-07-09、`tool/`直下からの
+>   移動・改名は不要という判断）。
+
+---
+
+## 🎯 次に来る作業：stageEX2（144×72・地雷率20%）（2026-07-09追記）
+
+- ユーザーが Board Hunter で **144×72・地雷率20%** の保証盤面を探索中（ローカル実行、進行中）。
+  **seedが100個たまったらstageEX2として実装する**予定。
+- 参考：既存stageEX(144×72)は地雷率18%（`data/board/72x144_18.json`）。18%はリアルタイム保証でも
+  成功率約10%と現実的だが、**20%は約0.3%までしか成功率が出ない**ため元々Factory必須の密度
+  （`etc/V2_GENERATION_ENGINE.md`実測）。20%キャンペーンは`tool/boardHunter/`で探索し、
+  100件たまったら`tool/board-merge.html`で`data/board/72x144_20.json`（想定ファイル名）に集約する。
+- 実装時にstageEXと同じ手順を踏む想定（要ユーザー確認、以下は見込み）：
+  1. `tool/board-merge.html`で20%キャンペーンのhunterログを集約 → `data/board/72x144_20.json`
+  2. `data/stages.json` / `data/stage-params.json` に id:11「stageEX2」を追加
+     （`boardSource: "data/board/72x144_20.json"`、`diff`は新規preset`ex2`等）
+  3. `index.html`の`renderNormalList`フィルタに`id===11`を追加
+  4. charId固定値・背景・BGM・盤面パレット（西/東2色）は未定→着手時に確認
+- **今回の実装で判明した重要な罠（stageEX1の実装経験から）**：
+  - `data/board/*.json`は**seedのみ**（mines/hash無し）。ゲーム側で`js/board-gen.js`の
+    `generateMineSet`をその場で呼んで再生成する設計（`?boot=factory`のhash検証パイプラインとは別経路）。
+  - `getCellPaletteIndex(cell)`の東西分割は**列の中央付近の帯を西、両端の帯を東**にする必要がある
+    （円柱ラップなので単純に`col<COLS/2`だと前後半球に分かれてしまい、初期カメラでは片方しか
+    画面に見えない。詳細は`sphere-minesweeper.html`のコメント参照）。
+  - 2色パレットのステージは`getNumberColor`が常に鮮やかな配色になるよう分岐が必要
+    （背景の明度で自動切替すると東西で数字の見た目が揃わない）。
 
 ---
 
 ## いま何をしているフェーズか
 
-**Phase 3 Factory盤面の実装完了（2026-07-08、feature/factory-board・未コミット）。
-実機での体感確認と、マージ判断が次の入口。**
+**Phase 3 Factory盤面（stageEX）の実装・merge・バグ修正まで完了（2026-07-09）。
+次はstageEX2（144×72/20%）の準備待ち（seed 100件到達待ち）。**
 
 ### 2026-07-08 完了した作業（詳細は memory [[project-factory-board]] / [[project-perf-zoomout]]）
 
@@ -52,7 +77,8 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   - `verifyFactoryBoard()`：genVersion＋hash 再検証。NGは console 警告して通常生成へ
     自動フォールバック（Q5）。検証完了前クリックは `_factoryVerified` ガードで無視。
   - **Judge開始モデル**：idle枝の先頭で分岐。クリック位置は開始合図として無視し、
-    `judgeReveal()`（カメラ回転＋シアンハイライト＋SE bell1、650ms）→ startCell を dig。
+    `judgeReveal()`→ startCell を dig。**演出の詳細は2026-07-09に大幅改修済み
+    （下記④参照。650ms/シアン/bell1は初版の値で現在は変更済み）**。
     **`applyBoardFromFactory` はクリック時に毎回呼ぶ**（RETRYのinitBoardで地雷が消えるため）。
   - 検証済み（dev server）：72×144/1866地雷 seed 3297795212 で Judge起動・RETRY・
     分母8502・hash/genVersion改竄フォールバック すべてOK。
@@ -78,6 +104,59 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 - 「未開封マスに隣接して数字を挟まず消滅している穴」は**旗で除去した地雷の跡**（V1からの仕様）。
   消滅ロジックの不変条件（消滅する非地雷セルの隣は必ず開封済み）は Factory盤面の正解データで
   機械検証済み・違反0件。気になるなら「除去済みマーカーを残す」等の設計変更は別途。
+
+### 2026-07-09 完了した作業（stageEX本実装＋バグ修正＋盤面2色化）
+
+**④ stageEXをSIMPLE MODEに本実装（内部id:10・表示名「stageEX」/「EXTRA STAGE」）**
+- `data/stages.json` / `data/stage-params.json`にid:10追加。`DIFF_PRESETS.ex1`（144×72）。
+  `boardSource: "data/board/72x144_18.json"`を見て、`?boot=factory`の localStorage/hash検証
+  パイプラインとは**別の新しい起動経路**（seedプール方式）を実装：
+  盤面ファイルはseedのみ（mines/hash無し）→ 起動時にランダムに1つseedを選び、
+  `js/board-gen.js`の`generateMineSet`をその場で呼んで再生成（自前データなのでhash検証は不要）。
+  `window._seedPoolMode`/`window._seedPoolBoard`が目印。
+- `index.html`の`renderNormalList`フィルタに`id===10`を追加（stage9のループ専用枠は従来通り除外）。
+- SIMPLE MODEのランダムキャラプールを**011〜020（10体固定）→101〜199（実在するIDから動的選出）**に
+  拡張（今後のキャラ追加を見込んだ変更）。stageEXのみcharId固定（"010"）の例外。
+- `tool/board-merge.html`新規作成：`tool/hunter/`の複数hunterログをcampaignIdごとに集約し、
+  seed重複排除＋reporter対応付けをして`data/board/*.json`（seedのみ形式）を出力するツール。
+
+**⑤ バグ修正4件（実プレイで発覆）**
+1. **ドラッグ後の誤クリック**：マウスの`dragMoved`判定が「直前イベントとの差分」で閾値判定していたため、
+   ゆっくり大きくドラッグすると誤ってクリック扱いされる不具合。`mousedown`位置からの**累積距離**で
+   判定するよう修正（タッチ側は元々累積距離で正しかった）。
+2. **resume後、キャラの透過が効かない**：`resumeSuspend()`が`calcTotalNonMineCells()`を呼んでおらず
+   `totalNonMineCells`が0のままになり、露出率が即100%に張り付いていた。呼び出しを追加。
+3. **resume後、BGMがデフォルトに戻る**：`?boot=resume`は`applyStageParam()`を通らないためBGM適用が
+   効かなかった。`window._stageBgmFile`を追跡し、suspendの`meta.bgmFile`に保存・復元するよう修正。
+4. **Judge演出でカメラが極付近で止まる**：クリック位置に正確に合わせようとX/Y両軸を解く方式にしたところ、
+   既存の`rotation.x`クランプ（±0.45π）と衝突して見た目が固まる不具合。**Y軸（左右）のみ動かし、
+   X軸（上下の傾き）は現在の値のまま変更しない**方式に変更して解決（`startAutoRotateYOnly`）。
+
+**⑥ Judge演出の現行仕様（650ms/シアン/bell1から変更済み）**
+- カメラ移動＋ズームイン：`JUDGE_MOVE_MS=500ms`、`JUDGE_ZOOM_DIST=2.2`
+  （144×72だと4.0ではセルが豆粒サイズで見えなかったため大きく寄せる値に変更）。
+- ハイライト：`JUDGE_COLOR=0x00ffcc`（シアン系、変更なし）、`JUDGE_REVEAL_MS=1000`（1秒、旧650ms）。
+- SE：`playSE('charge')`（`EFE_10_charge.mp3`）。旧`bell1`は`triggerGameOverSequence`の
+  ゲームオーバー演出と同じ音で紛らわしかったため専用音に変更。
+
+**⑦ 盤面2色化（東西パレット。計画書 `etc/V2_BOARD_COLOR_PLAN.md`）**
+- `window._boardTheme`（単色hex）→ `window._boardPalette`（hex配列）に全面移行。
+  `getCellPaletteIndex(cell)`が列位置からパレットindexを返す（将来Factory盤面の
+  `cellPaletteMap`と結合する拡張ポイント。呼び出し側は無改修で差し替え可能な設計）。
+  `getNumberColor(idx, paletteIndex)`のシグネチャに変更（hex解決を関数内に閉じ込め）。
+- **円柱ラップの罠**：単純に`col<COLS/2`で東西を分けると、初期カメラ（無回転）では
+  **前後半球の分割**になり片方しか画面に映らない。**列の中央付近の帯を西、両端の帯を東**に
+  することで、初期カメラで見て正しく左右に分かれるようにした。
+- 2色パレットのステージは`getNumberColor`が常に鮮やかな配色（`NUMBER_COLORS`）になるよう分岐
+  （単色ステージは従来通り背景明度で自動切替、2色ステージだけ例外）。
+- stageEXの配色：`boardPalette: ["#cccc00", "#440088"]`（西=黄、東=紫）。
+- `data/stage-params.json`全10ステージを`boardColor`→`boardPalette`（配列）に移行
+  （既存9ステージは単色のまま1要素配列で後方互換）。`etc/stellar-delete-stage-params-editor.html`
+  も西/東2色対応に更新。中断・リプレイの保存データも`boardPalette`化（旧`boardTheme`形式を
+  読み込み時にフォールバック許容）。
+
+**⑧ merge実施**：`feature/factory-board` → `master`（no-ff・コンフリクトなし・2026-07-09）。
+push済み。
 
 ### 2026-07-05 完了した作業
 - **リプレイUI非表示化**：REPLAYボタン（タイトル）・SAVE REPLAYボタン（クリア/GO画面）・
@@ -327,33 +406,31 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-08 更新）
+## 次セッションの入口（2026-07-09 更新）
 
-0. **まず `git status`**：`feature/factory-board` に Phase 3＋性能改善A/B が**未コミット**で
-   載っている。ユーザーが commit + push（Claudeはgit操作しない）。`data/board/` は未追跡なので
-   リポジトリに含めるかどうかを判断（Hunter結果JSONの置き場）。
+0. **まず `git status`**：`master`にマージ・push済みのはず。念のため確認（未コミット変更が
+   残っていないか）。
 
-1. **実機で体感確認**：
-   - Factory盤面のプレイ（Board Factory「▶ プレイ」→ Judge開始 → 通常プレイ）
-   - ズームアウトの軽さ（改善前135ms→45.6ms。まだ重ければC案へ）
-   - Judge演出（650ms・シアン・bell1）の感触。長い/短い/色/音は `judgeReveal()` と
-     `JUDGE_REVEAL_MS` / `JUDGE_COLOR`（sphere-minesweeper.html）で調整可。
+1. **stageEX2（144×72/20%）の進捗確認**：Board Hunterでのseed収集が進んでいるか確認。
+   **100件たまっていれば**、上記「🎯 次に来る作業」節の手順で実装に着手。
+   たまっていなければ他の作業を進める。
 
-2. **master へのマージ判断**：問題なければ feature/factory-board → master（no-ff推奨）→ push。
-   GitHub Pages は master /(root) 配信なので push で公開に反映される点に注意
-   （Factory盤面は localStorage ブリッジ経由なので一般ユーザーの動線には影響しない）。
-
-3. **次の開発候補（優先度はユーザー判断）**：
+2. **次の開発候補（優先度はユーザー判断）**：
+   - **stageEX2実装**（seed 100件到達後。上記節参照）。
    - **C案**（セルInstancedMesh化・大改修）：ズームアウトを60fpsへ。計画書を作ってから。
      リプレイ全再構築も激速化するので Phase 4 の前にやる価値あり（[[project-perf-zoomout]]）。
    - **Phase 4**（リプレイ/中断の再設計・REPLAY UI復活）：Factory盤面の startCell を
      record の start に載せる整合を含む（計画書 §5 Q3 の整合メモ参照）。
-   - **複数盤面の供給**（data/boards 同梱・キャンペーン選択UI）＋ Hunter/Factory/game の
-     パリティ自動テスト。
+   - **盤面お絵描きツール**（`etc/V2_BOARD_COLOR_PLAN.md` §2.3の将来拡張。セルごとの
+     `cellPaletteMap`で自由に色を塗れるようにする構想。今の東西2色はこの布石）。
+   - **Hunter/Factory/game のパリティ自動テスト**（まだ未着手）。
    - LIMIT MODE（modes.json enabled:false のまま保留中）。
 
-4. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
+3. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
    起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
+   ⚠️ プレビューのブラウザセッションでHTTPキャッシュが古いまま残ることがある
+   （`data/stage-params.json`等の更新が反映されず「id not found」警告が出る）。
+   `cache:'no-store'`でのfetchや、URLに`?cb=<timestamp>`を付けての再ナビゲーションで回避可能。
 
 **整理系（いつでも）:** `docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
 V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在）、

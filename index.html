@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="js/tab-guard.js"></script>
+<script src="js/audio-settings.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stellar Delete</title>
 <link rel="icon" href="assets/images/etc/favicon.ico">
@@ -980,6 +981,62 @@
   }
   .screen-footer button:hover { color: var(--ice-white); border-color: var(--accent); }
 
+  /* ── SOUND: 音量スライダー ── */
+  .sound-row {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px,3vw,24px);
+    width: 100%;
+    padding: clamp(14px,2.4vh,20px) clamp(20px,3.5vw,30px);
+    border: 1.5px solid rgba(0,200,255,.35);
+    border-radius: 10px;
+    background: rgba(6,20,48,.55);
+  }
+  .sound-label {
+    flex: 0 0 auto;
+    width: clamp(48px,8vw,70px);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(12px,1.8vw,15px);
+    letter-spacing: .15em;
+    color: var(--ice-white);
+  }
+  .sound-slider {
+    flex: 1 1 auto;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(0,200,255,.25);
+    outline: none;
+    cursor: pointer;
+  }
+  .sound-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(0,200,255,.7);
+    cursor: pointer;
+  }
+  .sound-slider::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(0,200,255,.7);
+    cursor: pointer;
+  }
+  .sound-value {
+    flex: 0 0 auto;
+    width: clamp(34px,5vw,44px);
+    text-align: right;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(11px,1.6vw,14px);
+    color: rgba(232,244,255,.7);
+  }
+
   /* ── MODE SELECT: 大カード ── */
   .mode-card {
     position: relative;
@@ -1248,6 +1305,10 @@
       AUCTION
     </button>
 
+<button class="menu-btn" id="sound-btn">
+      SOUND
+    </button>
+
 <button class="menu-btn" id="credit-btn">
       CREDIT
     </button>
@@ -1326,6 +1387,26 @@
   <div class="screen-footer">
     <button id="normal-list-mode-btn">MODE SELECT</button>
     <button id="normal-list-title-btn">TITLE</button>
+  </div>
+</div>
+
+<!-- SOUND 設定画面 -->
+<div id="sound-modal" class="screen-overlay">
+  <div class="screen-title">SOUND</div>
+  <div class="screen-scroll" id="sound-list">
+    <div class="sound-row">
+      <span class="sound-label">BGM</span>
+      <input type="range" id="sound-bgm-slider" class="sound-slider" min="0" max="100" step="1">
+      <span class="sound-value" id="sound-bgm-value">100</span>
+    </div>
+    <div class="sound-row">
+      <span class="sound-label">SE</span>
+      <input type="range" id="sound-se-slider" class="sound-slider" min="0" max="100" step="1">
+      <span class="sound-value" id="sound-se-value">100</span>
+    </div>
+  </div>
+  <div class="screen-footer">
+    <button id="sound-title-btn">TITLE</button>
   </div>
 </div>
 
@@ -1533,19 +1614,25 @@ const efeSelect = document.getElementById('efe-select');
 
 function playTitle() {
   sndStage.pause(); sndStage.currentTime = 0;
-  sndTitle.volume = 0.7;
+  sndTitle.volume = 0.7 * AudioSettings.getBgmVolume();
   sndTitle.play().catch(() => {});
 }
 function playStage() {
   sndTitle.pause(); sndTitle.currentTime = 0;
-  sndStage.volume = 0.7;
+  sndStage.volume = 0.7 * AudioSettings.getBgmVolume();
   sndStage.play().catch(() => {});
 }
 function playSelect() {
   efeSelect.currentTime = 0;
-  efeSelect.volume = 1.0;
+  efeSelect.volume = 1.0 * AudioSettings.getSeVolume();
   efeSelect.play().catch(() => {});
 }
+
+// BGMスライダー操作中、再生中のBGM音量へ即時反映する
+AudioSettings.subscribe(function(s){
+  if(!sndTitle.paused) sndTitle.volume = 0.7 * s.bgm;
+  if(!sndStage.paused) sndStage.volume = 0.7 * s.bgm;
+});
 
 // 最初のタップ/クリックでタイトルBGM開始（ブラウザ自動再生制限対策）
 function startTitleBGMOnFirstClick() {
@@ -2351,6 +2438,38 @@ document.getElementById('credit-close').addEventListener('click', function(){
   creditRunning = false;
   if (creditRAF) cancelAnimationFrame(creditRAF);
   creditModal.classList.remove('show');
+});
+
+// SOUND
+const soundModal      = document.getElementById('sound-modal');
+const soundBgmSlider  = document.getElementById('sound-bgm-slider');
+const soundSeSlider   = document.getElementById('sound-se-slider');
+const soundBgmValue   = document.getElementById('sound-bgm-value');
+const soundSeValue    = document.getElementById('sound-se-value');
+
+function refreshSoundUI(){
+  soundBgmSlider.value = Math.round(AudioSettings.getBgmVolume() * 100);
+  soundSeSlider.value  = Math.round(AudioSettings.getSeVolume() * 100);
+  soundBgmValue.textContent = soundBgmSlider.value;
+  soundSeValue.textContent  = soundSeSlider.value;
+}
+
+document.getElementById('sound-btn').addEventListener('click', function(){
+  playSelect();
+  refreshSoundUI();
+  soundModal.classList.add('show');
+});
+document.getElementById('sound-title-btn').addEventListener('click', function(){
+  playSelect();
+  soundModal.classList.remove('show');
+});
+soundBgmSlider.addEventListener('input', function(){
+  soundBgmValue.textContent = this.value;
+  AudioSettings.setBgmVolume(this.value / 100);
+});
+soundSeSlider.addEventListener('input', function(){
+  soundSeValue.textContent = this.value;
+  AudioSettings.setSeVolume(this.value / 100);
 });
 
 // EXIT — 確認モーダル表示

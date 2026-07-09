@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="js/tab-guard.js"></script>
+<script src="js/audio-settings.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>球体マインスイーパー</title>
 <link rel="icon" href="assets/images/etc/favicon.ico">
@@ -864,6 +865,22 @@ SND.bell1.volume=0.6; SND.bell2.volume=0.65; SND.bell3.volume=0.7;
 SND.damage.volume=0.8;
 SND.pin.volume=0.7;
 SND.charge.volume=0.7;
+
+// SND.bgm/SND.clear はBGM音量、それ以外はSE音量に連動させる。
+// 各Audioの.volumeを常に「素材本来の基準音量 × 設定音量」に保つことで、
+// playSE()やSND.xxx.play()を直接呼んでいる既存の全箇所に手を入れず音量調整を反映する。
+const SND_BGM_KEYS = ['bgm','clear'];
+Object.keys(SND).forEach(function(key){ SND[key]._baseVolume = SND[key].volume; });
+function applySndVolumes(){
+  const bgmVol = AudioSettings.getBgmVolume();
+  const seVol  = AudioSettings.getSeVolume();
+  Object.keys(SND).forEach(function(key){
+    const mult = SND_BGM_KEYS.indexOf(key) >= 0 ? bgmVol : seVol;
+    SND[key].volume = SND[key]._baseVolume * mult;
+  });
+}
+applySndVolumes();
+AudioSettings.subscribe(applySndVolumes);
 
 // 効果音は複数重ねられるようにクローン再生
 function playSE(key){
