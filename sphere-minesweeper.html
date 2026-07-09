@@ -2807,6 +2807,15 @@ let dragMoved=false;
 let mouseStartX=0, mouseStartY=0;
 const DRAG_THRESHOLD = 4; // pixels
 
+// ズームイン時、同じドラッグ量でも見かけの回転速度が速く感じる問題への対応。
+// 体感速度は「角速度×半径÷カメラ距離」に比例するため、ドラッグ→回転量の変換係数を
+// カメラ距離に比例させることで、ズーム量によらず体感速度をほぼ一定に保つ。
+// ROTATION_BASE_DIST は初期ズーム距離（=従来通りの速度感になる基準距離）。
+const ROTATION_BASE_DIST = 7.0;
+function rotationSpeedScale(){
+  return camera.position.z / ROTATION_BASE_DIST;
+}
+
 function focusNearestNumberCell(){
   if(gameState !== 'playing') return;
 
@@ -2905,8 +2914,9 @@ canvas.addEventListener('mousemove', e=>{
   lastX=e.clientX; lastY=e.clientY;
   velX=dx; velY=dy;
   // Always rotate on left-drag regardless of mode
-  boardGroup.rotation.y+=dx*0.005;
-  boardGroup.rotation.x+=dy*0.005;
+  const rs=rotationSpeedScale();
+  boardGroup.rotation.y+=dx*0.005*rs;
+  boardGroup.rotation.x+=dy*0.005*rs;
 });
 
 canvas.addEventListener('mouseup', e=>{
@@ -2949,7 +2959,8 @@ canvas.addEventListener('touchmove', e=>{
     const totalDx=e.touches[0].clientX-touchStartX, totalDy=e.touches[0].clientY-touchStartY;
     if(Math.hypot(totalDx,totalDy)>12) touchMoved=true;
     lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; velX=dx; velY=dy;
-    boardGroup.rotation.y+=dx*0.005; boardGroup.rotation.x+=dy*0.005;
+    const rs=rotationSpeedScale();
+    boardGroup.rotation.y+=dx*0.005*rs; boardGroup.rotation.x+=dy*0.005*rs;
   } else if(e.touches.length===2&&pinchDist0!==null){
     const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
     zoomDist=Math.max(2.0,Math.min(8.0,zoomDist*(pinchDist0/d))); pinchDist0=d;
@@ -4411,8 +4422,9 @@ function animate(){
 
   // Inertia when not dragging
   if(!isDragging){
-    boardGroup.rotation.y+=velX*0.003;
-    boardGroup.rotation.x+=velY*0.003;
+    const rs=rotationSpeedScale();
+    boardGroup.rotation.y+=velX*0.003*rs;
+    boardGroup.rotation.x+=velY*0.003*rs;
     velX*=0.90; velY*=0.90;
   }
 
