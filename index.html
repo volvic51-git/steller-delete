@@ -2102,12 +2102,13 @@ function openModeSelect(){
 
 function renderNormalList(stages){
   const el = document.getElementById('normal-list');
-  const list = stages.filter(s => s.id >= 1 && s.id <= 8); // NORMAL は stage01-08 を使用
+  const list = stages.filter(s => (s.id >= 1 && s.id <= 8) || s.id === 10); // NORMAL は stage01-08 + stageEX(10) を使用
   el.innerHTML = list.map(s=>{
     const total = s.grid_col * s.grid_row;
     const best  = fmtBestTime(s.id);
+    const noStr = s.id === 10 ? 'EX' : String(s.id).padStart(2,'0');
     return `<div class="stage-row" data-id="${s.id}">
-      <div class="stage-row-no"><small>STAGE</small><b>${String(s.id).padStart(2,'0')}</b></div>
+      <div class="stage-row-no"><small>STAGE</small><b>${noStr}</b></div>
       <img class="stage-row-img" src="${s.image}" alt="">
       <div class="stage-row-body">
         <div class="stage-row-name">${s.name}</div>

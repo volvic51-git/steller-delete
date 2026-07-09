@@ -353,6 +353,11 @@
     </div>
 
     <div class="debug-tile">
+      <div class="lbl">盤面seed</div>
+      <span id="debug-seed-display" style="font-size:12px;font-family:'Share Tech Mono',monospace;color:#446677;word-break:break-all;">-</span>
+    </div>
+
+    <div class="debug-tile">
       <div class="lbl">ソルバー</div>
       <select id="solver-mode" onchange="setSolverMode(this.value)" style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
         <option value="basic">BASIC</option>
@@ -362,10 +367,25 @@
     </div>
 
     <div class="debug-tile">
-      <div class="lbl">盤面色</div>
-      <select id="debug-color-select" onchange="applyBoardColor(this.value)"
+      <div class="lbl">盤面色（西）</div>
+      <select id="debug-color-select" onchange="applyBoardColorPair()"
         style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
         <option value="">DEFAULT</option>
+        <option value="#0044aa">青</option>
+        <option value="#006622">緑</option>
+        <option value="#440088">紫</option>
+        <option value="#886600">金</option>
+        <option value="#880022">赤</option>
+        <option value="#aaaacc">白銀</option>
+        <option value="#884400">オレンジ</option>
+      </select>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">盤面色（東）</div>
+      <select id="debug-color-select-east" onchange="applyBoardColorPair()"
+        style="background:rgba(0,20,40,0.9);border:1px solid rgba(0,255,255,0.3);color:#00ffff;padding:4px 6px;font-family:'Share Tech Mono',monospace;font-size:11px;border-radius:2px;cursor:pointer;">
+        <option value="">OFF（西と同じ）</option>
         <option value="#0044aa">青</option>
         <option value="#006622">緑</option>
         <option value="#440088">紫</option>
@@ -780,6 +800,7 @@ const DIFF_PRESETS = {
   h1: { cols: 64, rows: 30 },  // 1,920
   h2: { cols: 72, rows: 34 },  // 2,448
   x1: { cols: 12, rows:  7 },  //    84  (消滅の果て専用)
+  ex1:{ cols:144, rows: 72 },  // 10,368 (stageEX Factory盤面専用)
 };
 let currentDiff = 's';
 
@@ -833,6 +854,7 @@ const SND = {
   bell3:   new Audio('assets/audio/EFE_08_bell3.mp3'),
   damage:  new Audio('assets/audio/EFE_09_damage.mp3'),
   pin:     new Audio('assets/audio/EFE_12_pin.mp3'),
+  charge:  new Audio('assets/audio/EFE_10_charge.mp3'),
 };
 SND.bgm.loop=true; SND.bgm.volume=0.55;
 SND.clear.loop=false; SND.clear.volume=0.8;
@@ -841,6 +863,7 @@ SND.beep.volume=0.5;
 SND.bell1.volume=0.6; SND.bell2.volume=0.65; SND.bell3.volume=0.7;
 SND.damage.volume=0.8;
 SND.pin.volume=0.7;
+SND.charge.volume=0.7;
 
 // 効果音は複数重ねられるようにクローン再生
 function playSE(key){
@@ -1239,7 +1262,7 @@ function buildCageWire(){
   }
 
   const baseOp = 0.65;
-  const _wc = buildThemeColors(window._boardTheme);
+  const _wc = buildThemeColors(paletteColor(0)); // cage wireは盤面全体で単色のまま（主色=index0）
 
   // 不透明度クラス（基本0.65／極側の減衰3段／極側経線）ごとに頂点を溜めて、
   // クラスにつき1つの LineSegments にまとめる（72×144で 22,112 Line → 5オブジェクト）。
@@ -1373,8 +1396,31 @@ let _mineTexture = null;
 })();
 
 // ===================== BOARD THEME =====================
-// テーマカラー管理（hex文字列 例: "#0044aa"）
-window._boardTheme = null; // nullのときはデフォルト青
+// テーマカラー管理：hex文字列の配列（パレット）。例: ["#0044aa"]（単色）/ ["#0044aa","#aa4400"]（西/東2色）。
+// nullまたは空配列のときはデフォルト青。要素数1なら全セル同色（旧仕様と完全互換）。
+window._boardPalette = null;
+
+// 文字列(旧形式) or 配列(新形式) or null を、配列 or null に正規化する（旧保存データとの互換用）。
+function normalizePalette(v){
+  if(v == null) return null;
+  return Array.isArray(v) ? v : [v];
+}
+
+// パレットのindex番目の色を返す（indexが無ければ0番目にフォールバック）。パレット未設定ならnull（デフォルト青）。
+function paletteColor(idx){
+  if(!window._boardPalette || window._boardPalette.length === 0) return null;
+  return window._boardPalette[idx] || window._boardPalette[0];
+}
+
+// セルがパレットの何番目の色を使うか。現状は列位置による東西2分割。
+// 円柱ラップなので単純に col<COLS/2 で分けると、初期カメラ（無回転）では前後半球の分割になり
+// 片側しか見えない（西/東が画面の奥/手前に分かれてしまう）。左右の見た目で分かれるように、
+// 列の中央付近の帯を西(左)、両端の帯（円柱の反対側＝東）を右に来るようオフセットする。
+// 将来Factory盤面のcellPaletteMapと結合する場合はここだけ差し替えれば済む（呼び出し側は無改修）。
+function getCellPaletteIndex(cell){
+  const quarter = COLS / 4;
+  return (cell.col >= quarter && cell.col < COLS - quarter) ? 0 : 1;
+}
 
 const BOARD_THEME_DEFAULT = {
   cell:       0x0044aa,
@@ -1427,22 +1473,23 @@ const NUMBER_COLORS_DARK = [
   '#222299','#991100','#007799','#990099','#333333'
 ];
 
-function getNumberColor(idx){
-  const lum = window._boardTheme ? hexLuminance(window._boardTheme) : 0;
+function getNumberColor(idx, paletteIndex){
+  const hex = paletteColor(paletteIndex);
+  const lum = hex ? hexLuminance(hex) : 0;
   const arr = lum > 0.35 ? NUMBER_COLORS_DARK : NUMBER_COLORS;
   return arr[idx] || (lum > 0.35 ? '#333333' : '#ffffff');
 }
 
 const NUMBER_COLORS = [
-  '#000000','#00aaff','#00ff88','#ff4444',
-  '#4444ff','#ff2200','#00ffff','#ff00ff','#ffffff'
+  '#000000','#33ccff','#00ff88','#ff5555',
+  '#7788ff','#ff4422','#00ffff','#ff00ff','#ffffff'
 ];
 
 // ===================== MESH CREATION =====================
 function createCellMesh(cell) {
   const {w, h} = cellSize(cell.row);
   const geo = new THREE.PlaneGeometry(w, h);
-  const _tc = buildThemeColors(window._boardTheme);
+  const _tc = buildThemeColors(paletteColor(getCellPaletteIndex(cell)));
   const mat = new THREE.MeshLambertMaterial({
     color: _tc.cell, emissive: _tc.cellEmit,
     transparent: false,
@@ -1498,11 +1545,11 @@ function buildCellBorderSegs(){
   cellBorderSegs.frustumCulled = false; // 頂点を書き換えるためboundingSphereを当てにしない
   boardGroup.add(cellBorderSegs);
 
-  const _bc = buildThemeColors(window._boardTheme);
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const cell = board[r][c];
     // 周回モードの出現アニメ中は非表示のまま（完了時にanimate側でwriteCellBorderGeometryする）
     if(!(cell.mesh && cell.mesh.userData._appearAnimating)) writeCellBorderGeometry(cell);
+    const _bc = buildThemeColors(paletteColor(getCellPaletteIndex(cell)));
     setCellBorderColor(cell, _bc.border);
   }
 }
@@ -1562,8 +1609,10 @@ function makeTextCanvas(text, color, fontSize, useEmojiFont) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = color;
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = 18;
   ctx.shadowColor = color;
+  // 二重描画で発光を重ねて明るく見せる（shadowはクリアされず蓄積するため単純に濃くなる）
+  ctx.fillText(text, size/2, size/2);
   ctx.fillText(text, size/2, size/2);
   return cv;
 }
@@ -1602,7 +1651,7 @@ function createNumberMesh(cell) {
   else if (cell.hasFlag)                  { text='🚩'; fsz=28; isFlag=true; }
   else if (cell.isOpen && cell.neighborMines>0) {
     text = String(cell.neighborMines);
-    colorHex = getNumberColor(cell.neighborMines);
+    colorHex = getNumberColor(cell.neighborMines, getCellPaletteIndex(cell));
   } else return;
 
   const cv = makeTextCanvas(text, colorHex, fsz, isFlag);
@@ -1738,23 +1787,32 @@ async function verifyFactoryBoard(fb){
   }
 }
 
-// Judge 開始演出：カメラを startCell へ向け、セルをハイライト＋SE → 演出後に done() で開く。
-// クリック位置は「開始合図」なので使わない（不変盤面では初手安全のための地雷移動ができないため）。
+// Judge 開始演出：startCellが画面中央（左右のみ）へ移動してくるようにカメラを向けズームイン
+// → セルを青くハイライト(1秒)＋SE → 演出後に done() で開く。
+// クリック位置は「開始合図」であり、実際に開くのは常にstartCell（不変盤面では初手安全のための
+// 地雷移動ができないため）。カメラの上下の傾きは変更しない（startAutoRotateYOnly参照：
+// X/Y両方を解こうとすると現在の傾きが極付近のときに回転が不安定になり止まって見える問題があった）。
 const JUDGE_COLOR = 0x00ffcc;
-const JUDGE_REVEAL_MS = 650; // startAutoRotate の回転(約455ms)を覆う長さ
+const JUDGE_MOVE_MS = 500;    // startCellが中央へ移動＋ズームインする所要時間（startAutoRotateの回転が約455ms）
+const JUDGE_REVEAL_MS = 1000; // ハイライト時間
+const JUDGE_ZOOM_DIST = 2.2;  // 演出後もこのズームのままゲーム開始（144×72等の大きい盤面だとセル1個が
+                               // 相対的に非常に小さく、4.0では豆粒程度で見えなかったため大きく寄せる）
 function judgeReveal(row, col, done){
-  const cell = board[row] && board[row][col];
-  startAutoRotate(row, col);
-  if(cell && cell.mesh){
-    cell.mesh.material.emissive.setHex(JUDGE_COLOR);
-    cell.mesh.material.emissiveIntensity = 1.6;
-    setCellBorderColor(cell, JUDGE_COLOR);
-  }
-  playSE('bell1');
+  zoomDist = JUDGE_ZOOM_DIST;
+  startAutoRotateYOnly(row, col);
   setTimeout(()=>{
-    if(cell) clearHintHighlight(cell); // digCell の開封・消滅演出の前にテーマ色へ戻す
-    done();
-  }, JUDGE_REVEAL_MS);
+    const cell = board[row] && board[row][col];
+    if(cell && cell.mesh){
+      cell.mesh.material.emissive.setHex(JUDGE_COLOR);
+      cell.mesh.material.emissiveIntensity = 1.6;
+      setCellBorderColor(cell, JUDGE_COLOR);
+    }
+    playSE('charge'); // bell系はgame over演出(triggerGameOverSequence)と同じ音のため紛らわしく、専用音に変更
+    setTimeout(()=>{
+      if(cell) clearHintHighlight(cell); // digCell の開封・消滅演出の前にテーマ色へ戻す
+      done();
+    }, JUDGE_REVEAL_MS);
+  }, JUDGE_MOVE_MS);
 }
 
 // 指定 seed + 初手セルから盤面を決定論的に生成して board[][] に反映する。
@@ -2343,7 +2401,7 @@ function updateCellVisual(cell){
   if(!cell.mesh||cell.isRemoved) return;
   const mat=cell.mesh.material;
   mat.transparent = false;
-  const _vc = buildThemeColors(window._boardTheme);
+  const _vc = buildThemeColors(paletteColor(getCellPaletteIndex(cell)));
   if(cell.isOpen){
     mat.color.setHex(_vc.openCell); mat.emissive.setHex(_vc.openEmit);
   } else if(cell.hasFlag){
@@ -2517,9 +2575,9 @@ function triggerLoopReplay(){
 
   currentLoop++;
 
-  // 次周のテーマカラーを設定
+  // 次周のテーマカラーを設定（周回モードは今のところ単色のまま。2色化の対象は現状stageEXのみ）
   const nextColor = loopColors[(currentLoop-1) % loopColors.length];
-  if(nextColor) window._boardTheme = nextColor;
+  if(nextColor) window._boardPalette = [nextColor];
 
   // 750ms後（減少完了後）：次周の色を適用。back は 0.4s でなめらかに現れる。
   setTimeout(()=>{
@@ -2672,7 +2730,7 @@ function runSolverDebug(){
 // ===================== HINT =====================
 function clearHintHighlight(cell){
   if(!cell||!cell.mesh) return;
-  const _hc = buildThemeColors(window._boardTheme);
+  const _hc = buildThemeColors(paletteColor(getCellPaletteIndex(cell)));
   cell.mesh.material.emissive.setHex(cell.isOpen?_hc.openEmit:_hc.cellEmit);
   cell.mesh.material.emissiveIntensity=1;
   setCellBorderColor(cell, cell.isOpen?_hc.openBorder:_hc.border);
@@ -2724,6 +2782,7 @@ function giveHint(){
 let isDragging=false, lastX=0, lastY=0, velX=0, velY=0;
 let zoomDist=7.0;
 let dragMoved=false;
+let mouseStartX=0, mouseStartY=0;
 const DRAG_THRESHOLD = 4; // pixels
 
 function focusNearestNumberCell(){
@@ -2780,6 +2839,23 @@ function startAutoRotate(row,col){
   autoRotateProgress=0; autoRotating=true;
 }
 
+// startAutoRotateのY軸(左右)のみ版。X軸（上下の傾き）は現在の値のまま触らない。
+// X/Y両方を解こうとすると、現在の傾きが極付近のときに回転計算が不安定になり
+// カメラが止まって見える問題があったため、Judge演出はこちらを使う（原因のX軸操作自体をしない）。
+function startAutoRotateYOnly(row,col){
+  const p = cellPosition(row,col).normalize();
+  const targetY = -Math.atan2(p.x, p.z);
+
+  autoRotateFrom = {x:boardGroup.rotation.x, y:boardGroup.rotation.y};
+
+  let dy = targetY - autoRotateFrom.y;
+  while(dy >  Math.PI) dy -= Math.PI*2;
+  while(dy < -Math.PI) dy += Math.PI*2;
+
+  autoRotateTo = {x: autoRotateFrom.x, y: autoRotateFrom.y+dy}; // xは変更しない
+  autoRotateProgress=0; autoRotating=true;
+}
+
 // ===================== INPUT — PC MOUSE =====================
 const canvas=renderer.domElement;
 
@@ -2792,6 +2868,7 @@ canvas.addEventListener('mousedown', e=>{
   if(e.button===0){
     isDragging=true; dragMoved=false;
     lastX=e.clientX; lastY=e.clientY;
+    mouseStartX=e.clientX; mouseStartY=e.clientY;
     velX=0; velY=0;
     autoRotating=false;
   }
@@ -2800,7 +2877,9 @@ canvas.addEventListener('mousedown', e=>{
 canvas.addEventListener('mousemove', e=>{
   if(!isDragging) return;
   const dx=e.clientX-lastX, dy=e.clientY-lastY;
-  if(Math.abs(e.clientX-lastX)>DRAG_THRESHOLD||Math.abs(e.clientY-lastY)>DRAG_THRESHOLD) dragMoved=true;
+  // mousedown位置からの累積距離で判定（直前イベントとの差分だと、細かい移動の積み重ねで
+  // 大きくドラッグしてもdragMoved=trueにならず離した位置のマスが誤って開いてしまう）
+  if(Math.hypot(e.clientX-mouseStartX, e.clientY-mouseStartY)>DRAG_THRESHOLD) dragMoved=true;
   lastX=e.clientX; lastY=e.clientY;
   velX=dx; velY=dy;
   // Always rotate on left-drag regardless of mode
@@ -3094,7 +3173,7 @@ function saveReplay(result, clearTime){
     genVersion: snap.genVersion, gameVersion: GAME_VERSION,
     board: { seed:snap.seed, start:snap.start, rows:snap.rows, cols:snap.cols, mineCount:snap.mineCount, wrap:snap.wrap },
     charId: (currentCharacter && currentCharacter.id) || null,
-    boardTheme: window._boardTheme ?? null,   // 盤面色テーマ
+    boardPalette: window._boardPalette ?? null,   // 盤面色パレット
     bg: getCanvasBackground(),                 // 背景画像(CSS)
     exMode: !!exMode,                          // ゲームルール：地雷即GO(true) / ゲージで受ける(false)。再生時の判定に必須
     stMode: !!stMode,                          // STモード（サーチ確定セル使用でGO）。再生時の判定に必須
@@ -3203,7 +3282,7 @@ function replaySubStepTo(pos){
     }
   }
   while(particleGroup.children.length){ const p=particleGroup.children[0]; disposeObject3D(p); particleGroup.remove(p); } // 演出パーティクルも掃除+解放
-  window._boardTheme = rec.boardTheme ?? null; // 盤面色テーマ復元（initBoardより前）
+  window._boardPalette = normalizePalette(rec.boardPalette ?? rec.boardTheme); // 盤面色パレット復元（initBoardより前。旧形式(単色文字列)も許容）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
   calcTotalNonMineCells(); // 総非地雷数を確定＋vanishedNonMine=0リセット（RESCUE PROGRESS率の分母。これが無いと0除算回避で即100%になる）
@@ -3342,8 +3421,9 @@ function saveSuspend(){
       logicGuarantee, currentDiff,
       charId: (currentCharacter && currentCharacter.id) || null,
       stageMines: window._stageMines ?? null,
-      boardTheme: window._boardTheme ?? null,
+      boardPalette: window._boardPalette ?? null,
       bg: getCanvasBackground(),
+      bgmFile: window._stageBgmFile ?? null,
       isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
       isNormalMode: (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode,
       novelAfterClear: window._novelAfterClear ?? null
@@ -3412,7 +3492,7 @@ function resumeSuspend(rec){
   ROWS=b.rows; COLS=b.cols; mineCount=b.mineCount;
   clearInterval(timerInterval);
   window._stageMines = m.stageMines ?? null;
-  window._boardTheme = m.boardTheme ?? null;
+  window._boardPalette = normalizePalette(m.boardPalette ?? m.boardTheme); // 旧形式(単色文字列)も許容
   window._novelAfterClear = m.novelAfterClear ?? null; // STORYモードで中断した場合のNEXT遷移先を復元
   window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
   window._resumeNormalMode = !!m.isNormalMode;          // 終了画面のSTAGEボタンをNORMALリスト(?normal=1)へ戻すために使う
@@ -3425,6 +3505,8 @@ function resumeSuspend(rec){
   // 盤面を身元から再構築（全セル閉じた状態＋地雷を同一配置）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
+  calcTotalNonMineCells(); // 総非地雷数を確定＋vanishedNonMine=0リセット（これが無いと中断前のtotalNonMineCellsが残り、
+                           // 再適用でvanishedNonMineが分母を超えて露出率が即100%＝キャラの透過が無効化される）
 
   // 操作ログを"即時"再適用して途中盤面を復元（アニメ待ちなし・自動保存/入力ガード抑止）
   _replayMode = true; _replayInstant = true; gameState = 'playing'; removedMines = 0;
@@ -3448,6 +3530,11 @@ function resumeSuspend(rec){
   if(m.charId){ selectCharacter(m.charId); setupCharacterPlane(); buildCageWire(); }
   applyCanvasBackground(m.bg); // 背景画像復元
 
+  // BGM復元（?boot=resumeはapplyStageParamを通らないため、既定BGMのままになってしまう）
+  window._stageBgmFile = m.bgmFile ?? null;
+  window._stageHasCustomBgm = !!m.bgmFile;
+  if(m.bgmFile){ SND.bgm.src = 'assets/audio/' + m.bgmFile; }
+
   resumeTimer();
   gameState = 'playing';
   updateStats(); updateHintGauge();
@@ -3463,6 +3550,35 @@ function handleCellAction(row,col,action){
     }
   }
   if(gameState==='idle'){
+    // ===== stageEX: seed プール盤面（Judge 開始モデル）=====
+    // data/board/ の seed をランダムに1つ選び、board-gen.js で毎回その場で再生成する。
+    // 自前データのためhash検証はしない（Factory盤面パイプラインとは別経路）。
+    // RETRY のたびに initBoard が盤面を作り直すため、開始のたびにここを通って地雷を流し込む。
+    if(window._seedPoolMode && window._seedPoolBoard){
+      gameState='generating';
+      const bd = window._seedPoolBoard;
+      const pick = bd.boards[Math.floor(Math.random() * bd.boards.length)];
+      const s = bd.params.start;
+      if(String(bd.genVersion) !== StellerBoardGen.GEN_VERSION){
+        console.warn(`stageEX: genVersion不一致 (board=${bd.genVersion} / game=${StellerBoardGen.GEN_VERSION})`);
+      }
+      applyBoardFromSeed(pick.seed, s.r, s.c);
+      const gr=document.getElementById('guarantee-result');
+      if(gr){ gr.textContent='✅ FACTORY'; gr.style.color='#00ff88'; }
+      judgeReveal(s.r, s.c, ()=>{
+        gameState='playing';
+        replayReset();
+        startTimer();
+        calcTotalNonMineCells();
+        autoEnableMisclickGuard();
+        replayRecord('dig', s.r, s.c);
+        digCell(s.r, s.c);
+        updateStats();
+        if(debugMode) runSolverDebug();
+      });
+      return;
+    }
+
     // ===== Factory 盤面（Judge 開始モデル）=====
     // 盤面は事前生成・不変。クリックは開始合図として扱い、Judge が唯一の startCell を開く。
     // placeMines / Border 振り分けは通らない（生成も保証リトライも不要）。
@@ -3660,7 +3776,7 @@ function toggleLoopMode(){
   }
   if(loopMode){
     currentLoop = 1;
-    window._boardTheme = loopColors[0] || window._boardTheme;
+    window._boardPalette = loopColors[0] ? [loopColors[0]] : window._boardPalette;
     updateLoopBarColors();
   }
 }
@@ -3937,6 +4053,11 @@ function updateMineCountLabel(){
 function openDebugMenu(){
   document.getElementById('settings-menu').style.display = 'none';
   document.getElementById('debug-menu').style.display = 'block';
+  const seedEl = document.getElementById('debug-seed-display');
+  if(seedEl){
+    const g = window._boardGen;
+    seedEl.textContent = g ? `${g.seed} (v${g.genVersion})` : '-';
+  }
 }
 function closeDebugMenu(){
   document.getElementById('debug-menu').style.display = 'none';
@@ -4079,8 +4200,15 @@ function updateHintGauge(){
   if(overlay) overlay.style.opacity = remaining > 0 ? '0' : '1';
 }
 
-function applyBoardColor(hex){
-  window._boardTheme = hex || null;
+// デバッグメニュー「盤面色（西）」「盤面色（東）」の2セレクトから window._boardPalette を組み立てる。
+// 東が未選択（""）なら西のみの単色パレット＝旧仕様と同じ見た目になる。
+function applyBoardColorPair(){
+  const west = document.getElementById('debug-color-select').value;
+  const east = document.getElementById('debug-color-select-east').value;
+  const palette = [];
+  if(west) palette.push(west);
+  if(east) palette.push(east);
+  window._boardPalette = palette.length ? palette : null;
   // 既存の全セルに即時反映
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const cell=board[r][c];
@@ -4165,7 +4293,7 @@ function restartGame(){
   // 周回モード：リスタート時は1周目に戻す
   currentLoop = 1;
   if(loopMode){
-    window._boardTheme = loopColors[0] || window._boardTheme;
+    window._boardPalette = loopColors[0] ? [loopColors[0]] : window._boardPalette;
   }
   updateLoopBarColors();
   // 地雷数の決定：ステージ直接指定 > 密度プルダウン
@@ -4467,10 +4595,12 @@ if(window.visualViewport){
         }
       }
 
-      // boardColor 適用
-      window._boardTheme = stage.boardColor || null;
+      // boardPalette 適用（旧stage.boardColorのみの定義もフォールバックで許容）
+      window._boardPalette = normalizePalette(stage.boardPalette ?? stage.boardColor);
       const dbgColorSel = document.getElementById('debug-color-select');
-      if(dbgColorSel) dbgColorSel.value = stage.boardColor || '';
+      const dbgColorSelEast = document.getElementById('debug-color-select-east');
+      if(dbgColorSel) dbgColorSel.value = (window._boardPalette && window._boardPalette[0]) || '';
+      if(dbgColorSelEast) dbgColorSelEast.value = (window._boardPalette && window._boardPalette[1]) || '';
 
       // maxHints 適用
       if(stage.maxHints != null){
@@ -4509,9 +4639,20 @@ if(window.visualViewport){
       // 物語進行ではないので novelAfterClear は無効化（クリア画面に NEXT を出さない）。
       // ランダム値はページ読込時にここで一度だけ確定し、以降は currentCharacter に保持される
       // （RETRYでも同一）。?boot=replay/resume ではこのブロックは走らず、記録済み charId を復元するので再現も一致。
-      if(urlParams.get('mode') === 'normal'){
-        const n = 11 + Math.floor(Math.random() * 10); // 11..20
-        window._stageCharId     = String(n).padStart(3, '0'); // "011".."020"
+      // stageEX（id:10）はキャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
+      // それ以外のSIMPLE MODEステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
+      // 011〜020は旧プール・上限10体で頭打ちだったため移行）。
+      if(urlParams.get('mode') === 'normal' && Number(stage.id) !== 10){
+        const pool = CHARACTER_LIST.filter(c => {
+          const n = parseInt(c.id, 10);
+          return n >= 101 && n <= 199;
+        });
+        if(pool.length > 0){
+          window._stageCharId = pool[Math.floor(Math.random() * pool.length)].id;
+        } else {
+          console.warn('SIMPLE MODE: 101-199にキャラが見つかりません（characters.json未整備）');
+          window._stageCharId = null;
+        }
         window._novelAfterClear = null;
       }
 
@@ -4527,6 +4668,7 @@ if(window.visualViewport){
         }
       }
       window._stageHasCustomBgm = !!stage.bgm;
+      window._stageBgmFile = stage.bgm || null; // 中断保存/復元でBGMを引き継ぐために記録
 
       // 背景画像 適用（canvas-containerはalpha:trueで透過しているのでCSS背景がそのまま見える）
       const canvasContainer = document.getElementById('canvas-container');
@@ -4588,7 +4730,7 @@ if(window.visualViewport){
         if(loopCountInput) loopCountInput.value = loopCount;
         // 1周目の盤面色・進行度バーをloopColorsで初期化（toggleLoopMode()と同じ処理）
         currentLoop = 1;
-        window._boardTheme = loopColors[0] || window._boardTheme;
+        window._boardPalette = loopColors[0] ? [loopColors[0]] : window._boardPalette;
         updateLoopBarColors();
       }
 
@@ -4599,6 +4741,28 @@ if(window.visualViewport){
       if(dens) dens.disabled = true;
       const lgBtn = document.getElementById('logic-guarantee-btn');
       if(lgBtn) lgBtn.disabled = true;
+
+      // ===== stageEX: seed プール盤面（data/board/ 由来。mines/hashは持たず、seedのみ）=====
+      // 自前で用意した信頼済みデータなので改竄検知(hash再検証)は行わない（?boot=factoryのFactory
+      // 盤面パイプラインとは別物。あちらは外部持ち込み盤面向け）。dims/mineCountは盤面ファイルの
+      // paramsを正とする（stage-params.jsonのgrid_col/grid_row/minesは表示用の参考値）。
+      if(stage.boardSource){
+        fetch(stage.boardSource)
+          .then(r => r.json())
+          .then(bd => {
+            ROWS = bd.params.rows; COLS = bd.params.cols;
+            window._stageMines = bd.params.mineCount;
+            window._seedPoolBoard = bd;
+            window._seedPoolMode = true;
+            restartGame();
+          })
+          .catch(e => {
+            console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
+            window._seedPoolMode = false;
+            restartGame();
+          });
+        return;
+      }
 
       // 設定を反映してリスタート
       restartGame();

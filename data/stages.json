@@ -97,5 +97,16 @@
     "grid_col": 12,
     "grid_row": 7,
     "mines": 10
+  },
+  {
+    "id": 10,
+    "name": "EXTRA STAGE",
+    "description": "誰も見たことのない、途方もなく広い星。",
+    "image": "assets/images/stages/st10.png",
+    "locked": false,
+    "difficulty": "規格外",
+    "grid_col": 144,
+    "grid_row": 72,
+    "mines": 1866
   }
 ]

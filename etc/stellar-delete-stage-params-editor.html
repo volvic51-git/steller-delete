@@ -134,15 +134,15 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
 
   function defaultState(){
     return { stages: [
-      { id:1, diff:'s1', mineMode:'mines', mines:12,  density:24, charId:'001', logicGuarantee:true, boardColor:'#666666', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel02.html', bgm:'', background:'', memo:'' },
-      { id:2, diff:'s2', mineMode:'mines', mines:45,  density:24, charId:'002', logicGuarantee:true, boardColor:'#006622', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel03.html', bgm:'', background:'', memo:'' },
-      { id:3, diff:'s3', mineMode:'mines', mines:90,  density:24, charId:'003', logicGuarantee:true, boardColor:'#440088', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel04.html', bgm:'', background:'', memo:'' },
-      { id:4, diff:'m1', mineMode:'mines', mines:150, density:24, charId:'004', logicGuarantee:true, boardColor:'#886600', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel05.html', bgm:'', background:'', memo:'' },
-      { id:5, diff:'m2', mineMode:'mines', mines:220, density:24, charId:'005', logicGuarantee:true, boardColor:'#880022', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel06.html', bgm:'', background:'', memo:'' },
-      { id:6, diff:'m3', mineMode:'mines', mines:300, density:24, charId:'006', logicGuarantee:true, boardColor:'#0044aa', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel07.html', bgm:'', background:'', memo:'' },
-      { id:7, diff:'h1', mineMode:'mines', mines:400, density:24, charId:'007', logicGuarantee:true, boardColor:'#aaaacc', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel08.html', bgm:'', background:'', memo:'' },
-      { id:8, diff:'h2', mineMode:'mines', mines:500, density:24, charId:'008', logicGuarantee:true, boardColor:'#884400', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel09.html', bgm:'', background:'', memo:'' },
-      { id:9, diff:'x1', mineMode:'mines', mines:10,  density:24, charId:'009', logicGuarantee:true, boardColor:'#552255', maxHints:3, timeLimitMode:true,  timeLimit:30,   loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel10.html', bgm:'', background:'', memo:'' }
+      { id:1, diff:'s1', mineMode:'mines', mines:12,  density:24, charId:'001', logicGuarantee:true, boardColorWest:'#666666', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel02.html', bgm:'', background:'', memo:'' },
+      { id:2, diff:'s2', mineMode:'mines', mines:45,  density:24, charId:'002', logicGuarantee:true, boardColorWest:'#006622', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel03.html', bgm:'', background:'', memo:'' },
+      { id:3, diff:'s3', mineMode:'mines', mines:90,  density:24, charId:'003', logicGuarantee:true, boardColorWest:'#440088', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel04.html', bgm:'', background:'', memo:'' },
+      { id:4, diff:'m1', mineMode:'mines', mines:150, density:24, charId:'004', logicGuarantee:true, boardColorWest:'#886600', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel05.html', bgm:'', background:'', memo:'' },
+      { id:5, diff:'m2', mineMode:'mines', mines:220, density:24, charId:'005', logicGuarantee:true, boardColorWest:'#880022', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel06.html', bgm:'', background:'', memo:'' },
+      { id:6, diff:'m3', mineMode:'mines', mines:300, density:24, charId:'006', logicGuarantee:true, boardColorWest:'#0044aa', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel07.html', bgm:'', background:'', memo:'' },
+      { id:7, diff:'h1', mineMode:'mines', mines:400, density:24, charId:'007', logicGuarantee:true, boardColorWest:'#aaaacc', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel08.html', bgm:'', background:'', memo:'' },
+      { id:8, diff:'h2', mineMode:'mines', mines:500, density:24, charId:'008', logicGuarantee:true, boardColorWest:'#884400', boardColorEast:'', maxHints:3, timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel09.html', bgm:'', background:'', memo:'' },
+      { id:9, diff:'x1', mineMode:'mines', mines:10,  density:24, charId:'009', logicGuarantee:true, boardColorWest:'#552255', boardColorEast:'', maxHints:3, timeLimitMode:true,  timeLimit:30,   loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'novel/novel10.html', bgm:'', background:'', memo:'' }
     ] };
   }
 
@@ -175,7 +175,7 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
       density: s.mineMode === 'density' ? s.density : null,
       charId: s.charId,
       logicGuarantee: !!s.logicGuarantee,
-      boardColor: s.boardColor ? s.boardColor : null,
+      boardPalette: s.boardColorWest ? (s.boardColorEast ? [s.boardColorWest, s.boardColorEast] : [s.boardColorWest]) : null,
       maxHints: s.maxHints,
       grid_col: info.cols,
       grid_row: info.rows,
@@ -223,7 +223,8 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
         density: s.density != null ? s.density : 24,
         charId: s.charId || '',
         logicGuarantee: !!s.logicGuarantee,
-        boardColor: s.boardColor || '',
+        boardColorWest: (Array.isArray(s.boardPalette) ? s.boardPalette[0] : s.boardPalette) || s.boardColor || '',
+        boardColorEast: Array.isArray(s.boardPalette) ? (s.boardPalette[1] || '') : '',
         maxHints: s.maxHints != null ? s.maxHints : 3,
         timeLimitMode: !!s.timeLimitMode,
         timeLimit: s.timeLimit != null ? s.timeLimit : null,
@@ -282,7 +283,7 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
     var s = {
       id: nextId, diff:'s1', mineMode:'mines', mines:12, density:24,
       charId: String(nextId).length <= 3 ? ('00'+nextId).slice(-3) : String(nextId),
-      logicGuarantee:true, boardColor:'', maxHints:3,
+      logicGuarantee:true, boardColorWest:'', boardColorEast:'', maxHints:3,
       timeLimitMode:false, timeLimit:null, loopMode:false, loopCount:3, loopTimeLimits:'', exMode:true, novelAfterClear:'', bgm:'', background:'', memo:''
     };
     state.stages.push(s);
@@ -314,7 +315,10 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
     state.stages.forEach(function(s){
       var item = document.createElement('div');
       item.className = 'spe-list-item' + (s.id === selectedId ? ' selected' : '');
-      var swatch = '<span class="spe-swatch" style="background:' + (s.boardColor || 'transparent') + ';"></span>';
+      var swatchBg = s.boardColorEast
+        ? 'linear-gradient(90deg,' + s.boardColorWest + ' 50%,' + s.boardColorEast + ' 50%)'
+        : (s.boardColorWest || 'transparent');
+      var swatch = '<span class="spe-swatch" style="background:' + swatchBg + ';"></span>';
       item.innerHTML =
         '<button class="spe-li-del" type="button" aria-label="削除">\u00d7</button>' +
         '<div class="spe-li-top">' + swatch + 'Stage ' + escapeHtml(s.id) + '</div>' +
@@ -382,12 +386,22 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
       '<div class="spe-section">' +
         '<h3>盤面色・ヒント・論理保証</h3>' +
         '<div class="spe-row">' +
-          '<div class="spe-field">盤面色（boardColor）' +
+          '<div class="spe-field">盤面色（西・boardPalette[0]）' +
             '<div class="spe-color-row">' +
               '<input type="color" id="fColorPicker">' +
               '<input type="text" id="fColorHex" placeholder="#666666（空欄でDEFAULT）">' +
               COLOR_PRESETS.map(function(c){ return '<button type="button" class="spe-swatch-btn" data-hex="' + c.hex + '" title="' + c.name + '" style="background:' + c.hex + ';"></button>'; }).join('') +
               '<button type="button" class="spe-swatch-btn spe-default" data-hex="" title="DEFAULT">×</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="spe-row">' +
+          '<div class="spe-field">盤面色（東・boardPalette[1]・東西2色にする場合のみ）' +
+            '<div class="spe-color-row">' +
+              '<input type="color" id="fColorPickerEast">' +
+              '<input type="text" id="fColorHexEast" placeholder="空欄なら西と同じ単色">' +
+              COLOR_PRESETS.map(function(c){ return '<button type="button" class="spe-swatch-btn spe-east" data-hex="' + c.hex + '" title="' + c.name + '" style="background:' + c.hex + ';"></button>'; }).join('') +
+              '<button type="button" class="spe-swatch-btn spe-east spe-default" data-hex="" title="OFF">×</button>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -453,8 +467,10 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
     detailEl.querySelector('#fChar').value = s.charId;
     detailEl.querySelector('#fMines').value = s.mines;
     detailEl.querySelector('#fDensity').value = s.density;
-    detailEl.querySelector('#fColorHex').value = s.boardColor || '';
-    detailEl.querySelector('#fColorPicker').value = s.boardColor || '#888888';
+    detailEl.querySelector('#fColorHex').value = s.boardColorWest || '';
+    detailEl.querySelector('#fColorPicker').value = s.boardColorWest || '#888888';
+    detailEl.querySelector('#fColorHexEast').value = s.boardColorEast || '';
+    detailEl.querySelector('#fColorPickerEast').value = s.boardColorEast || '#888888';
     detailEl.querySelector('#fHints').value = s.maxHints;
     detailEl.querySelector('#fLogic').checked = !!s.logicGuarantee;
     detailEl.querySelector('#fTLMode').checked = !!s.timeLimitMode;
@@ -506,16 +522,28 @@ body{ display:flex; justify-content:center; padding:24px 14px 40px; box-sizing:b
     detailEl.querySelector('#fDensity').addEventListener('input', function(e){ s.density = parseInt(e.target.value,10) || 0; refreshListItem(); saveStateDebounced(); });
 
     function setColor(hex){
-      s.boardColor = hex;
+      s.boardColorWest = hex;
       detailEl.querySelector('#fColorHex').value = hex;
       detailEl.querySelector('#fColorPicker').value = hex || '#888888';
       refreshListItem();
       saveStateDebounced();
     }
+    function setColorEast(hex){
+      s.boardColorEast = hex;
+      detailEl.querySelector('#fColorHexEast').value = hex;
+      detailEl.querySelector('#fColorPickerEast').value = hex || '#888888';
+      refreshListItem();
+      saveStateDebounced();
+    }
     detailEl.querySelector('#fColorHex').addEventListener('input', function(e){ setColor(e.target.value); });
     detailEl.querySelector('#fColorPicker').addEventListener('input', function(e){ setColor(e.target.value); });
-    Array.from(detailEl.querySelectorAll('.spe-swatch-btn')).forEach(function(btn){
+    detailEl.querySelector('#fColorHexEast').addEventListener('input', function(e){ setColorEast(e.target.value); });
+    detailEl.querySelector('#fColorPickerEast').addEventListener('input', function(e){ setColorEast(e.target.value); });
+    Array.from(detailEl.querySelectorAll('.spe-swatch-btn:not(.spe-east)')).forEach(function(btn){
       btn.addEventListener('click', function(){ setColor(btn.dataset.hex); });
+    });
+    Array.from(detailEl.querySelectorAll('.spe-swatch-btn.spe-east')).forEach(function(btn){
+      btn.addEventListener('click', function(){ setColorEast(btn.dataset.hex); });
     });
 
     detailEl.querySelector('#fHints').addEventListener('input', function(e){ s.maxHints = parseInt(e.target.value,10) || 0; saveStateDebounced(); });
