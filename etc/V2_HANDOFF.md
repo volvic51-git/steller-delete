@@ -30,21 +30,22 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## 🎯 次に来る作業：stageEX2（144×72・地雷率20%）（2026-07-09追記）
+## ✅ stageEX2（144×72・地雷率20%）実装完了（2026-07-10）
 
-- ユーザーが Board Hunter で **144×72・地雷率20%** の保証盤面を探索中（ローカル実行、進行中）。
-  **seedが100個たまったらstageEX2として実装する**予定。
-- 参考：既存stageEX(144×72)は地雷率18%（`data/board/72x144_18.json`）。18%はリアルタイム保証でも
-  成功率約10%と現実的だが、**20%は約0.3%までしか成功率が出ない**ため元々Factory必須の密度
-  （`etc/V2_GENERATION_ENGINE.md`実測）。20%キャンペーンは`tool/boardHunter/`で探索し、
-  100件たまったら`tool/board-merge.html`で`data/board/72x144_20.json`（想定ファイル名）に集約する。
-- 実装時にstageEXと同じ手順を踏む想定（要ユーザー確認、以下は見込み）：
-  1. `tool/board-merge.html`で20%キャンペーンのhunterログを集約 → `data/board/72x144_20.json`
-  2. `data/stages.json` / `data/stage-params.json` に id:11「stageEX2」を追加
-     （`boardSource: "data/board/72x144_20.json"`、`diff`は新規preset`ex2`等）
-  3. `index.html`の`renderNormalList`フィルタに`id===11`を追加
-  4. charId固定値・背景・BGM・盤面パレット（西/東2色）は未定→着手時に確認
-- **今回の実装で判明した重要な罠（stageEX1の実装経験から）**：
+- `data/board/72x144_20.json`（seed 108件、Board Hunterで収集済み）を使い、stageEXと同じ手順で
+  id:11「stageEX2」（表示名「EXTRA STAGE II」/リスト表記「EX2」）をSIMPLE MODE最後尾に実装済み。
+- 変更箇所：`data/stages.json`（id:11追加）／`data/stage-params.json`（id:11、
+  `boardSource: "data/board/72x144_20.json"`, `diff:"ex2"`, mines:2074）／
+  `sphere-minesweeper.html`（`DIFF_PRESETS.ex2`追加、キャラ固定除外条件にid:11を追加）／
+  `index.html`（`renderNormalList`フィルタと`noStr`ラベルにid:11対応）。
+- **charId/BGM/背景は暫定でstageEXと同一値を流用**（charId:"010", bgm:"SND_07_simpleEX.mp3",
+  background:"img_bg02.jpg"）。ユーザーが後日`data/stage-params.json`の該当フィールドを
+  書き換えるだけで反映される（JSON設定のみで完結、コード変更不要）。stage画像も暫定で
+  `st10.png`を流用（`st11.png`未作成のため）。
+- 動作確認済み（dev server）：SIMPLE MODEリスト最後尾に「STAGE EX2」表示、
+  `?stage=11&mode=normal`で盤面144×72・mines=2074・`_seedPoolMode=true`・
+  BGM/charId/palette全て意図通りに読み込み、盤面描画（黄/紫2色）も正常。
+- **今回の実装で判明した重要な罠（stageEX1の実装経験から。stageEX2でも同様に適用）**：
   - `data/board/*.json`は**seedのみ**（mines/hash無し）。ゲーム側で`js/board-gen.js`の
     `generateMineSet`をその場で呼んで再生成する設計（`?boot=factory`のhash検証パイプラインとは別経路）。
   - `getCellPaletteIndex(cell)`の東西分割は**列の中央付近の帯を西、両端の帯を東**にする必要がある

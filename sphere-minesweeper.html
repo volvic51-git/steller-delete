@@ -802,6 +802,7 @@ const DIFF_PRESETS = {
   h2: { cols: 72, rows: 34 },  // 2,448
   x1: { cols: 12, rows:  7 },  //    84  (消滅の果て専用)
   ex1:{ cols:144, rows: 72 },  // 10,368 (stageEX Factory盤面専用)
+  ex2:{ cols:144, rows: 72 },  // 10,368 (stageEX2 Factory盤面専用・地雷率20%)
 };
 let currentDiff = 's';
 
@@ -4660,10 +4661,10 @@ if(window.visualViewport){
       // 物語進行ではないので novelAfterClear は無効化（クリア画面に NEXT を出さない）。
       // ランダム値はページ読込時にここで一度だけ確定し、以降は currentCharacter に保持される
       // （RETRYでも同一）。?boot=replay/resume ではこのブロックは走らず、記録済み charId を復元するので再現も一致。
-      // stageEX（id:10）はキャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
+      // stageEX（id:10）/ stageEX2（id:11）はキャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
       // それ以外のSIMPLE MODEステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
       // 011〜020は旧プール・上限10体で頭打ちだったため移行）。
-      if(urlParams.get('mode') === 'normal' && Number(stage.id) !== 10){
+      if(urlParams.get('mode') === 'normal' && Number(stage.id) !== 10 && Number(stage.id) !== 11){
         const pool = CHARACTER_LIST.filter(c => {
           const n = parseInt(c.id, 10);
           return n >= 101 && n <= 199;

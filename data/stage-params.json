@@ -209,5 +209,27 @@
     "novelAfterClear": null,
     "bgm": "SND_07_simpleEX.mp3",
     "background": "img_bg02.jpg"
+  },
+  {
+    "id": 11,
+    "diff": "ex2",
+    "mines": 2074,
+    "density": null,
+    "charId": "010",
+    "boardSource": "data/board/72x144_20.json",
+    "logicGuarantee": false,
+    "boardPalette": ["#cccc00", "#440088"],
+    "maxHints": 3,
+    "grid_col": 144,
+    "grid_row": 72,
+    "total": 10368,
+    "timeLimitMode": false,
+    "timeLimit": null,
+    "loopMode": false,
+    "loopCount": 3,
+    "exMode": false,
+    "novelAfterClear": null,
+    "bgm": "SND_07_simpleEX.mp3",
+    "background": "img_bg02.jpg"
   }
 ]
