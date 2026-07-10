@@ -3536,7 +3536,18 @@ function saveSuspend(){
       bgmFile: window._stageBgmFile ?? null,
       isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
       isNormalMode: (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode,
-      novelAfterClear: window._novelAfterClear ?? null
+      novelAfterClear: window._novelAfterClear ?? null,
+      // stageEX1/EX2（seedプール）・Factory盤面の起動モードを保存する。これが無いと、
+      // ?boot=resumeはapplyStageParamを通らないためwindow._seedPoolMode/_factoryModeが
+      // 未設定のまま復元され、resume後にRESTARTした際「次のidleクリック」が誤って
+      // 通常のリアルタイム生成経路（Border振り分け）に落ちてしまう
+      // （最悪、大盤面でlogicGuarantee=trueだとasyncEnsureSolvableの300回リトライに入り
+      // 「初手が開かない」ように見えてフリーズする）。盤面データ自体（数KB程度）を
+      // 直接保存し、再取得の非同期レースを避ける。
+      seedPoolMode: !!window._seedPoolMode,
+      seedPoolBoard: window._seedPoolMode ? window._seedPoolBoard : null,
+      factoryMode: !!window._factoryMode,
+      factoryBoard: window._factoryMode ? window._factoryBoard : null
     },
     savedAt: new Date().toISOString()
   };
@@ -3621,6 +3632,13 @@ async function resumeSuspend(rec){
   window._novelAfterClear = m.novelAfterClear ?? null; // STORYモードで中断した場合のNEXT遷移先を復元
   window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
   window._resumeNormalMode = !!m.isNormalMode;          // 終了画面のSTAGEボタンをNORMALリスト(?normal=1)へ戻すために使う
+  // stageEX1/EX2（seedプール）・Factory盤面のモードを復元する（RESTART後の次回idleクリックが
+  // 誤って通常のリアルタイム生成経路に落ちないようにするため。詳細はsaveSuspend側のコメント参照）。
+  window._seedPoolMode = !!m.seedPoolMode;
+  window._seedPoolBoard = m.seedPoolMode ? (m.seedPoolBoard ?? null) : null;
+  window._factoryMode = !!m.factoryMode;
+  window._factoryBoard = m.factoryMode ? (m.factoryBoard ?? null) : null;
+  window._factoryVerified = m.factoryMode; // 中断データは自分のsaveSuspendが作った信頼済みデータなので再検証は不要
   loopMode=!!m.loopMode; loopCount=m.loopCount ?? loopCount; currentLoop=m.currentLoop ?? 1;
   if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
   timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;

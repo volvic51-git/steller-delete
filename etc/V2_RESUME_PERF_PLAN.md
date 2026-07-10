@@ -22,6 +22,30 @@ NORMALモードのゲージ消費枝も正常／EXモードのゲームオーバ
 **設計書§2.1で予告されていた「複数の旗が400ms窓内に重なった場合の中間状態のズレ」も実機で確認**
 （不一致ログが一時的に出るが、全コールバック着地後は必ず収束）。これはバグではなく想定通りの挙動。
 
+## バグ修正: resume後にRESTARTすると初手が開かない（2026-07-10、ユーザー報告→当日修正）
+
+**症状**: stageEX1/EX2（seedプール盤面）または`?boot=factory`（Factory盤面）を中断→再開した後、
+設定メニューの「RESTART」を押して次の初手クリックをしても盤面が開かない（大盤面で
+`logicGuarantee=true`だと`asyncEnsureSolvable`の300回リトライに入り実質フリーズ）。
+
+**原因**: `window._seedPoolMode`/`window._seedPoolBoard`（およびFactory版の`_factoryMode`/
+`_factoryBoard`）は`applyStageParam()`が`?stage=`パラメータ経由でのみ設定する。
+`?boot=resume`にはstageパラメータが無いため`applyStageParam()`が素通りし、`resumeSuspend()`
+もこれらを復元していなかった。結果、resume直後のプレイは`resumeSuspend()`が盤面を直接
+操作するため問題なく動くが、**RESTART後の次のidleクリックは`handleCellAction`の
+`if(window._seedPoolMode && ...)`判定が偽になり、意図せず通常のリアルタイム生成
+（Border振り分け）に落ちる**。
+
+**修正**: `saveSuspend()`のmetaに`seedPoolMode`/`seedPoolBoard`/`factoryMode`/`factoryBoard`
+を追加（盤面データ本体を直接保存。数KB程度で軽量、再取得の非同期レースも回避）。
+`resumeSuspend()`側でこれらを復元。Factory版は`_factoryVerified`も`m.factoryMode`から
+直接trueにする（中断データは自分のsaveSuspendが作った信頼済みデータなので再検証不要）。
+
+検証済み: stageEX1・Factory盤面それぞれでresume→RESTART→クリックが正しくJudge開始経路
+（guarantee-result="✅ FACTORY"）を通ることを確認。通常盤面（seedPool/Factory以外）は
+`seedPoolMode:false`/`factoryMode:false`で保存され、RESTART後も従来通りリアルタイム
+生成が動作（回帰なし）。
+
 ## 実測結果（2026-07-10、C案のみ・デスクトップ）
 
 同一の合成中断データ（144×72・地雷2,074・stageEX2相当）で比較：
