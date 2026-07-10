@@ -1,7 +1,50 @@
 # 中断再開（resume）性能改善計画 — B＋C案
 
-作成日: 2026-07-10 / 状態: **C案 実装・検証済み（`feature/resume-perf`）／B案はテスト結果を見てユーザー判断**
+作成日: 2026-07-10 / 状態: **C案・B案ともに実装・検証済み（`feature/mine-removal-diff`。コミット/マージはユーザー）**
 対象ファイル: `sphere-minesweeper.html` のみ（保存フォーマット・他ファイルは変更しない）
+
+> B案の実装作業指示書（実装者向け・自己完結版）: `etc/V2_B_PLAN_WORKORDER.md`
+> B案の必要性を裏付けるフレームレート調査報告: `etc/V2_PERF_72x144_REPORT.md`
+> （旗1本=2,834msヒッチの実測。B案はresume高速化と通常プレイのカクつき解消の両方に効く）
+
+## B案 実測結果（2026-07-10、Sonnet 5実装）
+
+| 指標 | Before | After | 目標 |
+|---|---|---|---|
+| 旗1本のヒッチ（開封3,994セル時点・rAF最大フレーム間隔） | 2,834ms | **21.9ms** | 50ms以下 → 達成 |
+| resume時間（旗1,900＋掘削6,000＝7,901アクション） | 約6,100ms | **2,091ms** | 2,500ms以下 → 達成 |
+
+検証済み: 全セルneighborMines一致（旗23本適用後・最終収束状態で不一致0件）／
+カスケード開封・0セル消滅の局所伝播が正しく動作／epochガード（旗除去400ms窓内のRETRY）で
+盤面破損なし／resume前後で全セル状態(isOpen/hasFlag/isRemoved/neighborMines)完全一致／
+NORMALモードのゲージ消費枝も正常／EXモードのゲームオーバー・クリア(checkWin)とも正常。
+
+**設計書§2.1で予告されていた「複数の旗が400ms窓内に重なった場合の中間状態のズレ」も実機で確認**
+（不一致ログが一時的に出るが、全コールバック着地後は必ず収束）。これはバグではなく想定通りの挙動。
+
+## バグ修正: resume後にRESTARTすると初手が開かない（2026-07-10、ユーザー報告→当日修正）
+
+**症状**: stageEX1/EX2（seedプール盤面）または`?boot=factory`（Factory盤面）を中断→再開した後、
+設定メニューの「RESTART」を押して次の初手クリックをしても盤面が開かない（大盤面で
+`logicGuarantee=true`だと`asyncEnsureSolvable`の300回リトライに入り実質フリーズ）。
+
+**原因**: `window._seedPoolMode`/`window._seedPoolBoard`（およびFactory版の`_factoryMode`/
+`_factoryBoard`）は`applyStageParam()`が`?stage=`パラメータ経由でのみ設定する。
+`?boot=resume`にはstageパラメータが無いため`applyStageParam()`が素通りし、`resumeSuspend()`
+もこれらを復元していなかった。結果、resume直後のプレイは`resumeSuspend()`が盤面を直接
+操作するため問題なく動くが、**RESTART後の次のidleクリックは`handleCellAction`の
+`if(window._seedPoolMode && ...)`判定が偽になり、意図せず通常のリアルタイム生成
+（Border振り分け）に落ちる**。
+
+**修正**: `saveSuspend()`のmetaに`seedPoolMode`/`seedPoolBoard`/`factoryMode`/`factoryBoard`
+を追加（盤面データ本体を直接保存。数KB程度で軽量、再取得の非同期レースも回避）。
+`resumeSuspend()`側でこれらを復元。Factory版は`_factoryVerified`も`m.factoryMode`から
+直接trueにする（中断データは自分のsaveSuspendが作った信頼済みデータなので再検証不要）。
+
+検証済み: stageEX1・Factory盤面それぞれでresume→RESTART→クリックが正しくJudge開始経路
+（guarantee-result="✅ FACTORY"）を通ることを確認。通常盤面（seedPool/Factory以外）は
+`seedPoolMode:false`/`factoryMode:false`で保存され、RESTART後も従来通りリアルタイム
+生成が動作（回帰なし）。
 
 ## 実測結果（2026-07-10、C案のみ・デスクトップ）
 
