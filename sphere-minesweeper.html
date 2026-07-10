@@ -2347,6 +2347,18 @@ function checkCascade(){
   }
 }
 
+// 即時再構築（resume/リプレイステップ）の完了後に、盤面の最終状態を1パスで描画する。
+// updateCellVisual は _replayInstant 中スキップされるため、これを呼ばないと色・枠線・数字が初期状態のまま。
+// ⚠️ 対象は「初期状態から変化したセル（開封済み/旗）」のみ。未開封セルは initBoard の初期描画のままで
+// 正しく、逆に未開封の地雷セルへ updateCellVisual を呼ぶと createNumberMesh の地雷ブランチが
+// 地雷アイコンを描いてしまう（盤面ネタバレ）。
+function refreshAllCellVisuals(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell = board[r][c];
+    if(cell.isOpen || cell.hasFlag) updateCellVisual(cell);
+  }
+}
+
 // リプレイのステップ再構築中は、消滅演出を再生せずメッシュを即座に消す
 // （毎回盤面を作り直すため、演出を残すと「消滅済みセルが復活→再度フェードアウト」がちらつく）。
 function removeMeshInstant(cell){
@@ -2420,6 +2432,10 @@ function revealAllMines(){
 }
 
 function updateCellVisual(cell){
+  // 即時再構築中（resume/リプレイステップ）は描画しない。状態変更は呼び出し側で完結しており、
+  // 完了後に refreshAllCellVisuals() が最終状態を1パスで描画する。ここで毎回描くと
+  // アクション数×開封セル数ぶんの数字テクスチャ生成が走り、大盤面後半のresumeが数分固まる。
+  if(_replayInstant) return;
   if(!cell.mesh||cell.isRemoved) return;
   const mat=cell.mesh.material;
   mat.transparent = false;
@@ -3337,6 +3353,7 @@ function replaySubStepTo(pos){
     else if(a.a==='search'){ _searchAvailable=true; _searchCooldown=0; triggerSearchButton(); } // レーダー演出を再現
   }
   _replayInstant = false;
+  refreshAllCellVisuals(); // instant中は描画スキップのため最終状態を1パス描画（予告ハイライト適用より前に）
 
   _replayPos = pos;
   updateStats(); updateHintGauge();
@@ -3519,6 +3536,7 @@ function resumeTimer(){
 function resumeSuspend(rec){
   if(!rec || !rec.board) return false;
   if(!isReplayCompatible(rec)){ console.warn('Suspend: バージョン非互換のため再開不可', rec.genVersion, rec.gameVersion); return false; }
+  const _resumeT0 = performance.now();
   const b = rec.board, m = rec.meta || {};
 
   // モード・パラメータ復元（盤面/タイマーより先に）
@@ -3545,6 +3563,7 @@ function resumeSuspend(rec){
   _replayMode = true; _replayInstant = true; gameState = 'playing'; removedMines = 0;
   for(const a of rec.actions){ if(a.a==='dig') digCell(a.r,a.c); else if(a.a==='flag') flagCell(a.r,a.c); }
   _replayMode = false; _replayInstant = false;
+  refreshAllCellVisuals(); // instant中は描画スキップのため、ここで最終状態を1パス描画
 
   // アクション由来でないメタを上書き復元
   elapsed   = m.elapsed ?? elapsed;
@@ -3571,6 +3590,7 @@ function resumeSuspend(rec){
   resumeTimer();
   gameState = 'playing';
   updateStats(); updateHintGauge();
+  console.info(`[resume] 再構築完了 ${(performance.now()-_resumeT0).toFixed(0)}ms (actions=${(rec.actions||[]).length})`);
   return true;
 }
 

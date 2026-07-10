@@ -1,20 +1,22 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-09
+作成日: 2026-06-30 / 最終更新: 2026-07-10
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-09）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-10）
 
-- **`feature/factory-board` は `master` にマージ済み・push済み**（2026-07-09、no-ff、
-  コンフリクトなし）。GitHub Pages（master/(root)配信）にも反映済み。
-  作業ブランチは今後 `master` から都度切る運用でよい（`feature/factory-board` は役目を終えたので
-  削除しても問題ない想定。念のためユーザー判断）。
-- 直近まとまった変更（Phase 3 Factory盤面〜stageEX〜盤面2色化）は全て
-  **§「2026-07-09 完了した作業」**（下記）参照。
+- **`master`が最新**。直近3件はすべて`master`にマージ・push済み：
+  1. `音量調整`（SOUND設定機能。ブランチ切らず直接master）
+  2. `EX2追加`（stageEX2実装。ブランチ切らず直接master）
+  3. `feature/zoom-rotation-scale`（ズーム連動の回転速度自動スケール。no-ff、コンフリクトなし、
+     マージ後にローカル・リモートとも削除済み）
+  詳細は下記**§「2026-07-10 完了した作業」**参照。
 - **git運用**：commit / push はユーザーが行う。**マージはClaudeが実行してよい**（2026-07-09に分担確定。
   ただしマージ前にワーキングツリーがクリーンであることを確認する）。push後の反映はユーザー確認。
+  ⚠️ **リモートブランチの削除・push はこのツール環境からは認証エラーで実行不可**
+  （`/dev/tty`が無くgit credentialの対話プロンプトが動かない）。ユーザー側で実行してもらう。
 - **GitHub Pages は master / (root) から配信**（`volvic51-git.github.io/steller-delete`、push→数分で反映）。
   設定は Settings→Pages「Deploy from a branch = master /(root)」。gh-pagesブランチは無い。
 - **設計文書ブランチ `feature/spec-foundation` は未マージのまま**（docs/ はここにしか無い：
@@ -30,10 +32,26 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ✅ stageEX2（144×72・地雷率20%）実装完了（2026-07-10）
+## ✅ 2026-07-10 完了した作業（SOUND設定／stageEX2／ズーム回転速度）
 
+**① SOUND音量設定（BGM/SE独立スライダー）**
+- タイトル画面にSOUNDボタン追加（RESUME/REPLAY/AUCTIONの下、CREDITの上）。押すとBGM/SEの
+  音量スライダー（0-100%、デフォルト50%）が開く。
+- `js/audio-settings.js`（新規）：`window.AudioSettings`を公開。`getBgmVolume()/getSeVolume()/
+  setBgmVolume()/setSeVolume()/subscribe()`。localStorage `stellarDeleteAudioSettings`に
+  `{bgm,se}`保存（他のkeyと同じtry/catch規約）。
+- 各画面は素材本来の基準音量に倍率を掛けるだけの最小変更で対応（既存の音量バランス非破壊）：
+  `sphere-minesweeper.html`の`SND`各Audioに`_baseVolume`を保持し`applySndVolumes()`で再計算
+  （既存の散在した`.play()`呼び出し15箇所は無改造）／`index.html`のタイトル・ステージBGM・
+  選択SE／`novel/js/novel.js`の`playBGM`/`_playSE`（全10ノベル章に自動波及）／
+  `endrole_release.html`のエンドロールBGM。
+- **`SND.clear`（クリアジングル）はBGM音量グループに属する**とユーザー確定（ファイル名は
+  `SND_*`系列だが単発再生のため要判断だった）。
+- 詳細設計は`etc/VOLUME_CONTROL_PLAN.md`（V1.0実装済みに更新済み）。memory [[project-sound-settings]]。
+
+**② stageEX2実装＋stageEX1へのリネーム**
 - `data/board/72x144_20.json`（seed 108件、Board Hunterで収集済み）を使い、stageEXと同じ手順で
-  id:11「stageEX2」（表示名「EXTRA STAGE II」/リスト表記「EX2」）をSIMPLE MODE最後尾に実装済み。
+  id:11「stageEX2」（表示名「EXTRA STAGE II」/リスト表記「EX2」）をSIMPLE MODE最後尾に実装。
 - 変更箇所：`data/stages.json`（id:11追加）／`data/stage-params.json`（id:11、
   `boardSource: "data/board/72x144_20.json"`, `diff:"ex2"`, mines:2074）／
   `sphere-minesweeper.html`（`DIFF_PRESETS.ex2`追加、キャラ固定除外条件にid:11を追加）／
@@ -42,6 +60,9 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   background:"img_bg02.jpg"）。ユーザーが後日`data/stage-params.json`の該当フィールドを
   書き換えるだけで反映される（JSON設定のみで完結、コード変更不要）。stage画像も暫定で
   `st10.png`を流用（`st11.png`未作成のため）。
+- **既存stageEX（id:10）は「stageEX1」に改名**（体裁統一）：`data/stages.json`の表示名
+  `"EXTRA STAGE"`→`"EXTRA STAGE I"`、`index.html`のリスト表記`'EX'`→`'EX1'`。
+  内部id(10)・`diff:"ex1"`・保存済みリプレイ/ランキング/中断データへの影響なし（表示名のみ変更）。
 - 動作確認済み（dev server）：SIMPLE MODEリスト最後尾に「STAGE EX2」表示、
   `?stage=11&mode=normal`で盤面144×72・mines=2074・`_seedPoolMode=true`・
   BGM/charId/palette全て意図通りに読み込み、盤面描画（黄/紫2色）も正常。
@@ -54,12 +75,25 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   - 2色パレットのステージは`getNumberColor`が常に鮮やかな配色になるよう分岐が必要
     （背景の明度で自動切替すると東西で数字の見た目が揃わない）。
 
+**③ ズーム連動の回転速度自動スケール**
+- 課題：ズームインすると同じドラッグ量でも球体回転が速く感じる（角速度×半径÷カメラ距離が
+  体感速度のため、距離が近いほど見かけ上速くなる）。
+- `sphere-minesweeper.html`に`rotationSpeedScale()`を追加（`camera.position.z / 7.0`。
+  7.0=デフォルトズーム距離でスケール1.0）。マウスドラッグ・タッチドラッグ・慣性回転の3箇所の
+  回転量にこの倍率を掛けて、ズーム量によらず体感速度をほぼ一定に保つ。
+- 検証済み：距離7.0でスケール1.0、距離2.0（最大ズームイン）でスケール≈0.286
+  （同じドラッグ量でも回転量が約29%に抑制されることを確認）。
+- ユーザー判断：**追加の速度調整アイコンは不要**（自動スケールのみで対応、テストプレイ後に確定）。
+- `feature/zoom-rotation-scale`ブランチで実装→`master`にno-ffマージ→ローカル・リモート
+  ブランチとも削除済み。Judge/オートローテート演出（`autoRotating`）は固定時間アニメーションで
+  ドラッグ入力と無関係なため、スケール対象外。
+
 ---
 
 ## いま何をしているフェーズか
 
-**Phase 3 Factory盤面（stageEX）の実装・merge・バグ修正まで完了（2026-07-09）。
-次はstageEX2（144×72/20%）の準備待ち（seed 100件到達待ち）。**
+**Phase 3 Factory盤面（stageEX1/EX2）・SOUND設定・回転速度自動スケールまで完了（2026-07-10）。
+次の作業はユーザー判断待ち（下記「次セッションの入口」参照）。**
 
 ### 2026-07-08 完了した作業（詳細は memory [[project-factory-board]] / [[project-perf-zoomout]]）
 
@@ -407,17 +441,12 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-09 更新）
+## 次セッションの入口（2026-07-10 更新）
 
 0. **まず `git status`**：`master`にマージ・push済みのはず。念のため確認（未コミット変更が
    残っていないか）。
 
-1. **stageEX2（144×72/20%）の進捗確認**：Board Hunterでのseed収集が進んでいるか確認。
-   **100件たまっていれば**、上記「🎯 次に来る作業」節の手順で実装に着手。
-   たまっていなければ他の作業を進める。
-
-2. **次の開発候補（優先度はユーザー判断）**：
-   - **stageEX2実装**（seed 100件到達後。上記節参照）。
+1. **次の開発候補（優先度はユーザー判断）**：
    - **C案**（セルInstancedMesh化・大改修）：ズームアウトを60fpsへ。計画書を作ってから。
      リプレイ全再構築も激速化するので Phase 4 の前にやる価値あり（[[project-perf-zoomout]]）。
    - **Phase 4**（リプレイ/中断の再設計・REPLAY UI復活）：Factory盤面の startCell を
@@ -425,9 +454,11 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
    - **盤面お絵描きツール**（`etc/V2_BOARD_COLOR_PLAN.md` §2.3の将来拡張。セルごとの
      `cellPaletteMap`で自由に色を塗れるようにする構想。今の東西2色はこの布石）。
    - **Hunter/Factory/game のパリティ自動テスト**（まだ未着手）。
+   - **stageEX2のcharId/BGM/背景/専用stage画像の確定**（現状stageEX1からの暫定流用。
+     `data/stage-params.json`のid:11ブロックと`data/stages.json`のid:11`image`を編集するだけ）。
    - LIMIT MODE（modes.json enabled:false のまま保留中）。
 
-3. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
+2. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
    起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
    ⚠️ プレビューのブラウザセッションでHTTPキャッシュが古いまま残ることがある
    （`data/stage-params.json`等の更新が反映されず「id not found」警告が出る）。
