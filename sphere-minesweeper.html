@@ -2777,8 +2777,12 @@ function triggerLoopReplay(){
 function triggerRescueSequence(){
   gameState='win';
   clearInterval(timerInterval);
-  if(window._stageHasCustomBgm){
-    // ステージ独自BGMが設定されている場合：クリアジングルに切り替えず、そのまま継続再生
+  if(loopMode){
+    // 周回モード（STORY stage9等）：ループ間もBGMを継続させる設計のため、
+    // クリアジングルに切り替えずそのまま継続再生する。
+    // ⚠️ 以前は window._stageHasCustomBgm（＝ステージにbgm指定があるか）で判定していたが、
+    // stageEX1/EX2もカスタムBGMを持つため誤ってクリアジングルが鳴らなくなっていた。
+    // 「ジングルを鳴らさない」を意図しているのは周回モードだけなので loopMode で判定する。
   } else {
     pauseBGM();
     if(SND.clear) SND.clear.play().catch(()=>{});
