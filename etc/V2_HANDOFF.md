@@ -1,22 +1,25 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-10
+作成日: 2026-06-30 / 最終更新: 2026-07-11
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-10）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-11）
 
-- **`master`が最新**。直近3件はすべて`master`にマージ・push済み：
+- **`master`が最新**。直近4件はすべて`master`にマージ・push済み：
   1. `音量調整`（SOUND設定機能。ブランチ切らず直接master）
   2. `EX2追加`（stageEX2実装。ブランチ切らず直接master）
   3. `feature/zoom-rotation-scale`（ズーム連動の回転速度自動スケール。no-ff、コンフリクトなし、
      マージ後にローカル・リモートとも削除済み）
-  詳細は下記**§「2026-07-10 完了した作業」**参照。
+  4. `feature/mine-removal-diff`（72×144フレームレート低下対策＋Factory中断RESTARTバグ修正＋
+     数字セル開封演出。no-ff、コンフリクトなし、push済み）
+  詳細は下記**§「2026-07-10〜11 完了した作業」**（新しい方）と**§「2026-07-10 完了した作業」**参照。
 - **git運用**：commit / push はユーザーが行う。**マージはClaudeが実行してよい**（2026-07-09に分担確定。
   ただしマージ前にワーキングツリーがクリーンであることを確認する）。push後の反映はユーザー確認。
   ⚠️ **リモートブランチの削除・push はこのツール環境からは認証エラーで実行不可**
   （`/dev/tty`が無くgit credentialの対話プロンプトが動かない）。ユーザー側で実行してもらう。
+  → `feature/mine-removal-diff`のローカル・リモートブランチ削除もユーザー側で任意に実施。
 - **GitHub Pages は master / (root) から配信**（`volvic51-git.github.io/steller-delete`、push→数分で反映）。
   設定は Settings→Pages「Deploy from a branch = master /(root)」。gh-pagesブランチは無い。
 - **設計文書ブランチ `feature/spec-foundation` は未マージのまま**（docs/ はここにしか無い：
@@ -29,6 +32,83 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 > - spec-foundation側の未push（密度CSV `59c2a28`・タグ `design/data-foundation-v0.9`）。
 > - `tool/boadHunter/`（typo）は現状維持でよいとユーザー確認済み（2026-07-09、`tool/`直下からの
 >   移動・改名は不要という判断）。
+
+---
+
+## ✅ 2026-07-10〜11 完了した作業（72×144フレームレート対策／中断RESTARTバグ／開封演出）
+
+**① 中断再開(resume)の性能改善 — C案（描画スキップ）＋RE-MEMBERING進捗表示**
+- 症状：大盤面後半で中断→再開すると復元に長時間かかり、スマホでは**OSがタブを強制終了**
+  （メモリ急騰）。原因：`resumeSuspend()`が全操作ログを`digCell`/`flagCell`で同期再実行し、
+  旗（地雷除去）1回ごとに全盤面の`calcNeighbors`＋**全開封セルの数字テクスチャ再生成**
+  （`createNumberMesh`が毎回canvas＋CanvasTexture＋Material新規生成）が走っていた。
+  stageEX2後半なら数十万〜百万オーダーのGPUリソース生成が1フレームも描画されず同期一括で走る。
+- **C案**：`updateCellVisual`に`if(_replayInstant) return;`を追加し、再構築中は描画をスキップ。
+  完了後に`refreshAllCellVisuals()`で最終状態を1パスだけ描画（開封済み/旗セル限定。
+  **全セルに広げると未開封の地雷にアイコンが出て盤面ネタバレするので厳禁**）。
+- **RE-MEMBERING表示**：`resumeSuspend`を約150msごとに1フレーム譲るasyncチャンク実行に変更し、
+  進捗％・手数を表示。副作用対策：①チャンク合間の入力を透明オーバーレイ+`_replayInstant`ガードで
+  遮断、②`resumeSuspend`がPromiseを返すため呼び出し側は`.then()`で完了を待って中断データを消費
+  （`if(resumeSuspend(...))`は常にtruthyになる罠）。
+- **副産物のバグ2件を発見・修正**：①別ステージのデフォルト盤面が一瞬映る問題→
+  `?boot=resume`分岐で中断レコードをrestartGameより**先に読んで**ROWS/COLS/パレット/キャラを
+  先に反映する方式で解決（隠すだけでは実機で再発）。②再開時にGUARDがOFFに戻る問題→
+  `resumeSuspend`末尾で`autoEnableMisclickGuard()`を呼んでON復元。
+- 実測：旗600規模「5分以上フリーズ→1.8秒」、実後半規模(7,901アクション)「未計測→3.9秒
+  （表示なし）／6.1秒（RE-MEMBERING表示込み）」。詳細・実測手順は`etc/V2_RESUME_PERF_PLAN.md`。
+
+**② 72×144フレームレート低下の原因調査＋B案（地雷除去の差分更新化）**
+- 依頼に基づき`animate()`にセクション別計測プローブを一時挿入して切り分け
+  （実装前に計測のみ実施。結果は`etc/V2_PERF_72x144_REPORT.md`に保存・プローブは撤去済み）。
+- **判明した事実**：「進捗とともにカクつく」症状の正体は、旗を立てるたびに①と同じ
+  「全開封セルの数字テクスチャ再生成」がライブプレイ中も400ms遅延で走ること。
+  進捗40%（開封4,559セル）で**旗1本＝2,834msのフリーズ**（開封セル数に比例）。
+  一方ズームアウト時の恒常的な低FPS（進捗0%でも24fps）はdraw call数（約5,300）が原因で
+  これは別問題＝将来のC案（InstancedMesh化）の領域と判定（切り分け実験で演出は無罪と確認）。
+- **B案実装**：`removeMine()`/`digCell`の地雷ゲージ枝で、地雷除去後の「全盤面
+  calcNeighbors＋全開封セルupdateCellVisual＋checkCascade＋vanishNewZeroCells」を
+  `applyMineRemovalEffects(row,col)`（**除去セルの隣接8セルだけの差分更新**）に置換。
+  1アクションあたりO(盤面)→O(1)。等価性の論証・罠は`etc/V2_RESUME_PERF_PLAN.md §2.1`、
+  実装手順書は`etc/V2_B_PLAN_WORKORDER.md`（Sonnet 5への引き継ぎ用に作成→実装完了）。
+- **`_boardEpoch`ガード（新規・重要）**：差分更新は「400ms窓内にRETRYで盤面が作り直された」
+  場合に旧盤面座標で新盤面をデクリメントすると壊れるため、`initBoard()`で盤面世代を
+  インクリメントし、遅延コールバックが発行時のepochと不一致ならno-opにする。
+- 実測（B案適用後）：旗ヒッチ**2,834ms→21.9ms**、resume時間（7,901アクション）**6,100ms→2,091ms**。
+  検証：全セルneighborMines一致（旗23本適用後不一致0件）／epochガード動作／
+  「複数の旗が400ms窓内に重なる際の中間状態の一時的ズレ」も設計書予告どおり実機確認
+  （バグではなく想定挙動、最終収束は必ず一致）。
+
+**③ バグ修正：resume後にRESTARTすると初手が開かない（stageEX1/EX2・Factory盤面）**
+- ユーザー報告に基づき実機と同条件で再現・特定。原因：`window._seedPoolMode`/
+  `_seedPoolBoard`（stageEX系）と`_factoryMode`/`_factoryBoard`（真のFactory盤面）は
+  `?stage=`パラメータ経由の`applyStageParam()`でしか設定されない。`?boot=resume`には
+  stageパラメータが無いため`resumeSuspend()`もこれらを復元しておらず、resume直後の
+  プレイ自体は問題なく動くが、**その後RESTARTした次のidleクリックが誤って通常の
+  リアルタイム生成（Border振り分け）に落ちる**。大盤面で`logicGuarantee=true`だと
+  `asyncEnsureSolvable`の300回リトライに入り実質フリーズ＝「初手が開かない」症状に。
+- 修正：`saveSuspend()`のmetaに`seedPoolMode`/`seedPoolBoard`/`factoryMode`/`factoryBoard`
+  を追加（**盤面データ本体を直接保存**。数KB程度で軽量、再取得の非同期レースを回避）。
+  `resumeSuspend()`側で復元。Factory版は`_factoryVerified`も信頼済みとして直接true化
+  （再ハッシュ検証は不要）。検証：stageEX1・Factory盤面それぞれでresume→RESTART→クリックが
+  正しくJudge開始経路（guarantee-result="✅ FACTORY"）を通ることを確認、通常盤面は回帰なし。
+
+**④ 数字セル開封演出（発光フラッシュ＋数字ポップ＋カスケード波紋）**
+- 背景：地雷発見（旗成功）時は消滅アニメ＋エフェクトがあるが、通常セル開封は無演出で
+  フィードバックが弱かった。検討書`etc/V2_OPEN_FX_PLAN.md`でA〜D案を比較評価し、
+  コスパ最良のB（発光フラッシュ）＋C（数字ポップ）採用、追加でE（カスケード波紋）も実装
+  （D＝枠線波紋は毎フレームGPU転送コストが重く見送り）。
+- 実装：専用配列`_openFx`でアクティブなセルだけ回す（**全盤面スキャンを追加しない**設計。
+  ①②の教訓を踏まえ、演出から`updateCellVisual`は絶対に呼ばずmaterial/scaleを直接書く）。
+  `registerOpenFx(cell, depth*6ms)`をopenCellのフラッド再帰深度から呼び、波紋状に
+  遅延発火。フラッシュ色は盤面パレット由来（`buildThemeColors.openFlash`）。
+  `_replayInstant`中は登録スキップ、`initBoard()`でクリア。
+- 検証：演出中の値（emissive/intensity/数字scale）実測、終了時のテーマ値への完全復元、
+  RETRY・resume（再構築中0件登録・状態完全一致）・大盤面フラッドいずれも正常。
+
+**⑤ merge実施**：`feature/mine-removal-diff` → `master`（no-ff・コンフリクトなし・2026-07-11）。
+push済み（ユーザー実施）。新規ドキュメント3件：`etc/V2_PERF_72x144_REPORT.md`（性能調査報告）／
+`etc/V2_B_PLAN_WORKORDER.md`（B案実装手順書。実装済みステータスに更新済み）／
+`etc/V2_OPEN_FX_PLAN.md`（開封演出検討書。実装済みステータスに更新済み）。
 
 ---
 
@@ -92,7 +172,8 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ## いま何をしているフェーズか
 
-**Phase 3 Factory盤面（stageEX1/EX2）・SOUND設定・回転速度自動スケールまで完了（2026-07-10）。
+**Phase 3 Factory盤面（stageEX1/EX2）・SOUND設定・回転速度自動スケール・中断/resume性能改善
+（B+C案）・Factory中断RESTARTバグ修正・数字セル開封演出まで完了（2026-07-11）。
 次の作業はユーザー判断待ち（下記「次セッションの入口」参照）。**
 
 ### 2026-07-08 完了した作業（詳細は memory [[project-factory-board]] / [[project-perf-zoomout]]）
@@ -441,14 +522,19 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-10 更新）
+## 次セッションの入口（2026-07-11 更新）
 
 0. **まず `git status`**：`master`にマージ・push済みのはず。念のため確認（未コミット変更が
-   残っていないか）。
+   残っていないか）。`feature/mine-removal-diff`ブランチ（ローカル・リモート）は削除して良いか
+   ユーザー判断（マージ済み・作業完了）。
 
 1. **次の開発候補（優先度はユーザー判断）**：
-   - **C案**（セルInstancedMesh化・大改修）：ズームアウトを60fpsへ。計画書を作ってから。
-     リプレイ全再構築も激速化するので Phase 4 の前にやる価値あり（[[project-perf-zoomout]]）。
+   - **C案**（セルInstancedMesh化・大改修）：ズームアウトが依然24fps程度（draw call約5,300が
+     原因。B案で解消したのは「旗ヒッチ」のみで、こちらの恒常的な低FPSは未着手）。計画書を
+     作ってから着手。リプレイ全再構築も激速化するのでPhase 4の前にやる価値あり
+     （[[project-perf-zoomout]]。実測は`etc/V2_PERF_72x144_REPORT.md`参照）。
+     数字セル開封演出（B+C+E、2026-07-11実装）はC案移行時に`registerOpenFx`/`updateOpenFx`
+     の中身を差し替えるだけで済む設計にしてある（`etc/V2_OPEN_FX_PLAN.md §5`）。
    - **Phase 4**（リプレイ/中断の再設計・REPLAY UI復活）：Factory盤面の startCell を
      record の start に載せる整合を含む（計画書 §5 Q3 の整合メモ参照）。
    - **盤面お絵描きツール**（`etc/V2_BOARD_COLOR_PLAN.md` §2.3の将来拡張。セルごとの
@@ -457,6 +543,9 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
    - **stageEX2のcharId/BGM/背景/専用stage画像の確定**（現状stageEX1からの暫定流用。
      `data/stage-params.json`のid:11ブロックと`data/stages.json`のid:11`image`を編集するだけ）。
    - LIMIT MODE（modes.json enabled:false のまま保留中）。
+   - **開封演出の微調整**（任意）：`OPEN_FX_MS`（演出時間220ms）・`OPEN_FX_WAVE_MS`
+     （波紋の段あたり遅延6ms）・フラッシュ強度係数1.8は実プレイの手触りで再調整可能
+     （`sphere-minesweeper.html`の該当定数のみ触ればよい）。
 
 2. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
    起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
@@ -465,5 +554,6 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
    `cache:'no-store'`でのfetchや、URLに`?cb=<timestamp>`を付けての再ナビゲーションで回避可能。
 
 **整理系（いつでも）:** `docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
-V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在）、
+V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在。
+2026-07-11時点でルート直下の`V2_HANDOFF.md`は存在せず`etc/`側のみ確認済み。次回念のため再確認）、
 spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）。
