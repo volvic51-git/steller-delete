@@ -3573,10 +3573,13 @@ async function resumeSuspend(rec){
   if(!isReplayCompatible(rec)){ console.warn('Suspend: バージョン非互換のため再開不可', rec.genVersion, rec.gameVersion); return false; }
   const _resumeT0 = performance.now();
   const _nextFrame = ()=> new Promise(res=>requestAnimationFrame(res));
+  console.info(`[resume] 開始 board=${rec.board.rows}x${rec.board.cols} mines=${rec.board.mineCount} actions=${(rec.actions||[]).length} savedAt=${rec.savedAt}`);
   showRemembering(0, (rec.actions||[]).length);
-  // restartGameが構築したデフォルト盤面・キャラ・檻（＝中断したステージとは別物）を見せないよう、
-  // 正しいステージの盤面が組み上がるまでキャンバスごと非表示にする（1フレームでも映ると別ステージに見える）
-  const _cv = document.getElementById('canvas-container');
+  // restartGameが構築したデフォルト盤面（青・12×24）を見せないよう、正しいステージの盤面が
+  // 組み上がるまで3D球体を非表示にする（1フレームでも映ると別ステージに見える）。
+  // ⚠️ 隠す対象はWebGLキャンバス本体（renderer.domElement）。#canvas-containerはCSS背景画像専用で
+  // 球体はbody直下に別挿入されているため、そちらを隠しても青い球体は消えない。
+  const _cv = renderer.domElement;
   if(_cv) _cv.style.visibility = 'hidden';
   await _nextFrame(); await _nextFrame(); // ラベルを一度描画させてから重い処理（initBoard）へ（rAF1回では描画前に続行してしまう）
   try{
@@ -3644,6 +3647,7 @@ async function resumeSuspend(rec){
 
   resumeTimer();
   gameState = 'playing';
+  autoEnableMisclickGuard(); // 再開時はGUARDをON（restartGameがOFFにリセットしているため。中断＝プレイ途中なので誤操作防止が必要）
   updateStats(); updateHintGauge();
   console.info(`[resume] 再構築完了 ${(performance.now()-_resumeT0).toFixed(0)}ms (actions=${(rec.actions||[]).length})`);
   return true;
@@ -4488,6 +4492,7 @@ function restartGame(){
   zoomDist=7.0;
   setMode('dig');
   initBoard(); updateStats();
+  console.info(`[restartGame] board=${ROWS}x${COLS} mines=${mineCount} char=${(currentCharacter&&currentCharacter.id)||'-'}`); // 診断ログ（resume後に意図しない盤面再構築が起きていないかの検出用）
 }
 
 // ===================== ANIMATION LOOP =====================
@@ -4904,13 +4909,36 @@ const _bootMode = _bootParams.get('boot');
 // キャラデータ(characters.json)の読み込み完了を待ってから起動する（旧名フォールバック回避）。
 _charDataReady.finally(()=>{
   if(_bootMode === 'resume'){
-    restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
     const _rec = loadSuspend();
-    if(!_rec){ console.warn('中断再開に失敗（データ無し/非互換）'); }
-    else resumeSuspend(_rec).then(ok=>{  // async化に伴い完了を待って消費（Promise自体は常にtruthyなので直接ifは不可）
-      if(ok) clearSuspend();             // 再開したら中断データは消費
-      else console.warn('中断再開に失敗（データ無し/非互換）');
-    });
+    if(!_rec){
+      // データ無し（再開済みデータをF5で再訪した場合など）。デフォルト盤面を出すと
+      // 「別ステージの盤面が表示される」ように見えて紛らわしいためタイトルへ戻す。
+      console.warn('[resume] 中断データ無し → タイトルへ戻る');
+      window.location.replace('index.html');
+    } else {
+      // 中断レコードの盤面パラメータを restartGame より先に反映する。
+      // これをしないと restartGame がデフォルト盤面（12×24・青・ランダムキャラ）を構築し、
+      // resumeSuspend が上書きするまでの間それが見えてしまう（＝別ステージの盤面に見えるバグ）。
+      // 先読みしておけば、起動時に作られる盤面自体が中断時と同じ寸法・色・キャラになる。
+      const _rb = _rec.board || {}, _rm = _rec.meta || {};
+      if(_rb.rows > 0 && _rb.cols > 0){ ROWS = _rb.rows; COLS = _rb.cols; }
+      window._stageMines = _rm.stageMines ?? _rb.mineCount ?? null;
+      window._boardPalette = normalizePalette(_rm.boardPalette ?? _rm.boardTheme);
+      if(_rm.charId) window._stageCharId = _rm.charId;
+      renderer.domElement.style.visibility = 'hidden'; // 再構築完了までは念のため球体を隠す（resumeSuspendが再表示）
+      restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
+      resumeSuspend(_rec).then(ok=>{  // async化に伴い完了を待って消費（Promise自体は常にtruthyなので直接ifは不可）
+        if(ok) clearSuspend();             // 再開したら中断データは消費
+        else {
+          console.warn('中断再開に失敗（バージョン非互換）');
+          renderer.domElement.style.visibility = ''; // 失敗時は隠したままにしない
+        }
+      }).catch(err=>{
+        // async化により例外がunhandled rejectionとして埋もれるのを防ぐ（中断データは消費せず残す）
+        console.error('[resume] 再構築中に例外', err);
+        renderer.domElement.style.visibility = '';
+      });
+    }
   } else if(_bootMode === 'replay'){
     restartGame();
     const _i = parseInt(_bootParams.get('i') || '0', 10);

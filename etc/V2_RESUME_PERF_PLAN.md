@@ -321,10 +321,26 @@ function refreshAllCellVisuals(){
     中断データを消してしまう → `.then(ok=>...)` で完了を待って消費に変更。
   - ラベルDOMは `_ensureGeneratingLabel()` としてGENERATINGと共用。例外時も
     `finally` でフラグ復帰＋ラベル非表示。
-  - **別ステージの球体が見えるバグ（修正済み）**: `?boot=resume` はステージ指定なしの
+  - **別ステージの球体が見えるバグ（修正済み・2回）**: `?boot=resume` はステージ指定なしの
     `restartGame()` が先に走るため、デフォルト盤面（12×24・青・ランダムキャラ）が
-    RE-MEMBERING中に見えていた。対策：①正しい盤面が組み上がるまで `#canvas-container` を
-    `visibility:hidden`（finallyで必ず復帰）、②キャラ・背景の復元を盤面再構築より**前**に移動
+    RE-MEMBERING中に見えていた。対策：①正しい盤面が組み上がるまで球体を非表示
+    （finallyで必ず復帰）、②キャラ・背景の復元を盤面再構築より**前**に移動
     （チャンク再構築の段階表示中も正しいステージの見た目になる）。
+    ⚠️ **1回目の修正では直らなかった罠**: 隠す対象を最初 `#canvas-container` にしたが、
+    これは **CSS背景画像専用**の要素で、3D球体（`renderer.domElement`）は body 直下に
+    別途 insertBefore されている（1183行付近）。→ 隠すのは `renderer.domElement` が正解。
+    ⚠️ **2回目の修正でも実機で再発報告 → 最終対策は「作らせない」方式（2026-07-10）**:
+    boot=resume 分岐で中断レコードを **restartGame より先に読み**、ROWS/COLS/_stageMines/
+    _boardPalette/_stageCharId を先に反映してから restartGame する。これで起動時に構築される
+    盤面自体が中断時と同じ寸法・色・キャラになり、どのタイミングで映っても別ステージには
+    見えない（隠すのは保険として継続）。あわせて：
+    - **データ無しで `?boot=resume` を開いた場合は index.html へ戻す**（resume成功で
+      中断データは消費されるため、F5で再訪するとデフォルト盤面が出て「別ステージの盤面」に
+      見えていた可能性が高い）。
+    - 診断ログ追加: `[resume] 開始 board=...`／`[restartGame] board=...`／
+      `[resume] 再構築中に例外`（unhandled rejection の可視化）。
+  - **再開時GUARDがOFFになるバグ（修正済み）**: `restartGame()` が `misclickGuard=false` に
+    リセットするため。中断＝プレイ途中なので、`resumeSuspend` 末尾で `autoEnableMisclickGuard()`
+    を呼んでON＋ラベル更新する。
 - `createNumberMesh` のキャッシュ（text+color 不変なら再生成しない）:
   B＋C後は呼び出し頻度が激減するため優先度低。
