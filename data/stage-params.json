@@ -218,7 +218,7 @@
     "charId": "010",
     "boardSource": "data/board/72x144_20.json",
     "logicGuarantee": false,
-    "boardPalette": ["#cccc00", "#440088"],
+    "boardPalette": ["#7FE7D8", "#FF67B3"],
     "maxHints": 3,
     "grid_col": 144,
     "grid_row": 72,

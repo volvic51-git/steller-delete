@@ -113,7 +113,7 @@
     "id": 11,
     "name": "EXTRA STAGE II",
     "description": "規格外の、さらに向こう側にある星。",
-    "image": "assets/images/stages/st10.png",
+    "image": "assets/images/stages/st11.png",
     "locked": false,
     "difficulty": "規格外+",
     "grid_col": 144,

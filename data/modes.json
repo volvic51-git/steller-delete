@@ -10,7 +10,7 @@
   {
     "id": "normal",
     "label": "SIMPLE MODE",
-    "desc": "StellarDelete版マインスイーパーを遊べる\nシンプルなモードです。",
+    "desc": "StellarDelete版マインスイーパーを\n楽しめるシンプルなモードです。",
     "image": "assets/images/etc/mod01.png",
     "color": "blue",
     "enabled": true
