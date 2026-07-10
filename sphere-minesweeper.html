@@ -1734,6 +1734,7 @@ function disposeObject3D(obj){
 }
 
 function initBoard() {
+  _boardEpoch++; // 盤面の世代を進める（地雷除去の遅延コールバックの世代ガードに使う）
   // 外す前に古いメッシュのGPUリソースを解放（remove単体ではリークする）
   while(boardGroup.children.length){
     const child = boardGroup.children[0];
@@ -2095,6 +2096,10 @@ let logicGuarantee = false;
 const GUARANTEE_SKIP_DENSITY = 0.22;
 let misclickGuard = false; // 誤操作防止モード（周囲が全て未開封/消滅のセルへの操作を無効化）
 let gamePaused = false; // 設定メニューによる一時停止（球体操作のみ無効化、タイマー/BGMは継続）
+// 盤面世代カウンタ。地雷除去の遅延コールバック（400ms後）が発行時の盤面に対して
+// 差分更新を行うため、initBoardで盤面が作り直された場合は世代不一致でno-opにする
+// （旧盤面の座標で新盤面のneighborMinesをデクリメントするとカウントが壊れるため）。
+let _boardEpoch = 0;
 
 // ===================== LOOP MODE (周回モード) =====================
 let loopMode    = false;   // 周回モードON/OFF
@@ -2264,14 +2269,15 @@ function digCell(row,col){
       cell.isMine=false; cell.isRemoved=true; removedMines++;
       playSE('flag');
       triggerRemovalAnimation(cell);
-      replayTimeout(()=>{
-        calcNeighbors();
-        for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
-        checkCascade();
-        vanishNewZeroCells();
-        updateStats(); checkWin();
-        if(debugMode) runSolverDebug();
-      },400);
+      {
+        const epoch = _boardEpoch;
+        replayTimeout(()=>{
+          if(epoch !== _boardEpoch) return; // 400ms窓内にRETRY等で盤面が作り直された場合は何もしない
+          applyMineRemovalEffects(row, col);
+          updateStats(); checkWin();
+          if(debugMode) runSolverDebug();
+        },400);
+      }
       return;
     }
     cell.isOpen=true; updateCellVisual(cell); triggerGameOverSequence(undefined, cell); return;
@@ -2345,22 +2351,43 @@ function flagCell(row,col){
   }
 }
 
+// 地雷1個の除去後の局所更新。旧実装の calcNeighbors()＋全開封セルupdateCellVisual＋
+// checkCascade()＋vanishNewZeroCells()（いずれも全盤面走査）と結果が等価（論証は
+// etc/V2_RESUME_PERF_PLAN.md §2.1）。neighborMinesが変わるのは除去セルの隣接8セルのみで、
+// 新たなカスケード/消滅の起点もその8セルに限られる（連鎖はopenCellの再帰が担う）。
+// 前提: 本ゲームの旗は立てた瞬間に必ず解決するため、未開封の通常セルに旗が残留せず、
+// 「開封済み0セルの隣が旗のせいで未開封のまま」というケースは存在しない。
+function applyMineRemovalEffects(row, col){
+  const affected = getNeighbors(row, col);
+  for(const n of affected) n.neighborMines--;
+  for(const n of affected){
+    if(n.isOpen && !n.isRemoved){
+      updateCellVisual(n);                             // 数字が変わったセルだけ再描画
+      if(n.neighborMines === 0){
+        getNeighbors(n.row, n.col).forEach(m => {      // 局所カスケード
+          if(!m.isOpen && !m.hasFlag && !m.isRemoved && !m.isMine) openCell(m.row, m.col);
+        });
+        if(!n.animating) scheduleVanish(n);            // 0になった開封済みセルは消滅
+      }
+    }
+  }
+}
+
 function removeMine(row,col){
   const cell=board[row][col];
   cell.isMine=false; cell.isRemoved=true; removedMines++;
   playSE('flag');
   triggerRemovalAnimation(cell);
+  const epoch = _boardEpoch;
   replayTimeout(()=>{
-    calcNeighbors();
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].isOpen) updateCellVisual(board[r][c]);
-    checkCascade();
-    // 数字が0になった開放済みセルを消滅させる
-    vanishNewZeroCells();
+    if(epoch !== _boardEpoch) return; // 400ms窓内にRETRY等で盤面が作り直された場合は何もしない
+    applyMineRemovalEffects(row, col);
     updateStats(); checkWin();
     if(debugMode) runSolverDebug();
   },400);
 }
 
+// B案で未使用化（applyMineRemovalEffectsに置換済み・等価性検証用に残置）
 // 地雷除去後に neighborMines が 0 になった開放済みセルを消滅
 function vanishNewZeroCells(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
@@ -2371,6 +2398,7 @@ function vanishNewZeroCells(){
   }
 }
 
+// B案で未使用化（applyMineRemovalEffectsに置換済み・等価性検証用に残置）
 function checkCascade(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const cell=board[r][c];
