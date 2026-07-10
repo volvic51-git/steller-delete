@@ -2119,8 +2119,8 @@ function setGuaranteeResult(success, attempts){
   }
 }
 
-// 生成中インジケーター
-function showGenerating(show, attempts, maxAttempts){
+// 生成中/再開中ラベルのDOM（GENERATINGとRE-MEMBERINGで共用）
+function _ensureGeneratingLabel(){
   let el = document.getElementById('generating-label');
   if(!el){
     el = document.createElement('div');
@@ -2131,6 +2131,38 @@ function showGenerating(show, attempts, maxAttempts){
       'text-align:center;line-height:1.8;';
     document.body.appendChild(el);
   }
+  return el;
+}
+
+// 中断再開の再構築中インジケーター：RE-MEMBERING＋進捗（％と手数）。
+// resumeSuspend のチャンクループが直接更新する（setInterval は使わない）。
+// 再構築中は透明オーバーレイで全UIへの入力をブロックする（非同期化により再構築の合間に
+// 入力が通るため。RETRY等で盤面を作り直されると復元中の盤面が壊れる）。
+function showRemembering(done, total){
+  let blocker = document.getElementById('resume-blocker');
+  if(!blocker){
+    blocker = document.createElement('div');
+    blocker.id = 'resume-blocker';
+    blocker.style.cssText='position:fixed;inset:0;z-index:299;background:rgba(0,0,10,0.25);';
+    document.body.appendChild(blocker);
+  }
+  blocker.style.display='block';
+  const el = _ensureGeneratingLabel();
+  el.style.display='block';
+  const pct = total>0 ? Math.floor(done/total*100) : 0;
+  el.innerHTML =
+    `RE-MEMBERING<br>`+
+    `<span style="font-size:11px;color:#88ffee;letter-spacing:1px;">${pct}% &nbsp;|&nbsp; ${done} / ${total}</span>`;
+}
+function hideRemembering(){
+  const blocker = document.getElementById('resume-blocker');
+  if(blocker) blocker.style.display='none';
+  showGenerating(false);
+}
+
+// 生成中インジケーター
+function showGenerating(show, attempts, maxAttempts){
+  const el = _ensureGeneratingLabel();
   if(show){
     el.style.display='block';
     el._startTime = Date.now();
@@ -3533,10 +3565,21 @@ function resumeTimer(){
 }
 
 // 中断データから再開する。
-function resumeSuspend(rec){
+// 操作ログの再適用は約80msごとに1フレーム譲るチャンク実行（async）。同期一括だと
+// RE-MEMBERING表示が一切描画されず、大盤面後半では数秒間ページが固まって見えるため。
+// チャンクの合間はshowRememberingの透明オーバーレイ＋handleCellActionの_replayInstantガードで入力を遮断する。
+async function resumeSuspend(rec){
   if(!rec || !rec.board) return false;
   if(!isReplayCompatible(rec)){ console.warn('Suspend: バージョン非互換のため再開不可', rec.genVersion, rec.gameVersion); return false; }
   const _resumeT0 = performance.now();
+  const _nextFrame = ()=> new Promise(res=>requestAnimationFrame(res));
+  showRemembering(0, (rec.actions||[]).length);
+  // restartGameが構築したデフォルト盤面・キャラ・檻（＝中断したステージとは別物）を見せないよう、
+  // 正しいステージの盤面が組み上がるまでキャンバスごと非表示にする（1フレームでも映ると別ステージに見える）
+  const _cv = document.getElementById('canvas-container');
+  if(_cv) _cv.style.visibility = 'hidden';
+  await _nextFrame(); await _nextFrame(); // ラベルを一度描画させてから重い処理（initBoard）へ（rAF1回では描画前に続行してしまう）
+  try{
   const b = rec.board, m = rec.meta || {};
 
   // モード・パラメータ復元（盤面/タイマーより先に）
@@ -3553,15 +3596,30 @@ function resumeSuspend(rec){
   if(m.currentDiff) currentDiff=m.currentDiff;
   maxHints = m.maxHints ?? maxHints;
 
+  // キャラ・背景を盤面より先に復元（restartGameのランダムキャラ/既定背景のままだと、
+  // チャンク再構築中の段階表示で別ステージの見た目になってしまう）
+  if(m.charId){ selectCharacter(m.charId); setupCharacterPlane(); buildCageWire(); }
+  applyCanvasBackground(m.bg); // 背景画像復元
+
   // 盤面を身元から再構築（全セル閉じた状態＋地雷を同一配置）
   initBoard();
   applyBoardFromSeed(b.seed, b.start.r, b.start.c);
   calcTotalNonMineCells(); // 総非地雷数を確定＋vanishedNonMine=0リセット（これが無いと中断前のtotalNonMineCellsが残り、
                            // 再適用でvanishedNonMineが分母を超えて露出率が即100%＝キャラの透過が無効化される）
+  if(_cv) _cv.style.visibility = ''; // 正しいステージの盤面・キャラが揃ったので表示再開（以降は段階表示を見せる）
 
   // 操作ログを"即時"再適用して途中盤面を復元（アニメ待ちなし・自動保存/入力ガード抑止）
   _replayMode = true; _replayInstant = true; gameState = 'playing'; removedMines = 0;
-  for(const a of rec.actions){ if(a.a==='dig') digCell(a.r,a.c); else if(a.a==='flag') flagCell(a.r,a.c); }
+  const _acts = rec.actions, _total = _acts.length;
+  let _ai = 0;
+  while(_ai < _total){
+    const _sliceEnd = performance.now() + 150; // 約150ms処理 → 1フレーム譲って進捗を描画（1フレームの3D描画が数十msかかるため、刻みすぎると総時間が延びる）
+    while(_ai < _total && performance.now() < _sliceEnd){
+      const a = _acts[_ai++];
+      if(a.a==='dig') digCell(a.r,a.c); else if(a.a==='flag') flagCell(a.r,a.c);
+    }
+    if(_ai < _total){ showRemembering(_ai, _total); await _nextFrame(); }
+  }
   _replayMode = false; _replayInstant = false;
   refreshAllCellVisuals(); // instant中は描画スキップのため、ここで最終状態を1パス描画
 
@@ -3578,11 +3636,8 @@ function resumeSuspend(rec){
     actions: rec.actions.slice()
   };
 
-  // キャラ復元（中断時と同じキャラにする。restartGameで選ばれたランダムキャラを上書き）
-  if(m.charId){ selectCharacter(m.charId); setupCharacterPlane(); buildCageWire(); }
-  applyCanvasBackground(m.bg); // 背景画像復元
-
   // BGM復元（?boot=resumeはapplyStageParamを通らないため、既定BGMのままになってしまう）
+  // ※キャラ・背景の復元は盤面再構築より前（上方）へ移動済み
   window._stageBgmFile = m.bgmFile ?? null;
   window._stageHasCustomBgm = !!m.bgmFile;
   if(m.bgmFile){ SND.bgm.src = 'assets/audio/' + m.bgmFile; }
@@ -3592,9 +3647,17 @@ function resumeSuspend(rec){
   updateStats(); updateHintGauge();
   console.info(`[resume] 再構築完了 ${(performance.now()-_resumeT0).toFixed(0)}ms (actions=${(rec.actions||[]).length})`);
   return true;
+  } finally {
+    // 例外時も必ず後始末（instantフラグが残ると以後の描画更新が全て無効化されてしまう）
+    _replayMode = false; _replayInstant = false;
+    if(_cv) _cv.style.visibility = ''; // 例外時もキャンバスを非表示のまま残さない
+    hideRemembering();
+  }
 }
 
 function handleCellAction(row,col,action){
+  // resume再構築（非同期チャンク）中のユーザー入力を無視。内部の再適用ループはdigCell/flagCellを直接呼ぶためここは通らない
+  if(_replayInstant) return;
   if(gameState==='playing' && misclickGuard){
     const cell = board[row][col];
     if(!cell.isOpen && !cell.hasFlag && !cell.isRemoved && isSafeguardedCell(row,col)){
@@ -4843,8 +4906,11 @@ _charDataReady.finally(()=>{
   if(_bootMode === 'resume'){
     restartGame();                       // シーン/キャラ/盤面の初期化（この後 resume で盤面と状態を上書き）
     const _rec = loadSuspend();
-    if(_rec && resumeSuspend(_rec)){ clearSuspend(); }  // 再開したら中断データは消費
-    else { console.warn('中断再開に失敗（データ無し/非互換）'); }
+    if(!_rec){ console.warn('中断再開に失敗（データ無し/非互換）'); }
+    else resumeSuspend(_rec).then(ok=>{  // async化に伴い完了を待って消費（Promise自体は常にtruthyなので直接ifは不可）
+      if(ok) clearSuspend();             // 再開したら中断データは消費
+      else console.warn('中断再開に失敗（データ無し/非互換）');
+    });
   } else if(_bootMode === 'replay'){
     restartGame();
     const _i = parseInt(_bootParams.get('i') || '0', 10);

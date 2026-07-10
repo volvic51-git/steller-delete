@@ -309,8 +309,22 @@ function refreshAllCellVisuals(){
   restartGame より先に読んで ROWS/COLS/mineCount を確定させ、resumeSuspend 側の
   initBoard をスキップ（「restartGame直後＝盤面クリーン」が前提条件になるため
   要注意コメント必須）。効果は数百ms。
-- **再開中のローディング表示**: 同期処理の前に1フレーム譲る必要がある
-  （`showGenerating(true)` → `requestAnimationFrame` で resumeSuspend 本体を実行）。
-  B＋C後は再構築自体が短くなるため必要性は下がる。
+- **再開中のローディング表示**: ✅ **実装済み（2026-07-10、C案と同じブランチ）**。
+  「RE-MEMBERING ＋ 進捗％・手数」を表示。実装の要点：
+  - `resumeSuspend` を **async のチャンク実行**に変更（約150msごとに1フレーム譲る。
+    同期一括だとラベルが一切描画されない）。表示コストとして実後半規模で 3.9s→約6.1s
+    （チャンク間の3D描画 約40ms/フレーム分）。盤面が徐々に復元される様子が見える。
+  - 非同期化の副作用対策2点：①チャンクの合間に入力が通るため、透明オーバーレイ
+    `#resume-blocker`＋`handleCellAction` 冒頭の `_replayInstant` ガードで入力遮断
+    （RETRY等で盤面を作り直されると復元が壊れる）。②`resumeSuspend` がPromiseを返すため、
+    boot経路の `if(_rec && resumeSuspend(_rec))` は**常にtruthy**になり失敗時も
+    中断データを消してしまう → `.then(ok=>...)` で完了を待って消費に変更。
+  - ラベルDOMは `_ensureGeneratingLabel()` としてGENERATINGと共用。例外時も
+    `finally` でフラグ復帰＋ラベル非表示。
+  - **別ステージの球体が見えるバグ（修正済み）**: `?boot=resume` はステージ指定なしの
+    `restartGame()` が先に走るため、デフォルト盤面（12×24・青・ランダムキャラ）が
+    RE-MEMBERING中に見えていた。対策：①正しい盤面が組み上がるまで `#canvas-container` を
+    `visibility:hidden`（finallyで必ず復帰）、②キャラ・背景の復元を盤面再構築より**前**に移動
+    （チャンク再構築の段階表示中も正しいステージの見た目になる）。
 - `createNumberMesh` のキャッシュ（text+color 不変なら再生成しない）:
   B＋C後は呼び出し頻度が激減するため優先度低。
