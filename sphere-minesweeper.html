@@ -1447,6 +1447,7 @@ const BOARD_THEME_DEFAULT = {
   openCell:   0x000d1a,
   openEmit:   0x000810,
   openBorder: 0x003355,
+  openFlash:  0x00255e, // 開封フラッシュ（cellの0.55倍。buildThemeColorsと同係数）
 };
 
 function hexStrToInt(hex){
@@ -1482,6 +1483,7 @@ function buildThemeColors(hex){
     openCell:   darkenHex(hex, 0.08),
     openEmit:   darkenHex(hex, 0.05),
     openBorder: darkenHex(hex, 0.3),
+    openFlash:  darkenHex(hex, 0.55), // 開封フラッシュ（emissiveIntensity増幅とセットで使う）
   };
 }
 
@@ -1735,6 +1737,7 @@ function disposeObject3D(obj){
 
 function initBoard() {
   _boardEpoch++; // 盤面の世代を進める（地雷除去の遅延コールバックの世代ガードに使う）
+  _openFx = [];  // 開封演出を全キャンセル（旧盤面のセル参照を持ち越さない）
   // 外す前に古いメッシュのGPUリソースを解放（remove単体ではリークする）
   while(boardGroup.children.length){
     const child = boardGroup.children[0];
@@ -2287,15 +2290,17 @@ function digCell(row,col){
   replayTimeout(()=>{ updateStats(); checkWin(); }, 300);
 }
 
-function openCell(row,col){
+// depth: フラッド開封の再帰深度（E案: 波紋演出の遅延に使う。呼び出し元は省略可＝0）
+function openCell(row,col,depth){
   const cell=board[row][col];
   if(cell.isOpen||cell.hasFlag||cell.isRemoved||cell.isMine) return;
   cell.isOpen=true;
   updateCellVisual(cell);
+  registerOpenFx(cell, (depth||0) * OPEN_FX_WAVE_MS); // 開封演出（フラッシュ＋数字ポップ＋波紋。instant中/0セルは内部でスキップ）
   if(cell.neighborMines===0){
     // 0セルは即消滅（遅延付きで演出）
     scheduleVanish(cell);
-    getNeighbors(row,col).forEach(n=>{ if(!n.isOpen&&!n.hasFlag&&!n.isRemoved) openCell(n.row,n.col); });
+    getNeighbors(row,col).forEach(n=>{ if(!n.isOpen&&!n.hasFlag&&!n.isRemoved) openCell(n.row,n.col,(depth||0)+1); });
   }
 }
 
@@ -2324,6 +2329,49 @@ function vanishZeroCell(cell){
   if(now-_lastDestroySE>80){ playSE('destroy'); _lastDestroySE=now; }
   onNonMineCellVanished(); // キャラ露出更新
   triggerVanishAnimation(cell);
+}
+
+// ===== 開封演出（B:発光フラッシュ + C:数字ポップ。設計は etc/V2_OPEN_FX_PLAN.md）=====
+// アクティブなセルだけを専用配列で回す（全盤面スキャンは追加しない）。
+// ⚠️ この演出から updateCellVisual を呼んではならない（内部の createNumberMesh が
+// canvas＋テクスチャを毎回再生成するため）。material/scale を直接書き、終了時も直接復元する。
+let _openFx = [];              // {cell, t0, delay, flashHex, restoreHex}
+const OPEN_FX_MS = 220;        // 演出時間
+const OPEN_FX_WAVE_MS = 6;     // E案: カスケード波紋（フラッド開封の再帰深度1段あたりの遅延）
+
+function registerOpenFx(cell, delayMs){
+  if(_replayInstant) return;               // resume/リプレイ再構築中は登録しない（数千個積まれる）
+  if(cell.neighborMines === 0) return;     // 0セルは直後のvanish演出に任せる（二重演出と競合を避ける）
+  const vc = buildThemeColors(paletteColor(getCellPaletteIndex(cell)));
+  // 波紋待ちの間、数字が一度フルサイズで見えてから縮む「再ポップ」に見えないよう、先に縮めておく
+  if(cell.numberMesh) cell.numberMesh.scale.setScalar(0.6);
+  _openFx.push({ cell, t0: performance.now(), delay: delayMs || 0, flashHex: vc.openFlash, restoreHex: vc.openEmit });
+}
+
+// animate() から毎フレーム呼ぶ
+function updateOpenFx(){
+  if(!_openFx.length) return;
+  const now = performance.now();
+  for(let i = _openFx.length - 1; i >= 0; i--){
+    const fx = _openFx[i], cell = fx.cell;
+    // 消滅演出が始まった/メッシュが無くなったセルは即打ち切り（vanish側の見た目を優先）
+    if(!cell.mesh || cell.isRemoved || cell.animating){ _openFx.splice(i,1); continue; }
+    const t = (now - fx.t0 - fx.delay) / OPEN_FX_MS;
+    if(t < 0) continue; // 波紋ディレイ待ち（数字は登録時に0.6へ縮小済み）
+    if(t >= 1){
+      // 終了：テーマ値へ直接復元
+      cell.mesh.material.emissive.setHex(fx.restoreHex);
+      cell.mesh.material.emissiveIntensity = 1;
+      if(cell.numberMesh) cell.numberMesh.scale.setScalar(1);
+      _openFx.splice(i,1); continue;
+    }
+    const ease = 1 - (1-t)*(1-t); // easeOut
+    // B: 開封フラッシュ（明るく点いて減衰）
+    cell.mesh.material.emissive.setHex(fx.flashHex);
+    cell.mesh.material.emissiveIntensity = 1 + (1 - ease) * 1.8;
+    // C: 数字ポップ（0.6 → 1.0）
+    if(cell.numberMesh) cell.numberMesh.scale.setScalar(0.6 + 0.4 * ease);
+  }
 }
 
 function flagCell(row,col){
@@ -4646,6 +4694,8 @@ function animate(){
       if(p>=1){ scene.remove(cell.mesh); cell.mesh=null; cell.animating=false; }
     }
   }
+
+  updateOpenFx(); // 開封演出（フラッシュ＋数字ポップ。アクティブなセルのみ）
 
   // Particles
   for(let i=particleGroup.children.length-1;i>=0;i--){
