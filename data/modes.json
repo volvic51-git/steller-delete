@@ -10,8 +10,16 @@
   {
     "id": "normal",
     "label": "SIMPLE MODE",
-    "desc": "StellarDelete版マインスイーパーを\n楽しめるシンプルなモードです。",
+    "desc": "消滅型球体マインスイーパーを楽しもう。 \nシンプルなモードです。",
     "image": "assets/images/etc/mod01.png",
+    "color": "blue",
+    "enabled": true
+  },
+  {
+    "id": "noflag",
+    "label": "NO FLAG MODE",
+    "desc": "完全マニア向け。旗は禁止された。 \nド級のマインスイーパーを楽しめ。",
+    "image": "assets/images/etc/mod04.png",
     "color": "blue",
     "enabled": true
   },

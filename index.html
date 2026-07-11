@@ -2174,6 +2174,7 @@ function renderModeSelect(modes){
       const id = card.dataset.mode;
       if(id === 'story'){ playSelect(); modeSelectModal.classList.remove('show'); openStoryList(); }
       else if(id === 'normal'){ playSelect(); modeSelectModal.classList.remove('show'); openNormalList(); }
+      else if(id === 'noflag'){ playSelect(); modeSelectModal.classList.remove('show'); openNoflagList(); }
       // 将来モードを追加する場合はここに分岐を足す
     });
   });
@@ -2187,13 +2188,17 @@ function openModeSelect(){
   }).catch(()=>{ modeSelectModal.classList.add('show'); });
 }
 
-function renderNormalList(stages){
+// SIMPLE MODE / NO FLAG MODE 共通のステージ一覧描画。idFilterで対象stageIdを絞り、
+// noStrFnで各行の表示番号（EX1/EX2等）を決める。#normal-list-modal を両モードで共用する。
+function renderStageList(stages, idFilter, noStrFn, titleText){
+  const titleEl = document.getElementById('normal-list-title');
+  if(titleEl) titleEl.textContent = titleText;
   const el = document.getElementById('normal-list');
-  const list = stages.filter(s => (s.id >= 1 && s.id <= 8) || s.id === 10 || s.id === 11); // NORMAL は stage01-08 + stageEX1(10) + stageEX2(11) を使用
+  const list = stages.filter(idFilter);
   el.innerHTML = list.map(s=>{
     const total = s.grid_col * s.grid_row;
     const best  = fmtBestTime(s.id);
-    const noStr = s.id === 10 ? 'EX1' : s.id === 11 ? 'EX2' : String(s.id).padStart(2,'0');
+    const noStr = noStrFn(s);
     return `<div class="stage-row" data-id="${s.id}">
       <div class="stage-row-no"><small>STAGE</small><b>${noStr}</b></div>
       <img class="stage-row-img" src="${s.image}" alt="">
@@ -2213,7 +2218,7 @@ function renderNormalList(stages){
   el.querySelectorAll('.stage-row-records').forEach(btn=>{
     btn.addEventListener('click', (e)=>{
       e.stopPropagation();
-      openRecordsModal(btn.dataset.id);
+      openRecordsModal(btn.dataset.id, noStrFn);
     });
   });
   el.querySelectorAll('.stage-row').forEach(row=>{
@@ -2229,6 +2234,26 @@ function renderNormalList(stages){
   });
 }
 
+// NORMAL は stage01-08 + stageEX1(10) + stageEX2(11) を使用
+function renderNormalList(stages){
+  renderStageList(
+    stages,
+    s => (s.id >= 1 && s.id <= 8) || s.id === 10 || s.id === 11,
+    s => s.id === 10 ? 'EX1' : s.id === 11 ? 'EX2' : String(s.id).padStart(2,'0'),
+    'SIMPLE MODE'
+  );
+}
+
+// NO FLAG は stage01-08 + stageEX1 + stageEX2 のミラー（新id 12-19, 20, 21）を使用
+function renderNoflagList(stages){
+  renderStageList(
+    stages,
+    s => (s.id >= 12 && s.id <= 19) || s.id === 20 || s.id === 21,
+    s => s.id === 20 ? 'EX1' : s.id === 21 ? 'EX2' : String(s.id - 11).padStart(2,'0'),
+    'NO FLAG MODE'
+  );
+}
+
 function openNormalList(){
   if(_normalStagesCache){ renderNormalList(_normalStagesCache); normalListModal.classList.add('show'); return; }
   fetch('data/stages.json').then(r=>r.json()).then(stages=>{
@@ -2236,13 +2261,21 @@ function openNormalList(){
   }).catch(()=>{ normalListModal.classList.add('show'); });
 }
 
+function openNoflagList(){
+  if(_normalStagesCache){ renderNoflagList(_normalStagesCache); normalListModal.classList.add('show'); return; }
+  fetch('data/stages.json').then(r=>r.json()).then(stages=>{
+    _normalStagesCache = stages; renderNoflagList(stages); normalListModal.classList.add('show');
+  }).catch(()=>{ normalListModal.classList.add('show'); });
+}
+
 // RECORDS：ステージ別の自己ベスト上位10件（stellarDeleteRanking_stage_N、STORY/TOURと共有）。
 // 日時は ts(ISO UTC)をローカル整形、旧レコード（ts無し）は date にフォールバック。
-function openRecordsModal(stageId){
+function openRecordsModal(stageId, noStrFn){
   playSelect();
   const stage = (_normalStagesCache || []).find(s => String(s.id) === String(stageId));
+  const noStr = (noStrFn && stage) ? noStrFn(stage) : String(stageId).padStart(2,'0');
   document.getElementById('records-stage-name').textContent =
-    'STAGE ' + String(stageId).padStart(2,'0') + (stage ? '　' + stage.name : '');
+    'STAGE ' + noStr + (stage ? '　' + stage.name : '');
   let records = [];
   try{ records = JSON.parse(localStorage.getItem('stellarDeleteRanking_stage_' + stageId) || '[]'); }catch(e){}
   records = records.slice().sort((a,b)=> a.time - b.time); // 保存側も昇順だが表示側でも念のためソート
@@ -2302,10 +2335,11 @@ document.getElementById('normal-list-title-btn').addEventListener('click', ()=>{
 document.getElementById('story-list-mode-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); openModeSelect(); });
 document.getElementById('story-list-title-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); });
 
-// ?normal=1 / ?story=1 で各リストを直接開く（クリア後・ノベル戻り等の戻り先）。タイトル階層なので title BGM のままでよい。
+// ?normal=1 / ?noflag=1 / ?story=1 で各リストを直接開く（クリア後・ノベル戻り等の戻り先）。タイトル階層なので title BGM のままでよい。
 (function(){
   const p = new URLSearchParams(window.location.search);
   if(p.get('normal') === '1') openNormalList();
+  if(p.get('noflag') === '1') openNoflagList();
   if(p.get('story')  === '1') openStoryList();
 })();
 
