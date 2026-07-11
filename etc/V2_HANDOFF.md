@@ -7,7 +7,12 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ## ⚠️ 最初に読む：現在のブランチ状態（2026-07-11）
 
-- **`master`が最新**。直近4件はすべて`master`にマージ・push済み：
+- **`feature/noflag-mode`ブランチで作業中（未マージ・未push）**：ノーフラッグモード
+  （旗禁止・非地雷全開封でクリア）を実装済み・dev serverで検証完了。
+  詳細は `etc/V2_NOFLAG_WORKORDER.md`（実装手順書兼実測結果）と
+  `etc/V2_NOFLAG_CLASSIC_PLAN.md`（検討書）参照。次セッションでの入口は
+  「commit（ユーザー実施）→ 動作確認 → master へマージ」。
+- **`master`はここまで最新**。直近4件はすべて`master`にマージ・push済み：
   1. `音量調整`（SOUND設定機能。ブランチ切らず直接master）
   2. `EX2追加`（stageEX2実装。ブランチ切らず直接master）
   3. `feature/zoom-rotation-scale`（ズーム連動の回転速度自動スケール。no-ff、コンフリクトなし、
