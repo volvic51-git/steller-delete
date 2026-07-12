@@ -94,7 +94,11 @@ textarea{resize:vertical;min-height:56px}
     このエディタは同フォルダへの相対パスで画像を読み込むため、未配置のうちはサムネイルが「?」表示のままで構いません。
   </div>
   <div id="char-list"></div>
-  <button class="add-btn" id="btn-add-char">+ キャラクター追加</button>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+    <button class="add-btn" id="btn-add-char" style="flex:1;margin-top:0">+ キャラクター追加</button>
+    <button class="btn-dark" id="btn-apply-chars" style="white-space:nowrap">イベントに反映</button>
+  </div>
+  <div class="hint" id="apply-status" style="margin-top:6px"></div>
 </div>
 
 <div id="panel-events" class="panel">
@@ -139,9 +143,19 @@ textarea{resize:vertical;min-height:56px}
 
 <button id="preview-exit" type="button">✕ プレビュー終了</button>
 
+<div id="cutin-load-warning" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:300;background:#fff0e0;border-top:3px solid #cc6600;color:#7a3d00;padding:12px 20px;font-size:13px;line-height:1.7">
+  ⚠️ <strong>js/cutin.js の読み込みに失敗しました。</strong>
+  そのため「▶ 再生して確認」プレビューは使えません（書き出しは影響なし）。<br>
+  file:// で直接開くと、ブラウザのセキュリティ制限で親ディレクトリ（<code>../js/</code>）への
+  参照がブロックされることがあります。プロジェクトルートでローカルサーバーを起動し
+  （例: <code>python -m http.server 8123</code>）、
+  <code>http://localhost:8123/etc/cutin-editor.html</code> として開き直してください。
+</div>
+
 <!-- 実物の演出モジュール（プロジェクトルートの js/cutin.js をそのまま利用。
-     このエディタのプレビューは「本番と全く同じ見た目・タイミング」で確認できる。 -->
-<script src="../js/cutin.js"></script>
+     このエディタのプレビューは「本番と全く同じ見た目・タイミング」で確認できる。
+     file://直接オープン時はブラウザの制限で読み込めないことがあるためonerrorを監視する。 -->
+<script src="../js/cutin.js" onerror="window._cutinLoadFailed=true;"></script>
 
 <script>
 var IMAGE_PATH = '../assets/images/cutin/';
@@ -179,6 +193,10 @@ function switchTab(name){
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab===name); });
   document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
   document.getElementById('panel-'+name).classList.add('active');
+  // イベントタブを開くたびに最新のキャラクター情報（表情差分の追加/変更含む）で再描画する。
+  // キャラクタータブ側の入力ハンドラは全再描画のたびにフォーカスが飛ぶのを避けるため
+  // renderEvents()を都度呼ばない設計なので、タブ切替時にここでまとめて同期する。
+  if(name === 'events') renderEvents();
 }
 function dlFile(content, name, mime){
   var blob = new Blob([content], {type:mime});
@@ -266,9 +284,11 @@ document.getElementById('char-list').addEventListener('click', function(e){
   } else if(action==='add-portrait'){
     characters[ci].portraits.push({key:'', file:''});
     renderChars();
+    renderEvents(); // 表情選択肢の増減をイベントタブへ即反映
   } else if(action==='del-portrait'){
     characters[ci].portraits.splice(parseInt(t.dataset.pi),1);
     renderChars();
+    renderEvents();
   }
 });
 
@@ -301,8 +321,37 @@ document.getElementById('char-list').addEventListener('change', function(e){
   if(!field || isNaN(ci) || t.dataset.pi!==undefined && t.dataset.pi!=='') return;
   if(field==='id' || field==='name' || field==='side'){
     characters[ci][field] = t.value;
-    if(field==='id' || field==='name') { renderChars(); renderEvents(); }
+    if(field==='id' || field==='name') renderChars();
+    renderEvents(); // side変更もプレビューの初期表示側に影響するため反映
   }
+});
+
+// 表情キー/ファイル名はキー入力ごとにrenderEvents()すると入力中のフォーカスが飛ぶため
+// あえて呼ばない設計（renderChars側のinputハンドラ参照）。そのためタブ切替時の自動再描画
+// （switchTab）に加えて、ここでいつでも明示的に同期できるボタンを用意する。
+// キャラクターの削除・ID変更で参照が壊れた行（存在しない話者/表情）は先頭候補へ自動補正する。
+document.getElementById('btn-apply-chars').addEventListener('click', function(){
+  var ids = characters.map(function(c){ return c.id; });
+  var fixed = 0;
+  events.forEach(function(ev){
+    ev.lines.forEach(function(line){
+      if(ids.indexOf(line.speaker) === -1){
+        line.speaker = ids.length ? ids[0] : '';
+        fixed++;
+      }
+      var keys = portraitKeysOf(line.speaker);
+      if(keys.length && keys.indexOf(line.portrait) === -1){
+        line.portrait = keys[0];
+        fixed++;
+      }
+    });
+  });
+  renderEvents();
+  var el = document.getElementById('apply-status');
+  el.textContent = fixed > 0
+    ? '✓ イベントタブに反映しました（' + fixed + '箇所を自動補正）'
+    : '✓ イベントタブに反映しました（補正の必要な箇所はありませんでした）';
+  setTimeout(function(){ if(el.textContent) el.textContent=''; }, 3200);
 });
 
 /* ==================================================
@@ -525,6 +574,10 @@ function ensurePreviewInit(){
 }
 
 function playPreview(lines){
+  if(typeof CutIn === 'undefined'){
+    document.getElementById('cutin-load-warning').style.display = 'block';
+    return;
+  }
   ensurePreviewInit();
   // 「無音固定」チェックは実データではse:nullになるが、プレビューではそのままCutIn.playに渡してよい
   var playLines = lines.map(function(l){
@@ -538,8 +591,13 @@ function playPreview(lines){
 }
 
 document.getElementById('preview-exit').addEventListener('click', function(){
-  CutIn.cancel();
+  if(typeof CutIn !== 'undefined') CutIn.cancel();
 });
+
+// file://直接オープン等でjs/cutin.jsが読み込めなかった場合は起動時にも警告を出す
+if(typeof CutIn === 'undefined'){
+  document.getElementById('cutin-load-warning').style.display = 'block';
+}
 
 /* ==================================================
    書き出し
