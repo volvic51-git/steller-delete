@@ -1,13 +1,24 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-11
+作成日: 2026-06-30 / 最終更新: 2026-07-12
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-11）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-12）
 
-- **`master`が最新**。直近5件はすべて`master`にマージ・push済み：
+- **`master`はノーフラッグモードまで反映済み**。加えて**`feature/cutin-story2`ブランチで
+  カットイン会話システム＋STORY MODE 2（id:22〜29）を実装済み・未マージ**。
+  実装手順書は`etc/V2_CUTIN_WORKORDER.md`（実装済みステータス、rAF制約下での検証結果込み）、
+  検討書は`etc/V2_CUTIN_PLAN.md`。実装中に`window.Dialogue`が常にundefinedになる
+  重大バグ（トップレベルconstはwindowプロパティにならない）を発見・修正済み
+  （詳細はWORKORDER参照）。dev server検証はJS直接実行で実施（プレビューのタブが
+  `document.hidden=true`扱いのため`requestAnimationFrame`が発火せず、three.jsの
+  描画ループ・resume処理のチャンク進行・スクリーンショットが動かない環境制約あり。
+  ロジック/タイマー/DOM/localStorageは動的確認済み、実際のドラッグ操作とresumeの
+  完全なE2Eはコードレビューのみ→**次回実ブラウザでの最終確認を推奨**）。
+  マージ判断・実機（GitHub Pages）確認はユーザー待ち。
+- **`master`が最新（cutin-story2マージ前時点）**。直近5件はすべて`master`にマージ・push済み：
   1. `音量調整`（SOUND設定機能。ブランチ切らず直接master）
   2. `EX2追加`（stageEX2実装。ブランチ切らず直接master）
   3. `feature/zoom-rotation-scale`（ズーム連動の回転速度自動スケール。no-ff、コンフリクトなし、

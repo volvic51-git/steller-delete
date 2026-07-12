@@ -8,6 +8,14 @@
     "enabled": true
   },
   {
+    "id": "story2",
+    "label": "STORY MODE 2",
+    "desc": "戦場に声が届く。\n仲間と共に星の傷を暴け。",
+    "image": "assets/images/etc/mod003.png",
+    "color": "blue",
+    "enabled": true
+  },
+  {
     "id": "normal",
     "label": "SIMPLE MODE",
     "desc": "消滅型球体マインスイーパーを楽しもう。 \nシンプルなモードです。",

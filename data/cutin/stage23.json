@@ -1,0 +1,18 @@
+{
+  "se": {},
+  "characters": {
+    "002": { "name": "キャラ002", "side": "left",
+             "portraits": { "normal": "cutin_002_normal.png" } },
+    "oracle": { "name": "ORACLE", "side": "right",
+                "portraits": { "normal": "cutin_oracle_normal.png" } }
+  },
+  "events": [
+    { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
+      "lines": [
+        { "speaker": "oracle", "text": "この星にも、まだ見ぬ傷が眠っています。\n暴いてあげてください。" } ] },
+    { "id": "stage_clear", "trigger": { "type": "stage_clear" }, "once": true,
+      "lines": [
+        { "speaker": "002", "text": "ありがとう……もう大丈夫。" },
+        { "speaker": "oracle", "text": "お見事です。" } ] }
+  ]
+}

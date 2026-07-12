@@ -2173,6 +2173,7 @@ function renderModeSelect(modes){
       if(card.dataset.enabled !== 'true') return; // グレーアウト（LIMIT等）は無反応
       const id = card.dataset.mode;
       if(id === 'story'){ playSelect(); modeSelectModal.classList.remove('show'); openStoryList(); }
+      else if(id === 'story2'){ playSelect(); modeSelectModal.classList.remove('show'); openStory2List(); }
       else if(id === 'normal'){ playSelect(); modeSelectModal.classList.remove('show'); openNormalList(); }
       else if(id === 'noflag'){ playSelect(); modeSelectModal.classList.remove('show'); openNoflagList(); }
       // 将来モードを追加する場合はここに分岐を足す
@@ -2268,6 +2269,22 @@ function openNoflagList(){
   }).catch(()=>{ normalListModal.classList.add('show'); });
 }
 
+// STORY MODE 2 は stage01-08 のミラー（新id 22-29）を使用
+function renderStory2List(stages){
+  renderStageList(
+    stages,
+    s => s.id >= 22 && s.id <= 29,
+    s => String(s.id - 21).padStart(2,'0'),
+    'STORY MODE 2'
+  );
+}
+function openStory2List(){
+  if(_normalStagesCache){ renderStory2List(_normalStagesCache); normalListModal.classList.add('show'); return; }
+  fetch('data/stages.json').then(r=>r.json()).then(stages=>{
+    _normalStagesCache = stages; renderStory2List(stages); normalListModal.classList.add('show');
+  }).catch(()=>{ normalListModal.classList.add('show'); });
+}
+
 // RECORDS：ステージ別の自己ベスト上位10件（stellarDeleteRanking_stage_N、STORY/TOURと共有）。
 // 日時は ts(ISO UTC)をローカル整形、旧レコード（ts無し）は date にフォールバック。
 function openRecordsModal(stageId, noStrFn){
@@ -2335,12 +2352,13 @@ document.getElementById('normal-list-title-btn').addEventListener('click', ()=>{
 document.getElementById('story-list-mode-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); openModeSelect(); });
 document.getElementById('story-list-title-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); });
 
-// ?normal=1 / ?noflag=1 / ?story=1 で各リストを直接開く（クリア後・ノベル戻り等の戻り先）。タイトル階層なので title BGM のままでよい。
+// ?normal=1 / ?noflag=1 / ?story=1 / ?story2=1 で各リストを直接開く（クリア後・ノベル戻り等の戻り先）。タイトル階層なので title BGM のままでよい。
 (function(){
   const p = new URLSearchParams(window.location.search);
   if(p.get('normal') === '1') openNormalList();
   if(p.get('noflag') === '1') openNoflagList();
   if(p.get('story')  === '1') openStoryList();
+  if(p.get('story2') === '1') openStory2List();
 })();
 
 // RANKING RESET（隠しコマンド：長押し）
