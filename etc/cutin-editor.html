@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カットイン台本エディター</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;font-size:14px;background:#f0f0f0;color:#111;padding:20px}
+h1{font-size:18px;font-weight:bold;margin-bottom:16px}
+.save-bar{display:flex;gap:10px;align-items:center;background:#fff;border:2px solid #555;border-radius:8px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap}
+.save-label{font-weight:bold;font-size:13px;color:#333;margin-right:4px}
+.tabs{display:flex;border:2px solid #555;border-radius:6px;overflow:hidden;width:fit-content;margin-bottom:20px}
+.tab{padding:8px 24px;font-size:14px;background:#fff;border:none;border-right:2px solid #555;cursor:pointer;color:#333}
+.tab:last-child{border-right:none}
+.tab.active{background:#333;color:#fff;font-weight:bold}
+.panel{display:none}.panel.active{display:block}
+.card{background:#fff;border:2px solid #555;border-radius:8px;padding:16px;margin-bottom:16px}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #ccc;gap:10px}
+.card-title{font-weight:bold;font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-acts{display:flex;gap:6px;flex-shrink:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+label{font-size:12px;color:#444;display:block;margin-bottom:4px;font-weight:bold}
+input[type=text],input[type=number],select,textarea{width:100%;font-size:13px;padding:7px 8px;border:2px solid #888;border-radius:4px;background:#fff;color:#111;font-family:inherit}
+textarea{resize:vertical;min-height:56px}
+.check-row{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:bold;color:#444;cursor:pointer}
+.check-row input{width:auto}
+.sec-label{font-size:12px;font-weight:bold;color:#444;margin:12px 0 6px;border-bottom:2px solid #ddd;padding-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.btn{padding:6px 14px;border:2px solid #888;border-radius:4px;background:#fff;cursor:pointer;font-size:13px;color:#111}
+.btn:hover{background:#eee}
+.btn-dark{padding:7px 18px;border:2px solid #333;border-radius:4px;background:#333;color:#fff;cursor:pointer;font-size:13px;font-weight:bold}
+.btn-dark:hover{background:#555}
+.btn-danger{border-color:#b00;color:#b00}
+.btn-danger:hover{background:#fee}
+.btn-sm{padding:4px 8px;font-size:12px;border:2px solid #888;border-radius:4px;background:#fff;cursor:pointer;color:#111}
+.btn-sm:hover{background:#eee}
+.btn-sm-del{padding:4px 8px;font-size:12px;border:2px solid #b00;border-radius:4px;background:#fff;cursor:pointer;color:#b00}
+.btn-sm-del:hover{background:#fee}
+.btn-preview{padding:5px 12px;font-size:12px;border:2px solid #0077cc;border-radius:4px;background:#eaf5ff;cursor:pointer;color:#0055aa;font-weight:bold}
+.btn-preview:hover{background:#d5ecff}
+.add-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border:2px dashed #888;border-radius:6px;background:#fff;cursor:pointer;font-size:13px;color:#555;width:100%;justify-content:center;margin-top:10px}
+.add-btn:hover{background:#eee;color:#111}
+.portrait-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.portrait-row{display:grid;grid-template-columns:44px 1fr 1fr 34px;gap:6px;align-items:center}
+.thumb{width:44px;height:44px;border:1px solid #ccc;border-radius:4px;background:#e8e8e8 center/contain no-repeat;background-image:none;position:relative;flex-shrink:0}
+.thumb img{width:100%;height:100%;object-fit:contain;border-radius:4px}
+.thumb.empty::after{content:'?';display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#999;font-size:16px}
+.line-row{background:#f7f9fb;border:2px solid #ccd6e0;border-radius:6px;padding:10px;margin-bottom:8px;display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:start}
+.line-fields{display:flex;flex-direction:column;gap:6px}
+.line-acts{display:flex;flex-direction:column;gap:4px}
+.trig-note{font-size:11px;color:#888;margin-top:4px}
+.export-box{background:#fff;border:2px solid #888;border-radius:8px;padding:20px;margin-bottom:16px}
+.export-title{font-weight:bold;font-size:15px;margin-bottom:8px}
+.export-desc{font-size:13px;color:#555;margin-bottom:14px;line-height:1.8}
+.status{font-size:12px;color:#080;margin-top:8px;min-height:18px;font-weight:bold}
+.status.err{color:#b00}
+.save-status{font-size:12px;color:#080;font-weight:bold;margin-left:4px}
+.warn-badge{display:inline-block;font-size:11px;font-weight:bold;padding:2px 8px;border-radius:20px;background:#fff0e0;color:#a05000;border:1px solid #e0a060;margin-left:6px}
+.hint{font-size:11px;color:#888;margin-top:2px}
+.empty-msg{color:#888;font-size:13px;padding:20px;text-align:center}
+
+/* ===== ライブプレビュー（実際の js/cutin.js を読み込んで再生） ===== */
+#preview-exit{
+  display:none;position:fixed;top:14px;right:14px;z-index:200;
+  padding:8px 16px;border-radius:6px;background:rgba(0,10,25,.9);border:1px solid rgba(0,200,255,.6);
+  color:#9fd8f5;cursor:pointer;font-size:13px;font-family:inherit;
+}
+#preview-exit.show{display:block}
+</style>
+</head>
+<body>
+<h1>カットイン台本エディター（data/cutin/*.json）</h1>
+
+<div class="save-bar">
+  <span class="save-label">プロジェクト:</span>
+  <button class="btn-dark" id="btn-save">保存（JSONダウンロード）</button>
+  <button class="btn" id="btn-load">読み込み（JSON選択）</button>
+  <input type="file" id="load-input" accept=".json" style="display:none">
+  <span id="save-status" class="save-status"></span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="chars">キャラクター</button>
+  <button class="tab" data-tab="events">イベント</button>
+  <button class="tab" data-tab="export">書き出し</button>
+</div>
+
+<div id="panel-chars" class="panel active">
+  <div class="hint" style="margin-bottom:10px">
+    立ち絵ファイルは <code>assets/images/cutin/</code> に置く想定です（幅600px前後・バストアップ）。
+    命名規則の目安: <code>cutin_&lt;charId&gt;_&lt;expression&gt;.png</code>。
+    このエディタは同フォルダへの相対パスで画像を読み込むため、未配置のうちはサムネイルが「?」表示のままで構いません。
+  </div>
+  <div id="char-list"></div>
+  <button class="add-btn" id="btn-add-char">+ キャラクター追加</button>
+</div>
+
+<div id="panel-events" class="panel">
+  <div class="hint" style="margin-bottom:10px">
+    トリガー種別のうち <code>time / open_rate / mines_removed / manual</code>
+    はプレイ中に発火し得るため、そのステージはランキング対象外になります
+    （<code>stage_start</code> / <code>stage_clear</code> のみなら対象のまま）。
+  </div>
+  <div id="event-list"></div>
+  <button class="add-btn" id="btn-add-event">+ イベント追加</button>
+</div>
+
+<div id="panel-export" class="panel">
+  <div class="export-box">
+    <div class="export-title">書き出し設定</div>
+    <div class="row2">
+      <div>
+        <label>セット名（ファイル名になります）</label>
+        <input type="text" id="f-setname" placeholder="例: stage22">
+        <div class="hint">data/cutin/<span id="setname-preview">&lt;セット名&gt;</span>.json としてダウンロードされます</div>
+      </div>
+      <div>
+        <label>既定SE（ウィンドウ表示時・省略可）</label>
+        <input type="text" id="f-rootse" placeholder="例: cutin_open.mp3（空欄なら無音）">
+        <div class="hint">assets/audio/ から読み込みます。行ごとに個別指定・無音固定で上書き可能</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn-dark" id="btn-export">JSONをDL</button>
+      <button class="btn" id="btn-preview-json">内容を確認</button>
+    </div>
+    <div id="status-export" class="status"></div>
+  </div>
+  <div class="export-box" id="preview-box" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="export-title">JSON プレビュー</div>
+      <button class="btn" id="btn-copy-json">コピー</button>
+    </div>
+    <textarea id="preview-area" style="width:100%;height:400px;font-family:monospace;font-size:12px;border:2px solid #888;border-radius:4px;padding:8px;background:#fafafa;color:#111;resize:vertical" readonly></textarea>
+  </div>
+</div>
+
+<button id="preview-exit" type="button">✕ プレビュー終了</button>
+
+<!-- 実物の演出モジュール（プロジェクトルートの js/cutin.js をそのまま利用。
+     このエディタのプレビューは「本番と全く同じ見た目・タイミング」で確認できる。 -->
+<script src="../js/cutin.js"></script>
+
+<script>
+var IMAGE_PATH = '../assets/images/cutin/';
+var AUDIO_PATH = '../assets/audio/';
+
+var characters = [
+  {id:'oracle', name:'ORACLE', side:'right', portraits:[{key:'normal', file:'cutin_oracle_normal.png'}]}
+];
+
+var events = [
+  {
+    id:'stage_open', once:true,
+    trigger:{type:'stage_start', sec:null, gte:null},
+    lines:[ {speaker:'oracle', side:'', portrait:'normal', text:'観測を開始します。', duration:null, se:'', seNull:false} ]
+  }
+];
+
+var setName = '';
+var rootSe = '';
+
+/* ==================================================
+   ユーティリティ
+================================================== */
+function escH(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function showStatus(id, msg, isErr){
+  var el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status' + (isErr ? ' err' : '');
+  setTimeout(function(){ if(el.textContent===msg) el.textContent=''; }, 3200);
+}
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab===name); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('panel-'+name).classList.add('active');
+}
+function dlFile(content, name, mime){
+  var blob = new Blob([content], {type:mime});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+function charById(id){
+  for (var i=0;i<characters.length;i++) if (characters[i].id===id) return characters[i];
+  return null;
+}
+function portraitKeysOf(charId){
+  var ch = charById(charId);
+  if(!ch) return [];
+  return ch.portraits.map(function(p){ return p.key; }).filter(function(k){ return k; });
+}
+function portraitFile(charId, key){
+  var ch = charById(charId);
+  if(!ch) return null;
+  for (var i=0;i<ch.portraits.length;i++) if (ch.portraits[i].key===key) return ch.portraits[i].file;
+  return null;
+}
+
+/* ==================================================
+   キャラクタータブ
+================================================== */
+function renderChars(){
+  var el = document.getElementById('char-list');
+  if(!characters.length){ el.innerHTML = '<div class="empty-msg">キャラクターがありません。「+ キャラクター追加」から作成してください。</div>'; return; }
+  el.innerHTML = '';
+  characters.forEach(function(ch, ci){
+    var d = document.createElement('div');
+    d.className = 'card';
+    var pRows = '';
+    ch.portraits.forEach(function(p, pi){
+      var src = p.file ? IMAGE_PATH + p.file : '';
+      pRows +=
+        '<div class="portrait-row">' +
+          '<div class="thumb'+(src?'':' empty')+'" data-thumb-src="'+escH(src)+'">' +
+            (src ? '<img src="'+escH(src)+'" onerror="this.parentNode.classList.add(\'empty\');this.remove();">' : '') +
+          '</div>' +
+          '<input type="text" data-ci="'+ci+'" data-pi="'+pi+'" data-field="key" value="'+escH(p.key)+'" placeholder="表情キー（例: normal）">' +
+          '<input type="text" data-ci="'+ci+'" data-pi="'+pi+'" data-field="file" value="'+escH(p.file)+'" placeholder="ファイル名（例: cutin_oracle_normal.png）">' +
+          '<button class="btn-sm-del" data-ci="'+ci+'" data-pi="'+pi+'" data-action="del-portrait">×</button>' +
+        '</div>';
+    });
+    d.innerHTML =
+      '<div class="card-hdr">' +
+        '<span class="card-title">' + escH(ch.name || ch.id || '(無題)') + '</span>' +
+        '<div class="card-acts"><button class="btn btn-danger" data-ci="'+ci+'" data-action="del-char">削除</button></div>' +
+      '</div>' +
+      '<div class="row3">' +
+        '<div><label>ID（会話データ内で参照するキー）</label><input type="text" data-ci="'+ci+'" data-field="id" value="'+escH(ch.id)+'"></div>' +
+        '<div><label>表示名（ウィンドウの名前欄）</label><input type="text" data-ci="'+ci+'" data-field="name" value="'+escH(ch.name)+'"></div>' +
+        '<div><label>既定の登場側</label><select data-ci="'+ci+'" data-field="side">' +
+          '<option value="left"'+(ch.side==='left'?' selected':'')+'>left（左からスライドイン）</option>' +
+          '<option value="right"'+(ch.side==='right'?' selected':'')+'>right（右からスライドイン）</option>' +
+        '</select></div>' +
+      '</div>' +
+      '<div class="sec-label">立ち絵（表情差分）</div>' +
+      '<div class="portrait-list">' + pRows + '</div>' +
+      '<button class="add-btn" data-ci="'+ci+'" data-action="add-portrait">+ 表情追加</button>';
+    el.appendChild(d);
+  });
+}
+
+document.getElementById('btn-add-char').addEventListener('click', function(){
+  characters.push({id:'char'+(characters.length+1), name:'新キャラ', side:'left', portraits:[{key:'normal', file:''}]});
+  renderChars();
+});
+
+document.getElementById('char-list').addEventListener('click', function(e){
+  var t = e.target;
+  var action = t.dataset.action;
+  if(!action) return;
+  var ci = parseInt(t.dataset.ci);
+  if(action==='del-char'){
+    if(confirm('このキャラクターを削除しますか？（参照しているイベントの話者選択が崩れる可能性があります）')){
+      characters.splice(ci,1); renderChars(); renderEvents();
+    }
+  } else if(action==='add-portrait'){
+    characters[ci].portraits.push({key:'', file:''});
+    renderChars();
+  } else if(action==='del-portrait'){
+    characters[ci].portraits.splice(parseInt(t.dataset.pi),1);
+    renderChars();
+  }
+});
+
+document.getElementById('char-list').addEventListener('input', function(e){
+  var t = e.target;
+  var ci = parseInt(t.dataset.ci);
+  var field = t.dataset.field;
+  if(!field || isNaN(ci)) return;
+  var pi = t.dataset.pi;
+  if(pi !== undefined && pi !== ''){
+    characters[ci].portraits[parseInt(pi)][field] = t.value;
+    if(field==='file'){
+      // サムネイルだけ即時更新（全体再描画すると入力中のフォーカスが飛ぶため）
+      var row = t.closest('.portrait-row');
+      var thumb = row.querySelector('.thumb');
+      var src = t.value ? IMAGE_PATH + t.value : '';
+      thumb.dataset.thumbSrc = src;
+      thumb.classList.toggle('empty', !src);
+      thumb.innerHTML = src ? '<img src="'+escH(src)+'" onerror="this.parentNode.classList.add(\'empty\');this.remove();">' : '';
+    }
+  } else {
+    characters[ci][field] = t.value;
+  }
+});
+
+document.getElementById('char-list').addEventListener('change', function(e){
+  var t = e.target;
+  var ci = parseInt(t.dataset.ci);
+  var field = t.dataset.field;
+  if(!field || isNaN(ci) || t.dataset.pi!==undefined && t.dataset.pi!=='') return;
+  if(field==='id' || field==='name' || field==='side'){
+    characters[ci][field] = t.value;
+    if(field==='id' || field==='name') { renderChars(); renderEvents(); }
+  }
+});
+
+/* ==================================================
+   イベントタブ
+================================================== */
+var TRIGGER_LABELS = {
+  stage_start:'初手前（ステージ開始・idle中）',
+  time:'経過時間（秒）',
+  open_rate:'開封率（0〜1）',
+  mines_removed:'地雷除去数',
+  stage_clear:'クリア確定後',
+  manual:'手動発火のみ（Dialogue.play(id)）'
+};
+var IN_PLAY_TYPES = {time:1, open_rate:1, mines_removed:1, manual:1};
+
+function renderEvents(){
+  var el = document.getElementById('event-list');
+  if(!events.length){ el.innerHTML = '<div class="empty-msg">イベントがありません。「+ イベント追加」から作成してください。</div>'; return; }
+  el.innerHTML = '';
+  events.forEach(function(ev, ei){
+    var d = document.createElement('div');
+    d.className = 'card';
+    var trigOpts = Object.keys(TRIGGER_LABELS).map(function(k){
+      return '<option value="'+k+'"'+((ev.trigger.type||'stage_start')===k?' selected':'')+'>'+TRIGGER_LABELS[k]+'</option>';
+    }).join('');
+    var extraField = '';
+    if(ev.trigger.type==='time'){
+      extraField = '<div><label>何秒経過で発火</label><input type="number" min="0" step="1" data-ei="'+ei+'" data-field="trig-sec" value="'+escH(ev.trigger.sec!=null?ev.trigger.sec:'')+'" placeholder="例: 300"></div>';
+    } else if(ev.trigger.type==='open_rate'){
+      extraField = '<div><label>開封率がいくつ以上で発火（0〜1）</label><input type="number" min="0" max="1" step="0.05" data-ei="'+ei+'" data-field="trig-gte" value="'+escH(ev.trigger.gte!=null?ev.trigger.gte:'')+'" placeholder="例: 0.5（50%）"></div>';
+    } else if(ev.trigger.type==='mines_removed'){
+      extraField = '<div><label>地雷除去数がいくつ以上で発火</label><input type="number" min="0" step="1" data-ei="'+ei+'" data-field="trig-gte" value="'+escH(ev.trigger.gte!=null?ev.trigger.gte:'')+'" placeholder="例: 10"></div>';
+    }
+    var inPlayBadge = IN_PLAY_TYPES[ev.trigger.type] ? '<span class="warn-badge">ランキング対象外になります</span>' : '';
+
+    var linesHtml = ev.lines.map(function(line, li){
+      var speakerOpts = characters.map(function(c){
+        return '<option value="'+escH(c.id)+'"'+(line.speaker===c.id?' selected':'')+'>'+escH(c.name||c.id)+'</option>';
+      }).join('');
+      var pKeys = portraitKeysOf(line.speaker);
+      if(pKeys.length && pKeys.indexOf(line.portrait) === -1) line.portrait = pKeys[0];
+      var portraitOpts = pKeys.map(function(k){
+        return '<option value="'+escH(k)+'"'+(line.portrait===k?' selected':'')+'>'+escH(k)+'</option>';
+      }).join('');
+      var thumbFile = portraitFile(line.speaker, line.portrait);
+      var thumbSrc = thumbFile ? IMAGE_PATH + thumbFile : '';
+      var ch = charById(line.speaker);
+      var sideOpts = ['', 'left', 'right'].map(function(v){
+        var lbl = v==='' ? 'キャラ既定（'+((ch&&ch.side)||'left')+'）' : v;
+        return '<option value="'+v+'"'+((line.side||'')===v?' selected':'')+'>'+lbl+'</option>';
+      }).join('');
+      return (
+        '<div class="line-row">' +
+          '<div class="thumb'+(thumbSrc?'':' empty')+'">' +
+            (thumbSrc ? '<img src="'+escH(thumbSrc)+'" onerror="this.parentNode.classList.add(\'empty\');this.remove();">' : '') +
+          '</div>' +
+          '<div class="line-fields">' +
+            '<div class="row3">' +
+              '<div><label>話者</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="speaker">'+speakerOpts+'</select></div>' +
+              '<div><label>表情</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="portrait">'+portraitOpts+'</select></div>' +
+              '<div><label>登場側（この行だけ上書き）</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="side">'+sideOpts+'</select></div>' +
+            '</div>' +
+            '<div><label>セリフ</label><textarea data-ei="'+ei+'" data-li="'+li+'" data-field="text">'+escH(line.text||'')+'</textarea></div>' +
+            '<div class="row3">' +
+              '<div><label>表示時間ms（空欄=文字数から自動）</label><input type="number" min="0" step="100" data-ei="'+ei+'" data-li="'+li+'" data-field="duration" value="'+escH(line.duration!=null?line.duration:'')+'"></div>' +
+              '<div><label>SE（空欄=既定SEを使用）</label><input type="text" data-ei="'+ei+'" data-li="'+li+'" data-field="se" value="'+escH(line.se||'')+'"'+(line.seNull?' disabled':'')+'></div>' +
+              '<div style="display:flex;align-items:flex-end;padding-bottom:6px"><label class="check-row"><input type="checkbox" data-ei="'+ei+'" data-li="'+li+'" data-field="seNull"'+(line.seNull?' checked':'')+'> この行は無音固定</label></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="line-acts">' +
+            '<button class="btn-sm" data-ei="'+ei+'" data-li="'+li+'" data-action="line-up">↑</button>' +
+            '<button class="btn-sm" data-ei="'+ei+'" data-li="'+li+'" data-action="line-dn">↓</button>' +
+            '<button class="btn-sm-del" data-ei="'+ei+'" data-li="'+li+'" data-action="line-del">×</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    d.innerHTML =
+      '<div class="card-hdr">' +
+        '<span class="card-title">' + escH(ev.id || '(無題イベント)') + inPlayBadge + '</span>' +
+        '<div class="card-acts">' +
+          '<button class="btn-preview" data-ei="'+ei+'" data-action="preview-event">▶ 再生して確認</button>' +
+          '<button class="btn" data-ei="'+ei+'" data-action="dup-event">複製</button>' +
+          '<button class="btn btn-danger" data-ei="'+ei+'" data-action="del-event">削除</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="row3">' +
+        '<div><label>イベントID（一意）</label><input type="text" data-ei="'+ei+'" data-field="id" value="'+escH(ev.id)+'"></div>' +
+        '<div><label>トリガー</label><select data-ei="'+ei+'" data-field="trigger-type">'+trigOpts+'</select></div>' +
+        extraField +
+      '</div>' +
+      '<label class="check-row" style="margin-bottom:10px"><input type="checkbox" data-ei="'+ei+'" data-field="once"'+(ev.once!==false?' checked':'')+'> 1回だけ発火する（once。チェックを外すと毎回発火）</label>' +
+      '<div class="sec-label"><span>台詞（'+ev.lines.length+'行）</span></div>' +
+      linesHtml +
+      '<button class="add-btn" data-ei="'+ei+'" data-action="add-line">+ 台詞追加</button>';
+    el.appendChild(d);
+  });
+}
+
+document.getElementById('btn-add-event').addEventListener('click', function(){
+  var defChar = characters[0];
+  events.push({
+    id: 'event' + (events.length+1),
+    once: true,
+    trigger: {type:'stage_start', sec:null, gte:null},
+    lines: [{speaker: defChar?defChar.id:'', side:'', portrait: defChar&&defChar.portraits[0]?defChar.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false}]
+  });
+  renderEvents();
+});
+
+document.getElementById('event-list').addEventListener('click', function(e){
+  var t = e.target;
+  var action = t.dataset.action;
+  if(!action) return;
+  var ei = parseInt(t.dataset.ei);
+  var ev = events[ei];
+  if(action==='del-event'){
+    if(confirm('このイベントを削除しますか？')){ events.splice(ei,1); renderEvents(); }
+  } else if(action==='dup-event'){
+    var copy = JSON.parse(JSON.stringify(ev));
+    copy.id = ev.id + '_copy';
+    events.splice(ei+1, 0, copy);
+    renderEvents();
+  } else if(action==='add-line'){
+    var defChar = characters[0];
+    ev.lines.push({speaker: defChar?defChar.id:'', side:'', portrait: defChar&&defChar.portraits[0]?defChar.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false});
+    renderEvents();
+  } else if(action==='preview-event'){
+    playPreview(ev.lines);
+  } else if(action==='line-del'){
+    var li = parseInt(t.dataset.li);
+    ev.lines.splice(li,1);
+    if(!ev.lines.length) ev.lines.push({speaker:characters[0]?characters[0].id:'', side:'', portrait:'normal', text:'', duration:null, se:'', seNull:false});
+    renderEvents();
+  } else if(action==='line-up'){
+    var li2 = parseInt(t.dataset.li);
+    if(li2>0){ var tmp=ev.lines[li2]; ev.lines[li2]=ev.lines[li2-1]; ev.lines[li2-1]=tmp; renderEvents(); }
+  } else if(action==='line-dn'){
+    var li3 = parseInt(t.dataset.li);
+    if(li3<ev.lines.length-1){ var tmp2=ev.lines[li3]; ev.lines[li3]=ev.lines[li3+1]; ev.lines[li3+1]=tmp2; renderEvents(); }
+  }
+});
+
+document.getElementById('event-list').addEventListener('input', function(e){
+  var t = e.target;
+  var ei = parseInt(t.dataset.ei);
+  var field = t.dataset.field;
+  if(isNaN(ei) || !field) return;
+  var ev = events[ei];
+  var li = t.dataset.li;
+  if(li !== undefined && li !== ''){
+    var line = ev.lines[parseInt(li)];
+    if(field==='text') line.text = t.value;
+    else if(field==='duration') line.duration = t.value===''?null:parseInt(t.value,10);
+    else if(field==='se') line.se = t.value;
+    else if(field==='seNull'){ line.seNull = t.checked; renderEvents(); }
+  } else {
+    if(field==='id') ev.id = t.value;
+    else if(field==='trig-sec') ev.trigger.sec = t.value===''?null:parseFloat(t.value);
+    else if(field==='trig-gte') ev.trigger.gte = t.value===''?null:parseFloat(t.value);
+    else if(field==='once') ev.once = t.checked;
+  }
+});
+
+document.getElementById('event-list').addEventListener('change', function(e){
+  var t = e.target;
+  var ei = parseInt(t.dataset.ei);
+  var field = t.dataset.field;
+  if(isNaN(ei) || !field) return;
+  var ev = events[ei];
+  var li = t.dataset.li;
+  if(li !== undefined && li !== ''){
+    var line = ev.lines[parseInt(li)];
+    if(field==='speaker'){
+      line.speaker = t.value;
+      var keys = portraitKeysOf(t.value);
+      line.portrait = keys.length ? keys[0] : '';
+      renderEvents();
+    } else if(field==='portrait') { line.portrait = t.value; renderEvents(); }
+    else if(field==='side') { line.side = t.value; }
+  } else {
+    if(field==='trigger-type'){
+      ev.trigger = {type:t.value, sec:null, gte:null};
+      renderEvents();
+    } else if(field==='id'){
+      ev.id = t.value; renderEvents();
+    }
+  }
+});
+
+/* ==================================================
+   ライブプレビュー（本物のCutIn.jsで再生 = 「アイコンにフォーカス」の実演）
+   話している側の立ち絵だけがスライドインして目立つ挙動を、そのまま実機と同じ見た目で確認できる。
+================================================== */
+var previewInited = false;
+function ensurePreviewInit(){
+  var charMap = {};
+  characters.forEach(function(c){
+    var pm = {};
+    c.portraits.forEach(function(p){ if(p.key) pm[p.key] = p.file; });
+    charMap[c.id] = {name:c.name, side:c.side, portraits:pm};
+  });
+  CutIn.configure({
+    imagePath: IMAGE_PATH, audioPath: AUDIO_PATH, typingSpeed: 30,
+    characters: charMap,
+    se: rootSe ? {open: rootSe} : {}
+  });
+  if(!previewInited){
+    CutIn.init({
+      imagePath: IMAGE_PATH, audioPath: AUDIO_PATH, typingSpeed: 30,
+      characters: charMap, se: rootSe ? {open: rootSe} : {},
+      hooks: {
+        onStart: function(){ document.getElementById('preview-exit').classList.add('show'); },
+        onEnd: function(){ document.getElementById('preview-exit').classList.remove('show'); }
+      }
+    });
+    previewInited = true;
+  }
+}
+
+function playPreview(lines){
+  ensurePreviewInit();
+  // 「無音固定」チェックは実データではse:nullになるが、プレビューではそのままCutIn.playに渡してよい
+  var playLines = lines.map(function(l){
+    var out = {speaker:l.speaker, portrait:l.portrait, text:l.text};
+    if(l.side) out.side = l.side;
+    if(l.duration!=null) out.duration = l.duration;
+    if(l.seNull) out.se = null; else if(l.se) out.se = l.se;
+    return out;
+  });
+  CutIn.play(playLines);
+}
+
+document.getElementById('preview-exit').addEventListener('click', function(){
+  CutIn.cancel();
+});
+
+/* ==================================================
+   書き出し
+================================================== */
+function buildExportObject(){
+  var charMap = {};
+  characters.forEach(function(c){
+    if(!c.id) return;
+    var pm = {};
+    c.portraits.forEach(function(p){ if(p.key && p.file) pm[p.key] = p.file; });
+    charMap[c.id] = {name:c.name||c.id, side:(c.side==='right'?'right':'left'), portraits:pm};
+  });
+  var evOut = events.map(function(ev){
+    var trig = {type: ev.trigger.type};
+    if(ev.trigger.type==='time' && ev.trigger.sec!=null) trig.sec = ev.trigger.sec;
+    if((ev.trigger.type==='open_rate'||ev.trigger.type==='mines_removed') && ev.trigger.gte!=null) trig.gte = ev.trigger.gte;
+    var out = {id: ev.id, trigger: trig};
+    if(ev.once===false) out.once = false;
+    out.lines = ev.lines.map(function(l){
+      var lo = {speaker:l.speaker, text:l.text||''};
+      if(l.side) lo.side = l.side;
+      if(l.portrait) lo.portrait = l.portrait;
+      if(l.duration!=null) lo.duration = l.duration;
+      if(l.seNull) lo.se = null; else if(l.se) lo.se = l.se;
+      return lo;
+    });
+    return out;
+  });
+  var root = {characters: charMap, events: evOut};
+  if(rootSe) root.se = {open: rootSe};
+  return root;
+}
+
+function validateForExport(){
+  var errs = [];
+  if(!setName) errs.push('セット名が未入力です');
+  var ids = {};
+  characters.forEach(function(c){ if(ids[c.id]) errs.push('キャラID重複: '+c.id); ids[c.id]=1; });
+  var evIds = {};
+  events.forEach(function(ev){
+    if(evIds[ev.id]) errs.push('イベントID重複: '+ev.id);
+    evIds[ev.id] = 1;
+    if(ev.trigger.type==='time' && ev.trigger.sec==null) errs.push('イベント「'+ev.id+'」: time秒数が未設定');
+    if((ev.trigger.type==='open_rate'||ev.trigger.type==='mines_removed') && ev.trigger.gte==null) errs.push('イベント「'+ev.id+'」: 閾値が未設定');
+    ev.lines.forEach(function(l, li){ if(!l.speaker) errs.push('イベント「'+ev.id+'」の台詞'+(li+1)+': 話者未設定'); });
+  });
+  return errs;
+}
+
+document.getElementById('btn-export').addEventListener('click', function(){
+  var errs = validateForExport();
+  if(errs.length){ showStatus('status-export', '✕ ' + errs.join(' / '), true); return; }
+  var obj = buildExportObject();
+  dlFile(JSON.stringify(obj, null, 2), setName + '.json', 'application/json');
+  showStatus('status-export', '✓ data/cutin/' + setName + '.json としてダウンロードしました');
+});
+
+document.getElementById('btn-preview-json').addEventListener('click', function(){
+  var obj = buildExportObject();
+  var box = document.getElementById('preview-box');
+  var area = document.getElementById('preview-area');
+  area.value = JSON.stringify(obj, null, 2);
+  box.style.display = 'block';
+  box.scrollIntoView({behavior:'smooth'});
+});
+
+document.getElementById('btn-copy-json').addEventListener('click', function(){
+  var area = document.getElementById('preview-area');
+  area.select();
+  document.execCommand('copy');
+  var btn = document.getElementById('btn-copy-json');
+  btn.textContent = '✓ コピーしました';
+  setTimeout(function(){ btn.textContent = 'コピー'; }, 2000);
+});
+
+document.getElementById('f-setname').addEventListener('input', function(e){
+  setName = e.target.value.trim();
+  document.getElementById('setname-preview').textContent = setName || '<セット名>';
+});
+document.getElementById('f-rootse').addEventListener('input', function(e){ rootSe = e.target.value.trim(); });
+
+/* ==================================================
+   プロジェクト保存・読込（そのまま data/cutin/*.json 互換の内部形式で保存）
+================================================== */
+document.getElementById('btn-save').addEventListener('click', function(){
+  var now = new Date();
+  var pad = function(n){ return ('0'+n).slice(-2); };
+  var ts = now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'_'+pad(now.getHours())+pad(now.getMinutes());
+  var proj = {version:1, setName:setName, rootSe:rootSe, characters:characters, events:events};
+  dlFile(JSON.stringify(proj, null, 2), 'cutin_project_' + (setName||'untitled') + '_' + ts + '.json', 'application/json');
+  showStatus('save-status', '✓ 保存しました');
+});
+
+document.getElementById('btn-load').addEventListener('click', function(){
+  document.getElementById('load-input').click();
+});
+
+document.getElementById('load-input').addEventListener('change', function(){
+  var file = this.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  var self = this;
+  reader.onload = function(e){
+    try {
+      var data = JSON.parse(e.target.result);
+      if(data.characters && !Array.isArray(data.characters) && data.events){
+        // data/cutin/*.json 形式（書き出し済みファイル）を直接読み込めるようにする
+        characters = Object.keys(data.characters).map(function(id){
+          var c = data.characters[id];
+          return {
+            id: id, name: c.name||id, side: c.side==='right'?'right':'left',
+            portraits: Object.keys(c.portraits||{}).map(function(k){ return {key:k, file:c.portraits[k]}; })
+          };
+        });
+        events = (data.events||[]).map(function(ev){
+          return {
+            id: ev.id, once: ev.once!==false,
+            trigger: {type:(ev.trigger&&ev.trigger.type)||'stage_start', sec:(ev.trigger&&ev.trigger.sec)!=null?ev.trigger.sec:null, gte:(ev.trigger&&ev.trigger.gte)!=null?ev.trigger.gte:null},
+            lines: (ev.lines||[]).map(function(l){
+              return {speaker:l.speaker||'', side:l.side||'', portrait:l.portrait||'normal', text:l.text||'', duration:l.duration!=null?l.duration:null, se:(l.se===null?'':(l.se||'')), seNull:(l.se===null)};
+            })
+          };
+        });
+        setName = '';
+        rootSe = (data.se && data.se.open) || '';
+      } else if(Array.isArray(data.characters)){
+        // このエディタ自身のプロジェクト形式
+        characters = data.characters;
+        events = data.events || [];
+        setName = data.setName || '';
+        rootSe = data.rootSe || '';
+      } else {
+        throw new Error('形式が正しくありません');
+      }
+      document.getElementById('f-setname').value = setName;
+      document.getElementById('setname-preview').textContent = setName || '<セット名>';
+      document.getElementById('f-rootse').value = rootSe;
+      renderChars();
+      renderEvents();
+      showStatus('save-status', '✓ ' + file.name + ' を読み込みました');
+    } catch(err){
+      alert('読み込みエラー: ' + err.message);
+    }
+    self.value = '';
+  };
+  reader.readAsText(file);
+});
+
+/* ==================================================
+   初期化
+================================================== */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){ switchTab(t.dataset.tab); });
+});
+renderChars();
+renderEvents();
+</script>
+</body>
+</html>

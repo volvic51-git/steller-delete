@@ -18,6 +18,9 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   ロジック/タイマー/DOM/localStorageは動的確認済み、実際のドラッグ操作とresumeの
   完全なE2Eはコードレビューのみ→**次回実ブラウザでの最終確認を推奨**）。
   マージ判断・実機（GitHub Pages）確認はユーザー待ち。
+  **台本作成ツール `etc/cutin-editor.html` も追加済み**（同ブランチ）。`js/cutin.js`を
+  直接読み込み、本番と全く同じ演出（話者側の立ち絵スライドイン＝フォーカス）でその場
+  プレビューできる。`data/cutin/*.json`の直接読込・書き出しに対応。詳細は[[project-tools]]。
 - **`master`が最新（cutin-story2マージ前時点）**。直近5件はすべて`master`にマージ・push済み：
   1. `音量調整`（SOUND設定機能。ブランチ切らず直接master）
   2. `EX2追加`（stageEX2実装。ブランチ切らず直接master）
