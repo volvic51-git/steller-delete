@@ -317,5 +317,16 @@
     "grid_col": 72,
     "grid_row": 34,
     "mines": 500
+  },
+  {
+    "id": 30,
+    "name": "消滅星の共鳴",
+    "description": "消滅した星は、星屑となり、やがて果てる",
+    "image": "assets/images/stages/st09.png",
+    "locked": false,
+    "difficulty": "消滅級",
+    "grid_col": 12,
+    "grid_row": 7,
+    "mines": 10
   }
 ]

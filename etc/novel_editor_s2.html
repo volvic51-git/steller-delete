@@ -64,7 +64,7 @@ textarea{resize:vertical;min-height:56px}
 </style>
 </head>
 <body>
-<h1>script.js エディター（STORY MODE 2 / novel11〜19）</h1>
+<h1>script.js エディター（STORY MODE 2 / novel11〜20）</h1>
 
 <div class="save-bar">
   <span class="save-label">プロジェクト:</span>
@@ -127,11 +127,13 @@ textarea{resize:vertical;min-height:56px}
   <div class="export-box" id="sd-export-box">
     <div class="export-title">Stellar Delete用 STORY MODE 2（nextUrl 自動設定）</div>
     <div class="export-desc">
-      ノベル番号を選ぶと nextUrl が自動で設定されます。11はオープニング、12〜18は
-      該当ステージ（stage22〜28）クリア後の固定セレクトへ、19はエンディング
-      （endrole_release2.html）へ遷移します。stage22〜29の novelAfterClear は
-      data/stage-params.json 側で novel12.html〜novel19.html に配線済みです。<br>
-      ダウンロード時のファイル名も script11.js〜script19.js になります。
+      ノベル番号を選ぶと nextUrl が自動で設定されます。11はオープニング、12〜19は
+      該当ステージ（stage22〜29）クリア後の固定セレクトへ、20はエンディング
+      （endrole_release2.html）へ遷移します。stage22〜30の novelAfterClear は
+      data/stage-params.json 側で novel12.html〜novel20.html に配線済みです
+      （stage30はオリジナルstage9＝消滅星・ループのミラーで、既存STORYと同じ
+      「オープニング+9ステージ+エンディング」構成になっています）。<br>
+      ダウンロード時のファイル名も script11.js〜script20.js になります。
       解放カウンタは既存STORYと混在しない専用フィールド（saveStageField:'unlockedStage2'）に
       自動で書き込まれます（このツールが自動出力するため手動設定不要）。
     </div>
@@ -147,7 +149,8 @@ textarea{resize:vertical;min-height:56px}
           <option value="16">16（Stage26クリア後 / EP.15）</option>
           <option value="17">17（Stage27クリア後 / EP.16）</option>
           <option value="18">18（Stage28クリア後 / EP.17）</option>
-          <option value="19">19（Stage29クリア後 / エンディング / EP.18）</option>
+          <option value="19">19（Stage29クリア後 / EP.18）</option>
+          <option value="20">20（Stage30クリア後 / エンディング / EP.19）</option>
         </select>
       </label>
       <span id="sd-nexturl-preview" style="font-family:monospace;font-size:12px;color:#555"></span>
@@ -162,7 +165,7 @@ textarea{resize:vertical;min-height:56px}
   <div class="export-box">
     <div class="export-title">script.js のみ（VS Code環境向け）</div>
     <div class="export-desc">既存の novel-game フォルダの js/script.js を差し替えて使います。<br>
-      <strong style="color:#b30000">⚠️ このボタンは nextUrl を含みません。</strong>Stellar Delete STORY MODE 2（novel11〜19.html）用に書き出す場合は、上の「Stellar Delete用 STORY MODE 2」ボタンを使ってください。
+      <strong style="color:#b30000">⚠️ このボタンは nextUrl を含みません。</strong>Stellar Delete STORY MODE 2（novel11〜20.html）用に書き出す場合は、上の「Stellar Delete用 STORY MODE 2」ボタンを使ってください。
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" id="btn-export-js">script.js をDL</button>
@@ -557,18 +560,19 @@ function generateScriptJs(imagePath) {
   return L.join('\n');
 }
 
-// STORY MODE 2: novel11(オープニング)〜19(エンディング)。stage22〜29の8ステージが間に挟まる。
-// nの範囲は11〜19固定（このツールから書き出す想定のため、原本のような1/10特別扱いは不要）。
+// STORY MODE 2: novel11(オープニング)〜20(エンディング)。stage22〜30の9ステージが間に挟まる
+// （stage30はオリジナルstage9＝消滅星・ループのミラーで、既存STORYと対称な構成にしている）。
+// nの範囲は11〜20固定（このツールから書き出す想定のため、原本のような1/10特別扱いは不要）。
 function sdNextUrl(n) {
-  return n >= 19 ? '../endrole_release2.html' : ('../index.html?select=1&storyStage=' + (n + 11));
+  return n >= 20 ? '../endrole_release2.html' : ('../index.html?select=1&storyStage=' + (n + 11));
 }
 
 function generateScriptJsForStellarDelete(n) {
   var code = generateScriptJs('../assets/images/');
   var url = sdNextUrl(n);
   // unlockStageOnComplete: novel11(n=11)はstage22を解放、novel12(n=12)はstage23を解放…
-  // novel18(n=18)はstage29を解放。novel19(n=19、エンディング)は解放対象なし。
-  var unlockLine = n < 19 ? '\n  unlockStageOnComplete: ' + (n + 11) + ',' : '';
+  // novel19(n=19)はstage30を解放。novel20(n=20、エンディング)は解放対象なし。
+  var unlockLine = n < 20 ? '\n  unlockStageOnComplete: ' + (n + 11) + ',' : '';
   // saveStageField: 既存STORY（unlockedStage）と衝突しないよう、STORY MODE 2専用の
   // unlockedStage2フィールドに書き込むようnovel.js側へ指示する（js/novel.js側で対応済み）。
   var replaced = code.replace(
@@ -584,11 +588,11 @@ function generateNovelHtml(n) {
   if (n === 11) {
     pageTitle = 'Stellar Delete — STORY2 OPENING';
     subtitle = 'EP.10';
-  } else if (n === 19) {
+  } else if (n === 20) {
     pageTitle = 'Stellar Delete — STORY2 ENDING';
     subtitle = 'ENDING';
   } else {
-    var stageNum = n - 11; // novel12→Stage1(=stage22)…novel18→Stage7(=stage28)
+    var stageNum = n - 11; // novel12→Stage1(=stage22)…novel19→Stage8(=stage29)
     pageTitle = 'Stellar Delete — S2 Stage ' + stageNum + ' クリア後';
     subtitle = 'S2 Stage ' + stageNum + ' クリア後';
   }

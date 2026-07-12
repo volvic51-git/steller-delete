@@ -2881,7 +2881,7 @@ function triggerRescueSequence(){
       // STORY MODE 2（id:22〜29）は既存STORYの解放カウンタと衝突しないよう別フィールドに書く
       // （単純な「より大きければ更新」比較のため、同一フィールドだと片方の進行がもう片方を
       // 誤って全解放してしまう。id範囲がそのまま数値的にも大きいため実害が出やすい）。
-      const epField = (stageId >= 22 && stageId <= 29) ? 'unlockedEpisode2' : 'unlockedEpisode';
+      const epField = (stageId >= 22 && stageId <= 30) ? 'unlockedEpisode2' : 'unlockedEpisode';
       if(stageId > (sd[epField]||0)){
         sd[epField] = stageId; // ステージN クリア → エピソードN 解放（novel(N+1)へ進める）
         localStorage.setItem(SAVE_KEY, JSON.stringify(sd));
@@ -5022,7 +5022,7 @@ if(window.visualViewport){
       // キャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
       // それ以外のSIMPLE MODEステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
       // 011〜020は旧プール・上限10体で頭打ちだったため移行）。
-      const _exFixedCharIds = [10, 11, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
+      const _exFixedCharIds = [10, 11, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30];
       if(urlParams.get('mode') === 'normal' && !_exFixedCharIds.includes(Number(stage.id))){
         const pool = CHARACTER_LIST.filter(c => {
           const n = parseInt(c.id, 10);

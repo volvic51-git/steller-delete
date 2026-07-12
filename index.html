@@ -1590,7 +1590,7 @@ const SAVE_KEY = 'stellarDeleteSave';
 const defaultSaveData = { unlockedStage: 0, unlockedEpisode: 0, unlockedStage2: 0, unlockedEpisode2: 0 };
 // STORY MODE 2のステージ（id 22-29）かどうか判定するヘルパー。
 // stage-modalの錠前判定・戻り先URL・mode paramの出し分けで共通利用する。
-function isStory2StageId(id){ return id >= 22 && id <= 29; }
+function isStory2StageId(id){ return id >= 22 && id <= 30; }
 
 function loadSaveData() {
   try {
@@ -1974,9 +1974,11 @@ const EPISODES = [
   { label:'EP.9', sub:'ENDING?',     novel:'novel/novel10.html', minEp:9 },
 ];
 
-// STORY MODE 2（EP.10〜EP.18、novel11〜19、stage22〜29）。既存EPISODESとは番号帯・
-// セーブフィールド(unlockedEpisode2)を分離した独立キャンペーン。
-// imgIdx: キャラ画像 assets/images/characters/0XX.png の番号（000〜013は既存STORYで予約済みのため020〜028を使用）。
+// STORY MODE 2（EP.10〜EP.19、novel11〜20、stage22〜30）。既存EPISODESとは番号帯・
+// セーブフィールド(unlockedEpisode2)を分離した独立キャンペーン。stage30はオリジナル
+// stage9（消滅星・ループ）のミラーで、既存STORY（オープニング+9ステージ+エンディング）と
+// 完全に対称な構成にしている。
+// imgIdx: キャラ画像 assets/images/characters/0XX.png の番号（000〜013は既存STORYで予約済みのため020〜029を使用）。
 // minEp: novel(N+1)（=このEPの次のEP）を解放する「ステージクリア」のstage-id。stage22クリアで
 // unlockedEpisode2=22になり、EP.11(minEp:22)が解放される（stage22→novelAfterClear=novel12.html の並び）。
 const EPISODES2 = [
@@ -1989,6 +1991,7 @@ const EPISODES2 = [
   { label:'EP.16', sub:'',  novel:'novel/novel17.html', minEp:27,    imgIdx:26 },
   { label:'EP.17', sub:'',  novel:'novel/novel18.html', minEp:28,    imgIdx:27 },
   { label:'EP.18', sub:'',  novel:'novel/novel19.html', minEp:29,    imgIdx:28 },
+  { label:'EP.19', sub:'',  novel:'novel/novel20.html', minEp:30,    imgIdx:29 },
 ];
 
 function buildEpisodeList() {
