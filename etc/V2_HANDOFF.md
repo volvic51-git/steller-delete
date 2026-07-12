@@ -546,8 +546,13 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
    - **盤面お絵描きツール**（`etc/V2_BOARD_COLOR_PLAN.md` §2.3の将来拡張。セルごとの
      `cellPaletteMap`で自由に色を塗れるようにする構想。今の東西2色はこの布石）。
    - **Hunter/Factory/game のパリティ自動テスト**（まだ未着手）。
-   - **stageEX2のcharId/BGM/背景/専用stage画像の確定**（現状stageEX1からの暫定流用。
-     `data/stage-params.json`のid:11ブロックと`data/stages.json`のid:11`image`を編集するだけ）。
+   - ~~stageEX2のcharId/BGM/背景/専用stage画像の確定~~ → **完了（2026-07-12ユーザー確認）**。
+   - **カットイン会話システム＋STORY MODE 2**：設計確定済み（`etc/V2_CUTIN_PLAN.md`、
+     2026-07-12・未実装）。器は新モード STORY MODE 2（stage1〜8ミラー、id:22〜29）。
+     ランキング除外は会話JSONのトリガー種別から自動導出（プレイ中トリガーありのみ除外）。
+     警告演出（赤点滅+警告音+イラスト）は同書§14で設計済み・実装は後段。
+     **実装手順書 `etc/V2_CUTIN_WORKORDER.md`（Sonnet 5向け・2026-07-12作成済み）あり**：
+     ブランチ `feature/cutin-story2`、検証チェックリスト20項目付き。実装はこれに従う。
    - LIMIT MODE（modes.json enabled:false のまま保留中）。
    - **開封演出の微調整**（任意）：`OPEN_FX_MS`（演出時間220ms）・`OPEN_FX_WAVE_MS`
      （波紋の段あたり遅延6ms）・フラッシュ強度係数1.8は実プレイの手触りで再調整可能
