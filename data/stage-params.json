@@ -471,10 +471,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel12.html",
     "bgm": "",
     "background": "img_bg01.jpg",
-    "listGroup": "story2",
     "cutin": "stage22"
   },
   {
@@ -494,10 +493,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel13.html",
     "bgm": "",
     "background": "img_bg01.jpg",
-    "listGroup": "story2",
     "cutin": "stage23"
   },
   {
@@ -517,10 +515,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel14.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
-    "listGroup": "story2"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 25,
@@ -539,10 +536,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel15.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
-    "listGroup": "story2"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 26,
@@ -561,10 +557,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel16.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
-    "listGroup": "story2"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 27,
@@ -583,10 +578,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel17.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
-    "listGroup": "story2"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 28,
@@ -605,10 +599,9 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel18.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
-    "listGroup": "story2"
+    "background": "img_bg01.jpg"
   },
   {
     "id": 29,
@@ -627,9 +620,8 @@
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
-    "novelAfterClear": null,
+    "novelAfterClear": "novel/novel19.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
-    "listGroup": "story2"
+    "background": "img_bg01.jpg"
   }
 ]

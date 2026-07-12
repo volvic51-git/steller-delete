@@ -1,14 +1,24 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-12
+作成日: 2026-06-30 / 最終更新: 2026-07-13
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-12）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-13）
 
-- **`master`はノーフラッグモードまで反映済み**。加えて**`feature/cutin-story2`ブランチで
-  カットイン会話システム＋STORY MODE 2（id:22〜29）を実装済み・未マージ**。
+- **`master`はノーフラッグモードまで反映済み**。その上に**`feature/cutin-story2`**
+  （カットイン会話システム＋stage22〜29採番）、さらにその上に**`feature/story2-novel`**
+  （STORY MODE 2をEPISODESリスト＋ノベル連動進行に再設計、未マージ）が積まれている。
+  ブランチ順序：`master` → `feature/cutin-story2` → `feature/story2-novel`。
+  **STORY MODE 2のUIは`feature/cutin-story2`時点のグリッド型ステージ選択から
+  `feature/story2-novel`で完全に置き換え済み**（既存STORY MODEと同じEPISODESリスト方式へ）。
+  詳細・セーブフィールド分離の重要な罠は[[project-story2-novel]]参照。
+  実装物：`etc/novel_editor_s2.html`（novel11〜19用エディタ）、`novel/js/novel.js`の
+  `saveStageField`オプション、`index.html`のEPISODES2、`sphere-minesweeper.html`の
+  `mode=story2`対応。**`endrole_release2.html`はユーザー準備中**（novel19のエンディング
+  遷移先）、novel11〜19.htmlの実コンテンツは未作成（本ツールで今後作成）。
+- 旧記述（カットイン会話システム＋STORY MODE 2グリッド型の実装、`feature/cutin-story2`）：
   実装手順書は`etc/V2_CUTIN_WORKORDER.md`（実装済みステータス、rAF制約下での検証結果込み）、
   検討書は`etc/V2_CUTIN_PLAN.md`。実装中に`window.Dialogue`が常にundefinedになる
   重大バグ（トップレベルconstはwindowプロパティにならない）を発見・修正済み

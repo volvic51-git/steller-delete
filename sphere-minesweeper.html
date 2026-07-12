@@ -678,7 +678,7 @@
       <button id="rescue-btn-novel"  class="rescue-action-btn" onclick="window.location.href=(window._novelAfterClear||'index.html')" style="display:none;">✦ NEXT ✦</button>
       <button id="rescue-btn-select" class="rescue-action-btn" onclick="window.location.href='index.html?select=1'" style="display:none;">✦ STAGE ✦</button>
       <button id="rescue-btn-retry"  class="rescue-action-btn" onclick="document.getElementById('rescue-screen').classList.remove('active');restartGame();" style="display:none;">✦ RETRY ✦</button>
-      <button id="rescue-btn-episode" class="rescue-action-btn" onclick="window.location.href='index.html?story=1'" style="display:none;">✦ EPISODE ✦</button>
+      <button id="rescue-btn-episode" class="rescue-action-btn" style="display:none;">✦ EPISODE ✦</button>
       <button id="rescue-btn-title"  class="rescue-action-btn" onclick="window.location.href='index.html'" style="display:none;">✦ TITLE ✦</button>
     </div>
   </div>
@@ -1087,20 +1087,25 @@ function showRescueScreen(){
 }
 
 function updateRescueButtons(){
-  // resumeはURLにmode=storyを持てない（?boot=resumeのみ）ので、resumeSuspend が復元した
-  // window._resumeStoryMode も合わせて見る（元プレイがSTORYだったかの真の判定）。
+  // resumeはURLにmode=story/story2を持てない（?boot=resumeのみ）ので、resumeSuspend が復元した
+  // window._resumeStoryMode/_resumeStory2Mode も合わせて見る（元プレイが物語モードだったかの真の判定）。
   const isStoryMode  = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+  const isStory2Mode = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
+  const isStoryLike  = isStoryMode || isStory2Mode;
   const isNormalMode = (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode;
   const btnNovel  = document.getElementById('rescue-btn-novel');
   const btnSelect = document.getElementById('rescue-btn-select');
   const btnTitle  = document.getElementById('rescue-btn-title');
   const btnRetry  = document.getElementById('rescue-btn-retry');
   const btnEpisode = document.getElementById('rescue-btn-episode');
-  // NORMAL は「STAGE」ボタンで NORMAL/NOFLAG リストへ戻す。それ以外は従来のカルーセル（?select=1）。
+  // NORMAL は「STAGE」ボタンで NORMAL/NOFLAG リストへ戻す。物語系は EPISODE ボタンで各EPISODESリストへ。
   if(btnSelect) btnSelect.onclick = ()=>{
     window.location.href = isNormalMode
-      ? (window._listGroup === 'story2' ? 'index.html?story2=1' : gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
+      ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
       : 'index.html?select=1';
+  };
+  if(btnEpisode) btnEpisode.onclick = ()=>{
+    window.location.href = isStory2Mode ? 'index.html?story2=1' : 'index.html?story=1';
   };
 
   if(_isReplaySession){
@@ -1113,15 +1118,15 @@ function updateRescueButtons(){
     return;
   }
 
-  if(isStoryMode){
-    // STORY（通常 or resume）：NEXT（次のノベルへ）＋ EPISODE（STORY MODE画面へ）＋ TITLE（RETRYは出さない。物語進行を明確にするため）
+  if(isStoryLike){
+    // STORY／STORY2（通常 or resume）：NEXT（次のノベルへ）＋ EPISODE（EPISODESリストへ）＋ TITLE（RETRYは出さない。物語進行を明確にするため）
     if(btnNovel)  btnNovel.style.display  = '';
     if(btnSelect) btnSelect.style.display = 'none';
     if(btnEpisode) btnEpisode.style.display = '';
     if(btnTitle)  btnTitle.style.display  = '';
     if(btnRetry)  btnRetry.style.display  = 'none';
   } else {
-    // SIMPLE／NORMAL／デバッグ／resume（STORY以外）：RETRY＋STAGE（ステージ選択）＋TITLE
+    // SIMPLE／NORMAL／デバッグ／resume（STORY系以外）：RETRY＋STAGE（ステージ選択）＋TITLE
     if(btnNovel)  btnNovel.style.display  = 'none';
     if(btnSelect) btnSelect.style.display = '';
     if(btnEpisode) btnEpisode.style.display = 'none';
@@ -2144,7 +2149,6 @@ let exMode      = true;    // EXモード(true=既存仕様：地雷即ゲーム
 let stMode      = false;   // STモード(デバッグ用)：サーチを常時使用可能にする代わりに、確定セルがある状態で使うと即ゲームオーバー
 let gameRule    = 'attack'; // 'attack'=現行ルール(旗=攻撃・地雷除去) / 'noflag'=旗禁止(開封のみ・非地雷全開封でクリア) / (将来:'classic')
 window._cutinSet = null;          // stage-params.json の cutin フィールド（会話セット名）
-window._listGroup = null;         // 'story2' 等。STAGEボタンの戻り先判定
 window._cutinBlocksRanking = false;
 let loopCount   = 3;       // 合計周回数
 let currentLoop = 1;       // 現在の周（1始まり）
@@ -2874,10 +2878,14 @@ function triggerRescueSequence(){
       const SAVE_KEY = 'stellarDeleteSave';
       const raw = localStorage.getItem(SAVE_KEY);
       const sd = raw ? JSON.parse(raw) : { unlockedStage:0, unlockedEpisode:0 };
-      if(stageId > (sd.unlockedEpisode||0)){
-        sd.unlockedEpisode = stageId; // ステージN クリア → エピソードN 解放（novel(N+1)へ進める）
+      // STORY MODE 2（id:22〜29）は既存STORYの解放カウンタと衝突しないよう別フィールドに書く
+      // （単純な「より大きければ更新」比較のため、同一フィールドだと片方の進行がもう片方を
+      // 誤って全解放してしまう。id範囲がそのまま数値的にも大きいため実害が出やすい）。
+      const epField = (stageId >= 22 && stageId <= 29) ? 'unlockedEpisode2' : 'unlockedEpisode';
+      if(stageId > (sd[epField]||0)){
+        sd[epField] = stageId; // ステージN クリア → エピソードN 解放（novel(N+1)へ進める）
         localStorage.setItem(SAVE_KEY, JSON.stringify(sd));
-        console.log('[SAVE] stage clear: unlockedEpisode =', sd.unlockedEpisode, '| full data:', JSON.stringify(sd));
+        console.log('[SAVE] stage clear: ' + epField + ' =', sd[epField], '| full data:', JSON.stringify(sd));
         showSaveToast();
       }
     }catch(e){}
@@ -3240,10 +3248,11 @@ function openSettingsMenu(){
     btn.style.opacity  = _isReplaySession ? '0.4' : '';
     btn.style.cursor   = _isReplaySession ? 'default' : '';
   });
-  // STORY（通常 or resume）は「STAGE SELECT」を「EPISODE」に（遷移先も STORY MODE 画面）。
-  const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+  // STORY/STORY2（通常 or resume）は「STAGE SELECT」を「EPISODE」に（遷移先も各EPISODES画面）。
+  const isStory  = (new URLSearchParams(window.location.search).get('mode') === 'story')  || !!window._resumeStoryMode;
+  const isStory2 = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
   const selBtn = document.getElementById('cfg-select-btn');
-  if(selBtn) selBtn.textContent = isStory ? 'EPISODE' : 'STAGE';
+  if(selBtn) selBtn.textContent = (isStory || isStory2) ? 'EPISODE' : 'STAGE';
   // リプレイ再生時のみ「TITLE」を表示（BACKの下、タイトルへ戻る手段）。通常プレイでは非表示。
   const titleBtn = document.getElementById('cfg-title-btn');
   if(titleBtn) titleBtn.style.display = _isReplaySession ? 'block' : 'none';
@@ -3269,10 +3278,11 @@ function closeHelpModal(){
 
 function confirmSettingsAction(action){
   _pendingConfirmAction = action;
-  const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
+  const isStory  = (new URLSearchParams(window.location.search).get('mode') === 'story')  || !!window._resumeStoryMode;
+  const isStory2 = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
   const texts = {
     restart: 'リスタートします。\n本当に良いですか？',
-    select:  (isStory ? 'エピソード選択に戻ります。' : 'ステージ選択に戻ります。') + '\n本当に良いですか？',
+    select:  ((isStory || isStory2) ? 'エピソード選択に戻ります。' : 'ステージ選択に戻ります。') + '\n本当に良いですか？',
     title:   'タイトルに戻ります。\n本当に良いですか？',
   };
   document.getElementById('confirm-dialog-text').textContent = texts[action] || '本当に良いですか？';
@@ -3292,9 +3302,10 @@ function executeConfirmedAction(){
     closeSettingsMenu();
     restartGame();
   } else if(action === 'select'){
-    // STORY は STORY MODE 画面へ、それ以外は NORMAL/NOFLAG リストへ。
-    const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
-    window.location.href = isStory ? 'index.html?story=1' : (window._listGroup === 'story2' ? 'index.html?story2=1' : gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
+    // STORY/STORY2 はそれぞれのEPISODES画面へ、それ以外は NORMAL/NOFLAG リストへ。
+    const isStory  = (new URLSearchParams(window.location.search).get('mode') === 'story')  || !!window._resumeStoryMode;
+    const isStory2 = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
+    window.location.href = isStory ? 'index.html?story=1' : isStory2 ? 'index.html?story2=1' : (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
   } else if(action === 'title'){
     window.location.href = 'index.html';
   }
@@ -3665,6 +3676,7 @@ function saveSuspend(){
       bg: getCanvasBackground(),
       bgmFile: window._stageBgmFile ?? null,
       isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
+      isStory2Mode: new URLSearchParams(window.location.search).get('mode') === 'story2',
       isNormalMode: (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode,
       novelAfterClear: window._novelAfterClear ?? null,
       // stageEX1/EX2（seedプール）・Factory盤面の起動モードを保存する。これが無いと、
@@ -3679,7 +3691,6 @@ function saveSuspend(){
       factoryMode: !!window._factoryMode,
       factoryBoard: window._factoryMode ? window._factoryBoard : null,
       cutinSet: window._cutinSet ?? null,
-      listGroup: window._listGroup ?? null,
       cutinFired: Dialogue.getFired()
     },
     savedAt: new Date().toISOString()
@@ -3764,6 +3775,7 @@ async function resumeSuspend(rec){
   window._boardPalette = normalizePalette(m.boardPalette ?? m.boardTheme); // 旧形式(単色文字列)も許容
   window._novelAfterClear = m.novelAfterClear ?? null; // STORYモードで中断した場合のNEXT遷移先を復元
   window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
+  window._resumeStory2Mode = !!m.isStory2Mode;          // 同上（STORY MODE 2版）
   window._resumeNormalMode = !!m.isNormalMode;          // 終了画面のSTAGEボタンをNORMALリスト(?normal=1)へ戻すために使う
   // stageEX1/EX2（seedプール）・Factory盤面のモードを復元する（RESTART後の次回idleクリックが
   // 誤って通常のリアルタイム生成経路に落ちないようにするため。詳細はsaveSuspend側のコメント参照）。
@@ -3776,7 +3788,6 @@ async function resumeSuspend(rec){
   if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
   gameRule = (m.gameRule === 'noflag') ? 'noflag' : 'attack'; // 旧データ(undefined)は'attack'にフォールバック
   window._cutinSet  = m.cutinSet ?? null;
-  window._listGroup = m.listGroup ?? null;
   if(window._cutinSet){
     Dialogue.load(window._cutinSet)
       .then(() => Dialogue.restoreFired(m.cutinFired))
@@ -4465,10 +4476,11 @@ function restoreFloatButtons(){
 }
 
 function updateMsgButtons(){
-  // CHECK / RETRY / TITLE は常時表示。STAGE SELECT はSTORYモード（mode=story）では非表示
-  const isStoryMode = new URLSearchParams(window.location.search).get('mode') === 'story';
+  // CHECK / RETRY / TITLE は常時表示。STAGE SELECT はSTORY系（mode=story/story2）では非表示
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  const isStoryLike = mode === 'story' || mode === 'story2';
   const btnSelect = document.getElementById('msg-btn-select');
-  if(btnSelect) btnSelect.style.display = isStoryMode ? 'none' : '';
+  if(btnSelect) btnSelect.style.display = isStoryLike ? 'none' : '';
 }
 
 // ===================== NORMAL MODE PENALTY =====================
@@ -4672,6 +4684,7 @@ function restartGame(){
   clearInterval(timerInterval);
   stopReplay(); _isReplaySession=false; // リプレイ再生の後始末（通常ゲームに戻す）
   window._resumeStoryMode = false; // 中断復元由来のSTORY判定フラグをリセット（resumeSuspendが必要なら再設定）
+  window._resumeStory2Mode = false; // 同上（STORY MODE 2版）
   window._resumeNormalMode = false; // 中断復元由来のNORMAL判定フラグをリセット（resumeSuspendが必要なら再設定）
   stopBGM();
   SND.clear.pause(); SND.clear.currentTime=0;
@@ -5075,9 +5088,8 @@ if(window.visualViewport){
       // gameRule 適用（stage-params.json連携）
       gameRule = (stage.gameRule === 'noflag') ? 'noflag' : 'attack';
 
-      // カットイン / リストグループ適用（stage-params.json連携）
+      // カットイン適用（stage-params.json連携）
       window._cutinSet  = stage.cutin || null;
-      window._listGroup = stage.listGroup || null;
 
       // loopMode / loopCount 適用（stage-params.json連携）
       if(stage.loopMode === true){
