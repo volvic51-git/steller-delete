@@ -1,0 +1,22 @@
+sphere-minesweeper.html:802-814にハードコードされた定数オブジェクトです。
+
+const DIFF_PRESETS = {
+  s1: { cols: 16, rows:  8 },  //   128
+  s2: { cols: 24, rows: 12 },  //   288
+  s3: { cols: 32, rows: 14 },  //   448
+  m1: { cols: 40, rows: 18 },  //   720
+  m2: { cols: 48, rows: 22 },  // 1,056
+  m3: { cols: 56, rows: 26 },  // 1,456
+  h1: { cols: 64, rows: 30 },  // 1,920
+  h2: { cols: 72, rows: 34 },  // 2,448
+  x1: { cols: 12, rows:  7 },  //    84  (消滅の果て専用)
+  ex1:{ cols:144, rows: 72 },  // 10,368 (stageEX Factory盤面専用)
+  ex2:{ cols:144, rows: 72 },  // 10,368 (stageEX2 Factory盤面専用・地雷率20%)
+};
+stage.diff（例: "m3"）はこのオブジェクトのキーとして使われ、applyStageParam()側のDIFF_PRESETS[stage.diff]（4954〜4959行）で{cols, rows}を取り出してCOLS/ROWSにセットしています。
+
+補足として、TIME_LIMITS（833行）という似た構造の定数も同じdiffキーを共有しています：
+
+const TIME_LIMITS  = { s1:60, s2:120, s3:180, m1:300, m2:420, m3:600, h1:900, h2:1200 };
+こちらは制限時間モードの既定秒数（timeLimit未指定時のフォールバック）に使われますが、ex1/ex2/x1のエントリはありません
+（該当diffのステージはstage-params.json側でtimeLimitを明示するか、制限時間モード自体を使わない設計です）。
