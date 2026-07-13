@@ -505,7 +505,7 @@ function pvRender(){
 
 document.getElementById('btn-preview').addEventListener('click',function(){
   if(!steps.length){flash('ステップがありません');return;}
-  var previewSrc = imgSrc || (imgPath ? '../'+imgPath : '');
+  var previewSrc = imgSrc || (imgPath ? '../../'+imgPath : '');
   if(!previewSrc){flash('先に画像を読み込むか、画像パスを設定してください');return;}
   pvIdx=0; pvImg.src=previewSrc;
   document.getElementById('preview-root').classList.add('on');
@@ -553,7 +553,7 @@ document.getElementById('fileProj').addEventListener('change',function(e){
       // imgSrc（base64）があればエディタ表示に使用、なければパスから試みる
       imgSrc = (d.imgSrc && d.imgSrc.startsWith('data:')) ? d.imgSrc : '';
       if(imgSrc){ loadEditorImg(imgSrc); }
-      else if(imgPath){ loadEditorImg('../'+imgPath); }
+      else if(imgPath){ loadEditorImg('../../'+imgPath); }
       else { renderRegions(); }
       flash('✓ プロジェクトを読み込みました');
     }catch(err){ flash('✕ 読み込み失敗: '+err.message); }
