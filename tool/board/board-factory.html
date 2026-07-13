@@ -81,8 +81,8 @@
   <div id="log"></div>
 </div>
 
-<script src="boadHunter/solver.js"></script>
-<script src="../js/board-gen.js"></script>
+<script src="boardHunter/solver.js"></script>
+<script src="../../js/board-gen.js"></script>
 <script>
 // 生成・正規形hashは js/board-gen.js（共通生成器）に一本化。
 // ゲーム本体・Board Hunter とのパリティは board-gen.js 側の契約（GEN_VERSION）で保証する。
@@ -236,7 +236,7 @@ async function genOne(seed){
     try{
       localStorage.setItem('steller_factory_board', JSON.stringify(board));
     }catch(e){ alert('localStorage への保存に失敗しました: ' + e.message); return; }
-    window.open('../sphere-minesweeper.html?boot=factory', '_blank');
+    window.open('../../sphere-minesweeper.html?boot=factory', '_blank');
   };
 
   checkAllDone();
