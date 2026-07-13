@@ -17,17 +17,19 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
     10本）になった。セーブフィールド分離（`unlockedStage2`/`unlockedEpisode2`、既存STORYと
     混在させるとEPISODE解放状態が壊れる罠）が最重要ポイント。詳細は[[project-story2-novel]]。
 - **push状況**：origin/`feature/story2-novel`は`bf56efd`（novel2追加、ユーザーpush分）まで。
-  ローカルはそこから3コミット先行——`79b1b07`（stage30/novel19-20追加）、`fc74160`
-  （manual-test.html移動）、`af7c30f`（移動時のgit add漏れ修正）——**未push**（ユーザーの
+  ローカルはそこから5コミット先行——`79b1b07`（stage30/novel19-20追加）、`fc74160`
+  （manual-test.html移動）、`af7c30f`（移動時のgit add漏れ修正）、`0b63b6f`
+  （V2_HANDOFF.md更新）、`0985b58`（tool/サブフォルダ整理）——**未push**（ユーザーの
   タイミングで実行）。
 - **novel11〜20.htmlの実コンテンツはユーザーが本セッション中に作成済み**
   （`etc/novel_editor_s2.html`使用、`novel/novel11〜20.html`・`novel/js/script11〜20.js`。
   いずれも未コミットのユーザー作業でClaudeは一切変更していない）。
   `endrole_release2.html`（novel20のエンディング遷移先）はユーザー準備中、まだ存在しない。
-- **`manual-test.html`は`tool/manual-test.html`へ移動済み**（未使用のため、他のdev用
-  ランチャーと同じ置き場に統一）。相対リンク3箇所を`../sphere-minesweeper.html`に修正済み
-  （初回コミットでgit add漏れがあり2回目のコミットで修正——移動作業をする際は`git mv`後の
-  編集を確実に`git add`すること）。
+- **`tool/`はサブフォルダ整理済み**（2026-07-13、`tool/board/`・`tool/endrole/`・
+  `tool/manual/`。`manual-test.html`もこの整理で`tool/manual/manual-test.html`に。
+  `tool/boadHunter/`のtypoも`boardHunter/`に修正）。フォルダが1階層深くなった影響で
+  `../js/...`等の相対パスが壊れていたため合わせて修正済み（`tool/board/`配下のツールから
+  ルート直下を参照する際は`../../`が正しい）。詳細は[[project-overview]]。
 - **git運用が変更**（2026-07-13、詳細は下記「git運用」項参照）：push以外はすべて
   許可なしで実行してよい。
 - **保留中の検討**：高密度盤面（地雷率50%等）の生成方法。rejection samplingは原理的に
@@ -73,11 +75,13 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   → Board Factory / 生成エンジンの設計を触るときはこのブランチを見る。
 
 > **既知の未処理**
-> - `tool/`（単数・既存）と `tools/`（複数）が混在。将来 `tool/` に統一予定。
+> - ~~`tool/`と`tools/`が混在~~ → **解消（2026-07-13）**：`tool/`をサブフォルダ整理
+>   （`board/`・`endrole/`・`manual/`）。`tools/`（複数形）フォルダは現存しない。
+> - ~~`tool/boadHunter/`（typo）~~ → **解消（2026-07-13）**：`tool/board/boardHunter/`へ
+>   移動と同時にtypo修正済み（2026-07-09時点は現状維持の判断だったが、今回のサブフォルダ
+>   整理のタイミングで直った）。
 > - `feature/solver-extraction` に出自不明の `d0a480d「solver.js生成」` コミットあり。
 > - spec-foundation側の未push（密度CSV `59c2a28`・タグ `design/data-foundation-v0.9`）。
-> - `tool/boadHunter/`（typo）は現状維持でよいとユーザー確認済み（2026-07-09、`tool/`直下からの
->   移動・改名は不要という判断）。
 
 ---
 
