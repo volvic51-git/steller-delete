@@ -3792,7 +3792,7 @@ function resumeTimer(){
   window._loopTotalStartMs = performance.now() - elapsed * 1000; // 通しタイムは近似（周回中断は限界あり）
   if(timeLimitMode) syncTimeLimitGaugeSize();
   timerInterval = setInterval(()=>{
-    elapsed++;
+    syncElapsedFromClock();
     document.getElementById('stat-time').textContent = formatTime(elapsed);
     updateDigitTimer(elapsed);
   }, 1000);
@@ -4276,8 +4276,16 @@ function resumeGameTime(){
   if(gameState === 'playing') timerInterval = setInterval(_timerTick, 1000);
 }
 
+// elapsedを精密クロック（_loopTotalStartMs基準。周回モードでも1周目開始からの通し時間）
+// から再計算する。setIntervalの発火遅延が蓄積してもここで毎回補正されるためドリフトしない。
+function syncElapsedFromClock(){
+  elapsed = window._loopTotalStartMs
+    ? Math.floor((performance.now() - window._loopTotalStartMs) / 1000)
+    : elapsed + 1;
+}
+
 function _timerTick(){
-  elapsed++;
+  syncElapsedFromClock();
   document.getElementById('stat-time').textContent=formatTime(elapsed);
   updateDigitTimer(elapsed);
   if(gameState === 'playing') cutinNotify('time', {sec: elapsed});
@@ -4953,7 +4961,7 @@ function animate(){
       window._lastPinSec = _remCeil;
       SND.pin.currentTime = 0; SND.pin.play().catch(()=>{});
     }
-    if(remainingTime <= 0 && totalTime - elapsed <= 0){
+    if(remainingTime <= 0){
       clearInterval(timerInterval);
       triggerGameOverSequence('__timeup__');
     }
