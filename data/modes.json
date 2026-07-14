@@ -1,17 +1,17 @@
 [
   {
     "id": "story",
-    "label": "STORY MODE",
-    "desc": "物語を読み進めながら、\n囚われた花嫁たちを救い出そう。",
-    "image": "assets/images/etc/mod003.png",
+    "label": "STORY MODE 1",
+    "desc": "不思議の世界に帰るために、\n花嫁たちを檻から解放しよう。",
+    "image": "assets/images/etc/mod03.png",
     "color": "blue",
     "enabled": true
   },
   {
     "id": "story2",
     "label": "STORY MODE 2",
-    "desc": "戦場に声が届く。\n仲間と共に星の傷を暴け。",
-    "image": "assets/images/etc/mod003.png",
+    "desc": "黄色いジャージの女子高生。\n無事に家に帰ることができるのか。",
+    "image": "assets/images/etc/mod05.png",
     "color": "blue",
     "enabled": true
   },
