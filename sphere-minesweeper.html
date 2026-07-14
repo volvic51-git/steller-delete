@@ -792,6 +792,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/solver.js"></script>
 <script src="js/board-gen.js"></script>
+<script src="js/cutin.js"></script>
+<script src="js/cutin-dialogue.js"></script>
 <script>
 // ===================== BOARD DIMENSIONS (変更可能定数) =====================
 // 難易度に応じて動的に変更される
@@ -1001,6 +1003,9 @@ function updateCharacterReveal(){
     minesEl.innerHTML = '<img src="assets/images/mine.png" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:4px;"> ' + removedMines + ' / ' + mineCount;
     minesEl.style.display = gameState==='idle'||gameState==='playing'||gameState==='win' ? '' : 'none';
   }
+  // クリア確定後の残存セル一括消滅でも呼ばれ続けるため、playing中のみ通知
+  // （ガード無しだと勝利演出中に閾値カットインが誤発火する）
+  if(gameState === 'playing') cutinNotify('open_rate', {rate: charRevealRatio});
 }
 
 // 非地雷セル消滅時に呼ぶ
@@ -1055,7 +1060,7 @@ function showRescueScreen(){
   // ランキング保存・順位表示
   const stageId = new URLSearchParams(window.location.search).get('stage');
   const rankEl  = document.getElementById('rescue-rank');
-  if(stageId){
+  if(stageId && !window._cutinBlocksRanking){  // プレイ中カットインのあるステージのみランキング対象外
     const rank = addRankingRecord(stageId, clearTimeSec);
     if(rank === 1){
       rankEl.innerHTML = '<span style="color:#ffd700;">👑 NEW RECORD!　BEST1 達成！</span>';
@@ -1094,7 +1099,7 @@ function updateRescueButtons(){
   // NORMAL は「STAGE」ボタンで NORMAL/NOFLAG リストへ戻す。それ以外は従来のカルーセル（?select=1）。
   if(btnSelect) btnSelect.onclick = ()=>{
     window.location.href = isNormalMode
-      ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
+      ? (window._listGroup === 'story2' ? 'index.html?story2=1' : gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
       : 'index.html?select=1';
   };
 
@@ -2116,6 +2121,18 @@ let logicGuarantee = false;
 const GUARANTEE_SKIP_DENSITY = 0.22;
 let misclickGuard = false; // 誤操作防止モード（周囲が全て未開封/消滅のセルへの操作を無効化）
 let gamePaused = false; // 設定メニューによる一時停止（球体操作のみ無効化、タイマー/BGMは継続）
+
+// ===================== CUTIN: 初期化（hooksでゲーム側のポーズ/入力制御と接続） =====================
+window._cutinHooks = {
+  onStart(){ _cutinPausing = true; gamePaused = true; pauseGameTime(); },
+  onEnd(){
+    _cutinPausing = false;
+    // 設定メニューが開いていない時だけ解除（gamePausedは設定メニューと共用のため）
+    if(document.getElementById('settings-menu').style.display !== 'block') gamePaused = false;
+    resumeGameTime();
+  },
+};
+CutIn.init({ hooks: window._cutinHooks });
 // 盤面世代カウンタ。地雷除去の遅延コールバック（400ms後）が発行時の盤面に対して
 // 差分更新を行うため、initBoardで盤面が作り直された場合は世代不一致でno-opにする
 // （旧盤面の座標で新盤面のneighborMinesをデクリメントするとカウントが壊れるため）。
@@ -2126,6 +2143,9 @@ let loopMode    = false;   // 周回モードON/OFF
 let exMode      = true;    // EXモード(true=既存仕様：地雷即ゲームオーバー) / false=NORMALモード(ヒントゲージで受ける)
 let stMode      = false;   // STモード(デバッグ用)：サーチを常時使用可能にする代わりに、確定セルがある状態で使うと即ゲームオーバー
 let gameRule    = 'attack'; // 'attack'=現行ルール(旗=攻撃・地雷除去) / 'noflag'=旗禁止(開封のみ・非地雷全開封でクリア) / (将来:'classic')
+window._cutinSet = null;          // stage-params.json の cutin フィールド（会話セット名）
+window._listGroup = null;         // 'story2' 等。STAGEボタンの戻り先判定
+window._cutinBlocksRanking = false;
 let loopCount   = 3;       // 合計周回数
 let currentLoop = 1;       // 現在の周（1始まり）
 let loopColors  = ['#0044aa','#006622','#440088','#884400','#880022']; // 各周の盤面色（boardColorとしても使用）
@@ -2288,6 +2308,7 @@ function digCell(row,col){
       cell.isOpen=true; updateCellVisual(cell);
       flashHintGaugePenalty();
       cell.isMine=false; cell.isRemoved=true; removedMines++;
+      cutinNotify('mines_removed', {count: removedMines});
       playSE('flag');
       triggerRemovalAnimation(cell);
       {
@@ -2445,6 +2466,7 @@ function applyMineRemovalEffects(row, col){
 function removeMine(row,col){
   const cell=board[row][col];
   cell.isMine=false; cell.isRemoved=true; removedMines++;
+  cutinNotify('mines_removed', {count: removedMines});
   playSE('flag');
   triggerRemovalAnimation(cell);
   const epoch = _boardEpoch;
@@ -2743,7 +2765,14 @@ function checkWin(){
     }
     // 全消滅後、外殻爆散→キャラ救出へ（ノーフラッグは地雷一括消滅の完了を待つため長めに取る）
     const rescueDelay = gameRule === 'noflag' ? 2000 : (pending>0?700:150);
-    setTimeout(()=>triggerRescueSequence(), rescueDelay);
+    setTimeout(()=>{
+      // カットイン有りなら完了(タップ早送り含む)を待ってから救出演出へ。
+      // hooksのpause/resumeが_timerStartMsをシフトするため、ここで何秒眺めても
+      // クリアタイム（computeClearTimeSec）は伸びない。
+      const _ps = cutinNotify('stage_clear');
+      if(_ps.length) Promise.all(_ps).then(()=>triggerRescueSequence());
+      else triggerRescueSequence();
+    }, rescueDelay);
   }, 200);
 }
 
@@ -3265,7 +3294,7 @@ function executeConfirmedAction(){
   } else if(action === 'select'){
     // STORY は STORY MODE 画面へ、それ以外は NORMAL/NOFLAG リストへ。
     const isStory = (new URLSearchParams(window.location.search).get('mode') === 'story') || !!window._resumeStoryMode;
-    window.location.href = isStory ? 'index.html?story=1' : (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
+    window.location.href = isStory ? 'index.html?story=1' : (window._listGroup === 'story2' ? 'index.html?story2=1' : gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
   } else if(action === 'title'){
     window.location.href = 'index.html';
   }
@@ -3648,7 +3677,10 @@ function saveSuspend(){
       seedPoolMode: !!window._seedPoolMode,
       seedPoolBoard: window._seedPoolMode ? window._seedPoolBoard : null,
       factoryMode: !!window._factoryMode,
-      factoryBoard: window._factoryMode ? window._factoryBoard : null
+      factoryBoard: window._factoryMode ? window._factoryBoard : null,
+      cutinSet: window._cutinSet ?? null,
+      listGroup: window._listGroup ?? null,
+      cutinFired: Dialogue.getFired()
     },
     savedAt: new Date().toISOString()
   };
@@ -3743,6 +3775,13 @@ async function resumeSuspend(rec){
   loopMode=!!m.loopMode; loopCount=m.loopCount ?? loopCount; currentLoop=m.currentLoop ?? 1;
   if(m.exMode!==undefined) exMode=m.exMode; stMode=!!m.stMode;
   gameRule = (m.gameRule === 'noflag') ? 'noflag' : 'attack'; // 旧データ(undefined)は'attack'にフォールバック
+  window._cutinSet  = m.cutinSet ?? null;
+  window._listGroup = m.listGroup ?? null;
+  if(window._cutinSet){
+    Dialogue.load(window._cutinSet)
+      .then(() => Dialogue.restoreFired(m.cutinFired))
+      .catch(e => console.warn('[cutin] resume時ロード失敗', e));
+  }
   timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;
   if(m.currentDiff) currentDiff=m.currentDiff;
   maxHints = m.maxHints ?? maxHints;
@@ -4162,6 +4201,49 @@ function syncTimeLimitGaugeSize(){
   updateTimeLimitGauge();
 }
 
+// ===================== CUTIN: 時間停止 =====================
+let _timePausedAt = null;   // カットインによるポーズ開始時刻（null=非ポーズ）
+let _cutinPausing = false;  // gamePaused の設定メニューとの共用を安全にするための別フラグ
+
+function pauseGameTime(){
+  if(_timePausedAt !== null) return;
+  _timePausedAt = performance.now();
+  clearInterval(timerInterval);
+}
+function resumeGameTime(){
+  if(_timePausedAt === null) return;
+  const pausedMs = performance.now() - _timePausedAt;
+  _timePausedAt = null;
+  // performance.now() 基準の起点をポーズ時間ぶん後方へシフト（精密クリアタイム・
+  // 制限時間ゲージ・周回トータルの全てからカットイン時間を除外する）
+  if(window._timerStartMs)     window._timerStartMs     += pausedMs;
+  if(window._loopTotalStartMs) window._loopTotalStartMs += pausedMs;
+  if(gameState === 'playing') timerInterval = setInterval(_timerTick, 1000);
+}
+
+function _timerTick(){
+  elapsed++;
+  document.getElementById('stat-time').textContent=formatTime(elapsed);
+  updateDigitTimer(elapsed);
+  if(gameState === 'playing') cutinNotify('time', {sec: elapsed});
+}
+
+// リプレイ再生・resume/リプレイの盤面再構築中はカットインを発火させない
+// ⚠️ Dialogue/CutInはトップレベルconstのためwindow.Dialogueにはならない（bare識別子で参照すること）
+function cutinNotify(type, payload){
+  if(_replayMode || _replayInstant || _isReplaySession) return [];
+  return Dialogue.notify(type, payload);
+}
+
+// 通常の ?stage= 起動（restartGame後）でカットインデータを読み込み、初手前(idle中)に
+// stage_start を通知する。?boot=resume 経路では呼ばない（resumeSuspend側で個別に処理）。
+function _cutinStageStart(){
+  if(!window._cutinSet) return;
+  Dialogue.load(window._cutinSet)
+    .then(() => { Dialogue.notify('stage_start'); })
+    .catch(e => console.warn('[cutin] 会話データ読込失敗（カットイン無効で続行）', e));
+}
+
 function startTimer(){
   if(currentLoop === 1) elapsed=0; // 経過時間は1周目開始時のみリセット。2周目以降は通しで継続
   clearInterval(timerInterval);
@@ -4181,11 +4263,7 @@ function startTimer(){
     ? performance.now() - (totalTime - remainingTime) * 1000
     : performance.now();
   if(currentLoop === 1) window._loopTotalStartMs = performance.now();
-  timerInterval=setInterval(()=>{
-    elapsed++;
-    document.getElementById('stat-time').textContent=formatTime(elapsed);
-    updateDigitTimer(elapsed);
-  },1000);
+  timerInterval=setInterval(_timerTick,1000);
 }
 function formatTime(s){ return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); }
 
@@ -4569,6 +4647,7 @@ function toggleAudio(){
 
 // ===================== RESTART =====================
 function restartGame(){
+  Dialogue.reset(); // RETRY: once発火状態をリセット・進行中カットイン破棄
   window._lastPinSec = null;
   // サーチボタン状態をsearchEnabledに同期
   _searchAvailable = false;
@@ -4777,7 +4856,7 @@ function animate(){
   sphereWire.rotation.y+=dt*0.04;
 
   // 制限時間ゲージ：毎フレーム滑らかに更新
-  if(timeLimitMode && gameState==='playing' && totalTime > 0){
+  if(timeLimitMode && gameState==='playing' && totalTime > 0 && _timePausedAt === null){
     const _elapsedSec = window._timerStartMs ? (performance.now() - window._timerStartMs) / 1000 : elapsed;
     remainingTime = Math.max(0, totalTime - _elapsedSec);
     updateTimeLimitGauge();
@@ -4930,7 +5009,7 @@ if(window.visualViewport){
       // キャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
       // それ以外のSIMPLE MODEステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
       // 011〜020は旧プール・上限10体で頭打ちだったため移行）。
-      const _exFixedCharIds = [10, 11, 20, 21];
+      const _exFixedCharIds = [10, 11, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29];
       if(urlParams.get('mode') === 'normal' && !_exFixedCharIds.includes(Number(stage.id))){
         const pool = CHARACTER_LIST.filter(c => {
           const n = parseInt(c.id, 10);
@@ -4996,6 +5075,10 @@ if(window.visualViewport){
       // gameRule 適用（stage-params.json連携）
       gameRule = (stage.gameRule === 'noflag') ? 'noflag' : 'attack';
 
+      // カットイン / リストグループ適用（stage-params.json連携）
+      window._cutinSet  = stage.cutin || null;
+      window._listGroup = stage.listGroup || null;
+
       // loopMode / loopCount 適用（stage-params.json連携）
       if(stage.loopMode === true){
         loopMode = true;
@@ -5047,17 +5130,20 @@ if(window.visualViewport){
             window._seedPoolBoard = bd;
             window._seedPoolMode = true;
             restartGame();
+            _cutinStageStart();
           })
           .catch(e => {
             console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
             window._seedPoolMode = false;
             restartGame();
+            _cutinStageStart();
           });
         return;
       }
 
       // 設定を反映してリスタート
       restartGame();
+      _cutinStageStart();
     })
     .catch(() => {
       console.warn('stage-params.json not found, using defaults.');

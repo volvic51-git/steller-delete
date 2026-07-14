@@ -1,9 +1,60 @@
 # カットイン会話システム＋STORY MODE 2 実装手順書（Sonnet 5 向け）
 
-作成日: 2026-07-12　ステータス: **未着手**
+作成日: 2026-07-12　最終更新: 2026-07-12　ステータス: **実装済み（dev server検証済み・未マージ）**
+ブランチ: `feature/cutin-story2`
 検討書: `etc/V2_CUTIN_PLAN.md`（設計の背景・確定事項はこちら。本書と食い違ったら本書優先で、
 食い違い自体を完了報告に記載すること）
 memory: [[project-cutin-plan]]
+
+## 実装結果サマリ（2026-07-12）
+
+Step 1〜8すべて実装完了。検証は主にJS直接実行（`javascript_tool`）で実施——
+このdev serverのブラウザプレビューは**タブが`document.hidden=true`扱いのため
+`requestAnimationFrame`が一切発火しない環境的制約**があり、three.jsの`animate()`
+ループ・スクリーンショット・`resumeSuspend()`のチャンク処理（`_nextFrame()`が
+rAF依存）が動かない。この制約下でも検証できる項目（ロジック・タイマー・
+DOM状態・localStorage）は全て実機的に確認済み。rAF依存で確認しきれなかった項目
+（実際のドラッグ操作・resumeの完全なE2E・制限時間ゲージの実描画）は
+コードレビューのみ（**次回実ブラウザでの最終確認を推奨**）。
+
+**実装中に発見した重大バグ（手順書には無かった・修正済み）**：
+`window.Dialogue`は常に`undefined`だった。`const Dialogue = (()=>{...})()`は
+トップレベル宣言のため`window`のプロパティにならない（`let`/`const`の仕様）。
+これにより`cutinNotify()`の`if(!window.Dialogue) return [];`ガードが常に
+成立してしまい、**time/open_rate/mines_removed/stage_clearの通知が実際には
+一度も発火しない**状態だった（`stage_start`だけは`_cutinStageStart()`が
+bare識別子`Dialogue.load()`を直接呼んでいたため気づかれにくかった）。
+`restartGame()`の`if(window.Dialogue) Dialogue.reset();`、`saveSuspend()`の
+`window.Dialogue ? Dialogue.getFired() : []`も同様に無効化されていた。
+→ 全て`window.`プレフィックスを外しbare識別子（`Dialogue.notify(...)`等）に
+修正。以後の動作確認は全てこの修正後のコードで実施し、正常動作を確認済み。
+
+**動的に確認できた項目**：
+- CutIn: show/play/キュー直列化・タイプライター・誤タップ防止300msガード・
+  タップスキップ・duration自動クローズ・clearPending（stage_clear優先）・
+  cancel（RETRY中断）・hooks(onStart/onEnd)が複数行/複数イベントで1回ずつ
+- 時間停止: `pauseGameTime`/`resumeGameTime`による`_timerStartMs`シフトで
+  クリアタイムが実測でカットイン分だけ増えないこと（5.000s→5.056sで誤差
+  0.056sのみ、カットイン自体は1秒以上表示していた）
+- ランキング振り分け: id:22(time/open_rateトリガーあり)→保存されない、
+  id:23(stage_start/stage_clearのみ)→保存される、stage1(カットイン無し)→
+  従来通り保存される（回帰なし）
+- RETRY: once発火状態リセット・再生中カットインの強制終了・gamePaused復帰
+- STORY MODE 2: MODE SELECTカード→リスト（01〜08表記）→RECORDS表示・
+  `?story2=1`直接オープン・戻り導線URLロジック（`_listGroup`分岐）
+- noflagステージ(id:12)回帰: gameRule/listGroup/開封フラッド動作に影響なし
+
+**コードレビューのみで確認した項目**（rAF制約のため動的確認不可）：
+- 制限時間ゲージの`_timePausedAt===null`ガード（既存条件への1個のAND追加のみ、
+  低リスク）
+- `resumeSuspend()`のcutinSet/listGroup/cutinFired復元（既存の`gameRule`復元と
+  同一パターンで実装。`saveSuspend()`側がmeta生成に正しい値を含めることは
+  動的確認済み）
+- 実際のドラッグ/クリックによる盤面操作（`gamePaused`ガードのState遷移は
+  動的確認済みだが、canvas上の実クリックイベント自体は未確認）
+- モバイル幅レイアウト（375px CSS自体はレビュー済み、実描画は未確認）
+
+**暫定のまま残る項目**（§4参照）は変更なし。
 
 ---
 
