@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board Factory — Stellar Delete</title>
+<style>
+  :root{ --bg:#0b0d17; --fg:#e6e9ff; --acc:#8844ff; --acc2:#aa66ff; --ok:#28d17c; --ng:#ff5555; --bd:#262a40; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:radial-gradient(circle at 50% -10%,#1a1f3a,#0b0d17 60%); color:var(--fg);
+        font-family:'Segoe UI',system-ui,sans-serif; font-size:14px; padding:24px; min-height:100vh; }
+  h1{ font-size:20px; margin:0 0 4px; }
+  .sub{ color:#9aa0c8; font-size:12px; margin-bottom:20px; }
+  .card{ background:rgba(20,24,44,.75); border:1px solid var(--bd); border-radius:12px;
+         padding:16px 18px; margin-bottom:14px; box-shadow:0 6px 20px rgba(0,0,0,.3); }
+  .drop-zone{ border:2px dashed var(--bd); border-radius:10px; padding:32px; text-align:center;
+              cursor:pointer; color:#9aa0c8; transition:border-color .2s; }
+  .drop-zone:hover,.drop-zone.over{ border-color:var(--acc2); color:var(--acc2); }
+  .drop-zone input{ display:none; }
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  th,td{ padding:7px 10px; border-bottom:1px solid var(--bd); text-align:left; }
+  th{ color:#9aa0c8; font-weight:500; }
+  tr:last-child td{ border-bottom:none; }
+  .badge{ display:inline-block; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:600; }
+  .badge.ok{ background:rgba(40,209,124,.15); color:var(--ok); border:1px solid rgba(40,209,124,.4); }
+  .badge.ng{ background:rgba(255,85,85,.12); color:var(--ng); border:1px solid rgba(255,85,85,.3); }
+  .badge.wait{ background:rgba(136,68,255,.12); color:var(--acc2); border:1px solid rgba(136,68,255,.3); }
+  .badge.gen{ background:rgba(255,200,0,.12); color:#ffc800; border:1px solid rgba(255,200,0,.3); }
+  button{ border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600;
+          cursor:pointer; color:#fff; background:linear-gradient(90deg,var(--acc),var(--acc2)); transition:filter .15s; }
+  button:hover{ filter:brightness(1.1); }
+  button:disabled{ opacity:.4; cursor:not-allowed; filter:none; }
+  button.sec{ background:#1b2038; border:1px solid var(--bd); font-weight:500; }
+  .info-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:10px; }
+  .info-item{ background:#11152a; border:1px solid var(--bd); border-radius:8px; padding:9px 12px; }
+  .info-item .label{ font-size:10px; color:#9aa0c8; margin-bottom:2px; }
+  .info-item .val{ font-size:15px; font-weight:700; color:#fff; }
+  .pill{ display:inline-block; background:#1b2038; border:1px solid var(--bd); border-radius:20px;
+         padding:1px 8px; font-size:10px; color:#9aa0c8; }
+  #log{ font-size:11px; color:#9aa0c8; margin-top:8px; min-height:16px; }
+  .hash{ font-family:monospace; font-size:10px; color:#9aa0c8; word-break:break-all; }
+  #all-btn-row{ display:flex; gap:10px; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<h1>🏭 Board Factory</h1>
+<div class="sub">Board Hunter の結果JSON → 盤面生成・Board JSON 出力</div>
+
+<!-- ファイル読み込み -->
+<div class="card">
+  <div class="drop-zone" id="drop-zone">
+    <div>📂 boardhunter JSON をここにドロップ、またはクリックして選択</div>
+    <input type="file" id="file-input" accept=".json">
+  </div>
+</div>
+
+<!-- キャンペーン情報（読み込み後） -->
+<div class="card" id="info-card" style="display:none;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+    <strong id="campaign-id"></strong>
+    <span class="pill" id="gen-version-pill"></span>
+    <span id="reporter-badge"></span>
+  </div>
+  <div class="info-grid" id="info-grid"></div>
+</div>
+
+<!-- seed一覧 -->
+<div class="card" id="seeds-card" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <strong>Seeds（<span id="seed-count">0</span>件）</strong>
+    <div id="all-btn-row">
+      <button id="gen-all-btn" class="sec">▶ 全件生成</button>
+      <button id="dl-all-btn" class="sec" disabled>⬇ 全件ダウンロード</button>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Seed</th><th>状態</th><th>Hash（先頭16文字）</th><th></th></tr></thead>
+    <tbody id="seed-tbody"></tbody>
+  </table>
+  <div id="log"></div>
+</div>
+
+<script src="boardHunter/solver.js"></script>
+<script src="../../js/board-gen.js"></script>
+<script>
+// 生成・正規形hashは js/board-gen.js（共通生成器）に一本化。
+// ゲーム本体・Board Hunter とのパリティは board-gen.js 側の契約（GEN_VERSION）で保証する。
+function wrapFlags(w){ return { wrapCols:w==='cyl'||w==='torus', wrapRows:w==='torus' }; }
+
+// ── 盤面生成 ──
+async function generateBoard(seed, params, campaignId, genVersion, reporter){
+  const { rows, cols, mineCount, wrap, start } = params;
+  const { wrapCols, wrapRows } = wrapFlags(wrap);
+  const mineSet = StellerBoardGen.generateMineSet({
+    rows, cols, mineCount, start, seed: seed >>> 0, wrapCols, wrapRows
+  });
+
+  // 地雷リスト（r*cols+c の昇順でソート → 正規形）
+  const mines = [...mineSet].sort((a,b)=>a-b).map(k=>({ r: Math.floor(k/cols), c: k%cols }));
+
+  // ハッシュ（正規形の定義は board-gen.js canonicalBoard に集約）
+  const hash = await StellerBoardGen.hashBoard({ rows, cols, mineCount, wrap, startCell: start, mines });
+
+  // solver 再検証
+  let verified = false;
+  if(typeof StellerSolver !== 'undefined'){
+    const numMap = StellerSolver.computeNeighborMines(rows, cols, (r,c)=>mineSet.has(r*cols+c), wrapCols, wrapRows);
+    const cellAt = (r,c)=>({ isMine:mineSet.has(r*cols+c), neighborMines:numMap.get(r*cols+c) });
+    verified = StellerSolver.isSolvable({ rows, cols, mineCount, wrapCols, wrapRows, start, cellAt });
+  }
+
+  return {
+    identity:{ campaignId, genVersion, seed },
+    board:{ rows, cols, mineCount, wrap, startCell:start, mines, hash },
+    meta:{ createdAt: new Date().toISOString(), reporter: reporter||null, verified }
+  };
+}
+
+// ── ダウンロード ──
+function download(name, obj){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));
+  a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// ── 状態管理 ──
+let huntData = null;
+const boards = {}; // seed → board JSON
+
+// ── ファイル読み込み ──
+function loadJSON(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      huntData = JSON.parse(e.target.result);
+      renderInfo();
+      renderSeeds();
+    }catch(err){
+      alert('JSONの解析に失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('over'); if(e.dataTransfer.files[0]) loadJSON(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', ()=>{ if(fileInput.files[0]) loadJSON(fileInput.files[0]); });
+
+// ── キャンペーン情報表示 ──
+function renderInfo(){
+  const p = huntData.params;
+  document.getElementById('campaign-id').textContent = huntData.campaignId;
+  const pill = document.getElementById('gen-version-pill');
+  pill.textContent = 'genVersion: ' + huntData.genVersion;
+  // ゲーム側の生成器バージョンと不一致なら、生成しても hash 検証で弾かれるため警告する
+  if(String(huntData.genVersion) !== StellerBoardGen.GEN_VERSION){
+    pill.style.borderColor = 'var(--ng)'; pill.style.color = 'var(--ng)';
+    pill.textContent += ` ⚠ 生成器は v${StellerBoardGen.GEN_VERSION}（不一致：ゲームで再現できません）`;
+  }
+  const rb = document.getElementById('reporter-badge');
+  rb.innerHTML = huntData.reporter ? `<span class="badge ok">👤 ${huntData.reporter}</span>` : '';
+  document.getElementById('info-grid').innerHTML = [
+    ['盤面', `${p.rows} × ${p.cols}`],
+    ['地雷数', `${p.mineCount}（${(p.density*100).toFixed(0)}%）`],
+    ['隣接ルール', p.wrap],
+    ['開始セル', `r${p.start.r}, c${p.start.c}`],
+    ['試行回数', huntData.attempts.toLocaleString()],
+    ['発見件数', huntData.foundCount],
+    ['報告日時', new Date(huntData.reportedAt).toLocaleString('ja-JP')],
+  ].map(([l,v])=>`<div class="info-item"><div class="label">${l}</div><div class="val">${v}</div></div>`).join('');
+  document.getElementById('info-card').style.display = 'block';
+}
+
+// ── seed一覧表示 ──
+function renderSeeds(){
+  const tbody = document.getElementById('seed-tbody');
+  tbody.innerHTML = '';
+  document.getElementById('seed-count').textContent = huntData.seeds.length;
+  huntData.seeds.forEach((seed, i)=>{
+    const tr = document.createElement('tr');
+    tr.id = `row-${seed}`;
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td><code>${seed}</code></td>
+      <td><span class="badge wait" id="status-${seed}">未生成</span></td>
+      <td><span class="hash" id="hash-${seed}">—</span></td>
+      <td><button class="sec" id="dl-${seed}" onclick="genOne(${seed})" style="padding:5px 12px;font-size:11px;">生成</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('seeds-card').style.display = 'block';
+
+  document.getElementById('gen-all-btn').onclick = genAll;
+  document.getElementById('dl-all-btn').onclick = dlAll;
+}
+
+// ── 1件生成 ──
+async function genOne(seed){
+  const btn = document.getElementById(`dl-${seed}`);
+  const statusEl = document.getElementById(`status-${seed}`);
+  const hashEl = document.getElementById(`hash-${seed}`);
+  btn.disabled = true;
+  statusEl.className = 'badge gen'; statusEl.textContent = '生成中…';
+  await new Promise(r=>setTimeout(r,0));
+
+  const board = await generateBoard(seed, huntData.params, huntData.campaignId, huntData.genVersion, huntData.reporter);
+  boards[seed] = board;
+
+  const ok = board.meta.verified;
+  statusEl.className = 'badge ' + (ok ? 'ok' : 'ng');
+  statusEl.textContent = ok ? '✓ 検証OK' : '✗ 検証NG';
+  hashEl.textContent = board.board.hash.slice(0, 16) + '…';
+
+  const fname = `board_${huntData.campaignId}_seed${seed}.json`;
+  btn.textContent = '⬇ DL';
+  btn.disabled = false;
+  btn.onclick = ()=>download(fname, board);
+
+  // ▶ プレイ：localStorage ブリッジ経由でゲームを factory 起動する。
+  // tool/ とルートが同一オリジンで localStorage を共有する必要があるため、dev server 経由で開くこと。
+  let playBtn = document.getElementById(`play-${seed}`);
+  if(!playBtn){
+    playBtn = document.createElement('button');
+    playBtn.id = `play-${seed}`;
+    playBtn.style.cssText = 'padding:5px 12px;font-size:11px;margin-left:6px;';
+    btn.parentNode.appendChild(playBtn);
+  }
+  playBtn.textContent = '▶ プレイ';
+  playBtn.onclick = ()=>{
+    try{
+      localStorage.setItem('steller_factory_board', JSON.stringify(board));
+    }catch(e){ alert('localStorage への保存に失敗しました: ' + e.message); return; }
+    window.open('../../sphere-minesweeper.html?boot=factory', '_blank');
+  };
+
+  checkAllDone();
+  return board;
+}
+
+// ── 全件生成 ──
+async function genAll(){
+  document.getElementById('gen-all-btn').disabled = true;
+  document.getElementById('log').textContent = '生成中…';
+  for(const seed of huntData.seeds){
+    if(!boards[seed]) await genOne(seed);
+  }
+  document.getElementById('log').textContent = `完了: ${huntData.seeds.length}件生成`;
+}
+
+function checkAllDone(){
+  const allDone = huntData.seeds.every(s => boards[s]);
+  document.getElementById('dl-all-btn').disabled = !allDone;
+}
+
+// ── 全件DL ──
+function dlAll(){
+  huntData.seeds.forEach((seed, i)=>{
+    if(!boards[seed]) return;
+    setTimeout(()=>{
+      download(`board_${huntData.campaignId}_seed${seed}.json`, boards[seed]);
+    }, i * 300);
+  });
+}
+</script>
+</body>
+</html>

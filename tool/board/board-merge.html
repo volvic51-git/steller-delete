@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board Merge — Stellar Delete</title>
+<style>
+  :root{ --bg:#0b0d17; --fg:#e6e9ff; --acc:#8844ff; --acc2:#aa66ff; --ok:#28d17c; --ng:#ff5555; --bd:#262a40; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:radial-gradient(circle at 50% -10%,#1a1f3a,#0b0d17 60%); color:var(--fg);
+        font-family:'Segoe UI',system-ui,sans-serif; font-size:14px; padding:24px; min-height:100vh; }
+  h1{ font-size:20px; margin:0 0 4px; }
+  .sub{ color:#9aa0c8; font-size:12px; margin-bottom:20px; }
+  .card{ background:rgba(20,24,44,.75); border:1px solid var(--bd); border-radius:12px;
+         padding:16px 18px; margin-bottom:14px; box-shadow:0 6px 20px rgba(0,0,0,.3); }
+  .drop-zone{ border:2px dashed var(--bd); border-radius:10px; padding:32px; text-align:center;
+              cursor:pointer; color:#9aa0c8; transition:border-color .2s; }
+  .drop-zone:hover,.drop-zone.over{ border-color:var(--acc2); color:var(--acc2); }
+  .drop-zone input{ display:none; }
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  th,td{ padding:7px 10px; border-bottom:1px solid var(--bd); text-align:left; }
+  th{ color:#9aa0c8; font-weight:500; }
+  tr:last-child td{ border-bottom:none; }
+  .badge{ display:inline-block; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:600; }
+  .badge.ok{ background:rgba(40,209,124,.15); color:var(--ok); border:1px solid rgba(40,209,124,.4); }
+  .badge.ng{ background:rgba(255,85,85,.12); color:var(--ng); border:1px solid rgba(255,85,85,.3); }
+  .badge.wait{ background:rgba(136,68,255,.12); color:var(--acc2); border:1px solid rgba(136,68,255,.3); }
+  button{ border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:600;
+          cursor:pointer; color:#fff; background:linear-gradient(90deg,var(--acc),var(--acc2)); transition:filter .15s; }
+  button:hover{ filter:brightness(1.1); }
+  button:disabled{ opacity:.4; cursor:not-allowed; filter:none; }
+  button.sec{ background:#1b2038; border:1px solid var(--bd); font-weight:500; }
+  .info-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:10px; }
+  .info-item{ background:#11152a; border:1px solid var(--bd); border-radius:8px; padding:9px 12px; }
+  .info-item .label{ font-size:10px; color:#9aa0c8; margin-bottom:2px; }
+  .info-item .val{ font-size:15px; font-weight:700; color:#fff; }
+  .pill{ display:inline-block; background:#1b2038; border:1px solid var(--bd); border-radius:20px;
+         padding:1px 8px; font-size:10px; color:#9aa0c8; }
+  .group-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .files-list{ font-size:11px; color:#9aa0c8; margin-top:6px; }
+  .files-list li{ margin-bottom:2px; }
+  #log{ font-size:11px; color:#9aa0c8; margin-top:8px; min-height:16px; }
+  .warn{ color:#ffc800; }
+</style>
+</head>
+<body>
+
+<h1>🧩 Board Merge</h1>
+<div class="sub">tool/hunter/ の boardhunter 実行ログ（複数可）を campaignId ごとに集約し、data/board/ 用の seed プールJSONを出力</div>
+
+<!-- ファイル読み込み -->
+<div class="card">
+  <div class="drop-zone" id="drop-zone">
+    <div>📂 boardhunter JSON を複数まとめてここにドロップ、またはクリックして選択</div>
+    <input type="file" id="file-input" accept=".json" multiple>
+  </div>
+  <div id="log"></div>
+</div>
+
+<!-- campaignId ごとの結果 -->
+<div id="groups"></div>
+
+<script>
+// ── 状態管理 ──
+// campaignId -> { params, genVersion, files:[{name,reportedAt}], attemptsTotal,
+//                 seedMap: Map(seed -> {reporter, firstSeenAt, sources:[filename,...]}) }
+const groups = new Map();
+
+function paramsKey(p){
+  return JSON.stringify({ rows:p.rows, cols:p.cols, mineCount:p.mineCount, wrap:p.wrap, start:p.start });
+}
+
+function ingest(huntData, filename){
+  const cid = huntData.campaignId;
+  let g = groups.get(cid);
+  const pk = paramsKey(huntData.params);
+  if(!g){
+    g = { campaignId: cid, genVersion: huntData.genVersion, params: huntData.params,
+          paramsKey: pk, files: [], attemptsTotal: 0, seedMap: new Map(), conflicts: [] };
+    groups.set(cid, g);
+  }
+  if(pk !== g.paramsKey || String(huntData.genVersion) !== String(g.genVersion)){
+    g.conflicts.push(`${filename}: params/genVersion が既存グループと不一致（このファイルの seed は無視）`);
+    return;
+  }
+  g.files.push({ name: filename, reportedAt: huntData.reportedAt, attempts: huntData.attempts, reporter: huntData.reporter });
+  g.attemptsTotal += (huntData.attempts || 0);
+
+  (huntData.seeds || []).forEach(seed => {
+    const existing = g.seedMap.get(seed);
+    if(existing){
+      existing.sources.push(filename);
+      if(existing.reporter !== huntData.reporter && huntData.reporter){
+        g.conflicts.push(`seed ${seed}: reporter 不一致（${existing.reporter||'null'} と ${huntData.reporter}）→ 先に読み込んだ方(${existing.reporter||'null'})を採用`);
+      }
+    } else {
+      g.seedMap.set(seed, { reporter: huntData.reporter || null, firstSeenAt: huntData.reportedAt, sources: [filename] });
+    }
+  });
+}
+
+function loadFile(file){
+  return new Promise((resolve)=>{
+    const reader = new FileReader();
+    reader.onload = e => {
+      try{
+        const data = JSON.parse(e.target.result);
+        ingest(data, file.name);
+      }catch(err){
+        alert(`${file.name} の解析に失敗しました: ${err.message}`);
+      }
+      resolve();
+    };
+    reader.readAsText(file);
+  });
+}
+
+async function loadFiles(fileList){
+  document.getElementById('log').textContent = `読み込み中… (${fileList.length}件)`;
+  for(const f of fileList) await loadFile(f);
+  document.getElementById('log').textContent = `読み込み完了: ${fileList.length}件`;
+  renderGroups();
+}
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.addEventListener('click', ()=>fileInput.click());
+dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e=>{
+  e.preventDefault(); dropZone.classList.remove('over');
+  if(e.dataTransfer.files.length) loadFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', ()=>{ if(fileInput.files.length) loadFiles(fileInput.files); });
+
+// ── 出力ファイル名（data/board/ の既存命名規則 <rows>x<cols>_<density%>.json に合わせる） ──
+function boardFileName(params){
+  const densityPct = Math.round((params.density||0) * 100);
+  return `${params.rows}x${params.cols}_${densityPct}.json`;
+}
+
+// ── data/board/ 用JSON組み立て（seedのみ＋reporter対応表。mines/hashは持たない） ──
+function buildOutput(g){
+  const boards = [...g.seedMap.entries()]
+    .sort((a,b)=>a[0]-b[0])
+    .map(([seed, info]) => ({ seed, reporter: info.reporter }));
+  return {
+    campaignId: g.campaignId,
+    genVersion: g.genVersion,
+    params: g.params,
+    totalAttempts: g.attemptsTotal,
+    updatedAt: new Date().toISOString(),
+    boards
+  };
+}
+
+function download(name, obj){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));
+  a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// ── 表示 ──
+function renderGroups(){
+  const wrap = document.getElementById('groups');
+  wrap.innerHTML = '';
+  for(const g of groups.values()){
+    const p = g.params;
+    const card = document.createElement('div');
+    card.className = 'card';
+    const fname = boardFileName(p);
+    card.innerHTML = `
+      <div class="group-head">
+        <div>
+          <strong>${g.campaignId}</strong>
+          <span class="pill">genVersion: ${g.genVersion}</span>
+          <span class="pill">出力: data/board/${fname}</span>
+        </div>
+        <button class="dl-btn">⬇ ダウンロード</button>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">盤面</div><div class="val">${p.rows} × ${p.cols}</div></div>
+        <div class="info-item"><div class="label">地雷数</div><div class="val">${p.mineCount}（${Math.round((p.density||0)*100)}%）</div></div>
+        <div class="info-item"><div class="label">隣接ルール</div><div class="val">${p.wrap}</div></div>
+        <div class="info-item"><div class="label">開始セル</div><div class="val">r${p.start.r}, c${p.start.c}</div></div>
+        <div class="info-item"><div class="label">読込ファイル数</div><div class="val">${g.files.length}</div></div>
+        <div class="info-item"><div class="label">試行回数(合計)</div><div class="val">${g.attemptsTotal.toLocaleString()}</div></div>
+        <div class="info-item"><div class="label">seed件数(重複排除後)</div><div class="val">${g.seedMap.size}</div></div>
+      </div>
+      <ul class="files-list">${g.files.map(f=>`<li>${f.name}（reporter: ${f.reporter||'—'} / attempts: ${f.attempts}）</li>`).join('')}</ul>
+      ${g.conflicts.length ? `<div class="warn">⚠ ${g.conflicts.map(c=>c).join('<br>⚠ ')}</div>` : ''}
+      <table style="margin-top:10px;">
+        <thead><tr><th>#</th><th>Seed</th><th>Reporter</th><th>由来ファイル数</th></tr></thead>
+        <tbody>
+          ${[...g.seedMap.entries()].sort((a,b)=>a[0]-b[0]).map(([seed,info],i)=>`
+            <tr><td>${i+1}</td><td><code>${seed}</code></td><td>${info.reporter||'—'}</td><td>${info.sources.length}</td></tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    card.querySelector('.dl-btn').onclick = ()=>download(fname, buildOutput(g));
+    wrap.appendChild(card);
+  }
+}
+</script>
+</body>
+</html>

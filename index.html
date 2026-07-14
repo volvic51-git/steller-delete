@@ -1366,9 +1366,10 @@
   </div>
 </div>
 
-<!-- STORY MODE エピソードリスト画面 -->
+<!-- STORY MODE エピソードリスト画面（STORY MODE 2 とも共用。openStoryList/openStory2List が
+     screen-titleと#story-listの中身を差し替える） -->
 <div id="story-list-modal" class="screen-overlay">
-  <div class="screen-title">STORY MODE</div>
+  <div class="screen-title" id="story-list-title">STORY MODE</div>
   <div class="screen-scroll" id="story-list">
     <!-- EPISODES から動的生成 -->
   </div>
@@ -1576,12 +1577,20 @@
 
 /* ============================================================
    セーブデータ（localStorage）
-   unlockedStage   : 解放済みの最大ステージID（0=全未解放）
-   unlockedEpisode : 解放済みの最大エピソード番号（0=全未解放）
+   unlockedStage    : 解放済みの最大ステージID（0=全未解放。STORY MODE用、id 1-9）
+   unlockedEpisode  : 解放済みの最大エピソード番号（0=全未解放。STORY MODE用）
+   unlockedStage2   : STORY MODE 2用（id 22-29）。既存STORYと数値帯が異なっても
+                      単純な「より大きい値なら解放」比較のため、混在させると片方の
+                      進行がもう片方を誤って全解放してしまう。そのため別フィールドに分離。
+   unlockedEpisode2 : STORY MODE 2用のエピソード解放カウンタ
    novel01読了→ステージ1解放 / ステージ1クリア→エピソード1(novel02)解放
+   novel11読了→ステージ22解放 / ステージ22クリア→エピソード11(novel12)解放
 ============================================================ */
 const SAVE_KEY = 'stellarDeleteSave';
-const defaultSaveData = { unlockedStage: 0, unlockedEpisode: 0 };
+const defaultSaveData = { unlockedStage: 0, unlockedEpisode: 0, unlockedStage2: 0, unlockedEpisode2: 0 };
+// STORY MODE 2のステージ（id 22-29）かどうか判定するヘルパー。
+// stage-modalの錠前判定・戻り先URL・mode paramの出し分けで共通利用する。
+function isStory2StageId(id){ return id >= 22 && id <= 30; }
 
 function loadSaveData() {
   try {
@@ -1655,7 +1664,8 @@ let isAnimating = false;
 
 function cardHtml(idx, pos) {
   const s = stageData[idx];
-  const isLocked = s.id > (saveData.unlockedStage || 0);
+  const isS2 = isStory2StageId(s.id);
+  const isLocked = isS2 ? s.id > (saveData.unlockedStage2 || 0) : s.id > (saveData.unlockedStage || 0);
   const posClass = pos ? ' ' + pos : '';
   const total = (s.grid_col && s.grid_row) ? s.grid_col * s.grid_row : null;
   const gridStr  = (s.grid_col && s.grid_row)
@@ -1667,7 +1677,7 @@ function cardHtml(idx, pos) {
     ? isLocked ? `星傷数 <span class="stage-unknown">??</span>` : `星傷数 ${s.mines.toLocaleString()}`
     : '';
   const descStr = isLocked
-    ? `EP.${s.id - 1} を読み終わると解放されます`
+    ? `EP.${isS2 ? s.id - 12 : s.id - 1} を読み終わると解放されます`
     : (s.description || '');
   return `<div class="stage-card${isLocked ? ' locked' : ''}${posClass}" data-idx="${idx}" data-id="${s.id}" data-locked="${isLocked}">
     <div class="stage-img-wrap">
@@ -1861,7 +1871,7 @@ stageViewport.addEventListener('touchend', e => {
 function updateStartBtn() {
   const btn = document.getElementById('stage-start-btn');
   const s = stageData[currentIdx];
-  const isLocked = s && s.id > saveData.unlockedStage;
+  const isLocked = s && (isStory2StageId(s.id) ? s.id > saveData.unlockedStage2 : s.id > saveData.unlockedStage);
   btn.textContent = isLocked ? 'LOCKED' : 'START';
   btn.classList.toggle('locked', !!isLocked);
 }
@@ -1869,17 +1879,23 @@ function updateStartBtn() {
 document.getElementById('stage-start-btn').addEventListener('click', () => {
   if (_titleNavLocked) return;
   const s = stageData[currentIdx];
-  if (!s || s.id > saveData.unlockedStage) return;
+  if (!s) return;
+  const isS2 = isStory2StageId(s.id);
+  if (isS2 ? s.id > saveData.unlockedStage2 : s.id > saveData.unlockedStage) return;
   _titleNavLocked = true;
   playSelect();
-  const modeParam = isStoryFixedSelect ? '&mode=story' : '';
+  const modeParam = !isStoryFixedSelect ? '' : (isS2 ? '&mode=story2' : '&mode=story');
   window.location.href = `sphere-minesweeper.html?stage=${s.id}${modeParam}`;
 });
 
 document.getElementById('stage-back-btn').addEventListener('click', () => {
   playSelect();
-  // STORY（novel→固定カルーセル）から来た場合は STORY MODE 画面へ戻す。それ以外はタイトルへ。
-  if(isStoryFixedSelect){ window.location.href = 'index.html?story=1'; return; }
+  // STORY/STORY2（novel→固定カルーセル）から来た場合はそれぞれのEPISODES画面へ戻す。それ以外はタイトルへ。
+  if(isStoryFixedSelect){
+    const s0 = stageData[0];
+    window.location.href = (s0 && isStory2StageId(s0.id)) ? 'index.html?story2=1' : 'index.html?story=1';
+    return;
+  }
   stageModal.classList.remove('show');
   playTitle();
 });
@@ -1956,6 +1972,26 @@ const EPISODES = [
   { label:'EP.7', sub:'XENO',        novel:'novel/novel08.html', minEp:7 },
   { label:'EP.8', sub:'YOMI AND...', novel:'novel/novel09.html', minEp:8 },
   { label:'EP.9', sub:'ENDING?',     novel:'novel/novel10.html', minEp:9 },
+];
+
+// STORY MODE 2（EP.10〜EP.19、novel11〜20、stage22〜30）。既存EPISODESとは番号帯・
+// セーブフィールド(unlockedEpisode2)を分離した独立キャンペーン。stage30はオリジナル
+// stage9（消滅星・ループ）のミラーで、既存STORY（オープニング+9ステージ+エンディング）と
+// 完全に対称な構成にしている。
+// imgIdx: キャラ画像 assets/images/characters/0XX.png の番号（000〜013は既存STORYで予約済みのため020〜029を使用）。
+// minEp: novel(N+1)（=このEPの次のEP）を解放する「ステージクリア」のstage-id。stage22クリアで
+// unlockedEpisode2=22になり、EP.11(minEp:22)が解放される（stage22→novelAfterClear=novel12.html の並び）。
+const EPISODES2 = [
+  { label:'EP.10', sub:'',  novel:'novel/novel11.html', always:true, imgIdx:22 },
+  { label:'EP.11', sub:'',  novel:'novel/novel12.html', minEp:22,    imgIdx:23 },
+  { label:'EP.12', sub:'',  novel:'novel/novel13.html', minEp:23,    imgIdx:24 },
+  { label:'EP.13', sub:'',  novel:'novel/novel14.html', minEp:24,    imgIdx:25 },
+  { label:'EP.14', sub:'',  novel:'novel/novel15.html', minEp:25,    imgIdx:26 },
+  { label:'EP.15', sub:'',  novel:'novel/novel16.html', minEp:26,    imgIdx:27 },
+  { label:'EP.16', sub:'',  novel:'novel/novel17.html', minEp:27,    imgIdx:28 },
+  { label:'EP.17', sub:'',  novel:'novel/novel18.html', minEp:28,    imgIdx:29 },
+  { label:'EP.18', sub:'',  novel:'novel/novel19.html', minEp:29,    imgIdx:31 },
+  { label:'EP.19', sub:'',  novel:'novel/novel20.html', minEp:30,    imgIdx:32 },
 ];
 
 function buildEpisodeList() {
@@ -2269,22 +2305,6 @@ function openNoflagList(){
   }).catch(()=>{ normalListModal.classList.add('show'); });
 }
 
-// STORY MODE 2 は stage01-08 のミラー（新id 22-29）を使用
-function renderStory2List(stages){
-  renderStageList(
-    stages,
-    s => s.id >= 22 && s.id <= 29,
-    s => String(s.id - 21).padStart(2,'0'),
-    'STORY MODE 2'
-  );
-}
-function openStory2List(){
-  if(_normalStagesCache){ renderStory2List(_normalStagesCache); normalListModal.classList.add('show'); return; }
-  fetch('data/stages.json').then(r=>r.json()).then(stages=>{
-    _normalStagesCache = stages; renderStory2List(stages); normalListModal.classList.add('show');
-  }).catch(()=>{ normalListModal.classList.add('show'); });
-}
-
 // RECORDS：ステージ別の自己ベスト上位10件（stellarDeleteRanking_stage_N、STORY/TOURと共有）。
 // 日時は ts(ISO UTC)をローカル整形、旧レコード（ts無し）は date にフォールバック。
 function openRecordsModal(stageId, noStrFn){
@@ -2311,14 +2331,18 @@ function openRecordsModal(stageId, noStrFn){
 }
 document.getElementById('records-close').addEventListener('click', ()=>{ document.getElementById('records-modal').style.display = 'none'; });
 
-// STORY MODE：現STORYアコーディオンと同じEPISODESを、キャラ画像(001-010)＋エピソード文(白字)のリストで表示。
-// 行タップは従来どおり該当novelへ遷移。未解放EPは非表示（EP.0は常時表示）。
-function renderStoryList(){
+// STORY MODE / STORY MODE 2 共通：EPISODESを、キャラ画像＋エピソード文（白字）のリストで表示。
+// 行タップは従来どおり該当novelへ遷移。未解放EPは非表示（先頭EPは常時表示）。
+// #story-list-modal・#story-list-title・#story-listを両モードで共用し、呼び出しごとに中身を差し替える。
+function renderEpisodeList(episodes, unlockField, titleText){
+  const titleEl = document.getElementById('story-list-title');
+  if(titleEl) titleEl.textContent = titleText;
   const el = document.getElementById('story-list');
-  el.innerHTML = EPISODES.map((ep, i)=>{
-    const unlocked = ep.always ? true : (saveData.unlockedEpisode || 0) >= ep.minEp;
+  el.innerHTML = episodes.map((ep, i)=>{
+    const unlocked = ep.always ? true : (saveData[unlockField] || 0) >= ep.minEp;
     if(!unlocked) return '';
-    const img = 'assets/images/characters/' + String(i).padStart(3,'0') + '.png';
+    const idx = ep.imgIdx != null ? ep.imgIdx : i;
+    const img = 'assets/images/characters/' + String(idx).padStart(3,'0') + '.png';
     const sub = ep.sub ? `<span>${ep.sub}</span>` : '';
     return `<div class="stage-row story" data-href="${ep.novel}">
       <img class="stage-row-img" src="${img}" alt="" onerror="this.style.visibility='hidden'">
@@ -2339,9 +2363,15 @@ function renderStoryList(){
     });
   });
 }
+function renderStoryList(){ renderEpisodeList(EPISODES, 'unlockedEpisode', 'STORY MODE'); }
+function renderStory2EpisodeList(){ renderEpisodeList(EPISODES2, 'unlockedEpisode2', 'STORY MODE 2'); }
 
 function openStoryList(){
   renderStoryList(); // saveDataの解放状況を毎回反映
+  storyListModal.classList.add('show');
+}
+function openStory2List(){
+  renderStory2EpisodeList();
   storyListModal.classList.add('show');
 }
 

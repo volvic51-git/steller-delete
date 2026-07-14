@@ -112,7 +112,10 @@ const CutIn = (() => {
       const ch = (_cfg.characters && _cfg.characters[line.speaker]) || {};
       const side = line.side || ch.side || 'left';
       _setPortrait(side, line.speaker, ch, line.portrait || 'normal');
-      document.getElementById('cutin-name').textContent = ch.name || line.speaker || '';
+      const nameEl = document.getElementById('cutin-name');
+      const nameText = ch.name || line.speaker || '';
+      nameEl.textContent = nameText;
+      nameEl.style.display = nameText ? '' : 'none';
       _playSe(line.se !== undefined ? line.se : (_cfg.se && _cfg.se.open));
       _startTyping(line.text || '', () => {
         const dur = line.duration != null

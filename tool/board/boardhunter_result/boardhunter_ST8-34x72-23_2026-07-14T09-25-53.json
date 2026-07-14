@@ -1,0 +1,39 @@
+{
+  "tool": "board-hunter",
+  "toolVersion": "1.0.0",
+  "campaignId": "ST8-34x72-23",
+  "genVersion": "1",
+  "reporter": null,
+  "params": {
+    "rows": 34,
+    "cols": 72,
+    "density": 0.23,
+    "mineCount": 563,
+    "wrap": "cyl",
+    "start": {
+      "r": 17,
+      "c": 36
+    }
+  },
+  "startedAt": "2026-07-14T08:58:48.292Z",
+  "reportedAt": "2026-07-14T09:25:53.379Z",
+  "attempts": 13455,
+  "foundCount": 12,
+  "seeds": [
+    671680091,
+    2400718419,
+    1985500409,
+    1729706748,
+    165347432,
+    4116751270,
+    2090190035,
+    1686423558,
+    1321505536,
+    2655697801,
+    1040563828,
+    1822986522
+  ],
+  "client": {
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36"
+  }
+}

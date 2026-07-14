@@ -1,0 +1,247 @@
+{
+  "campaignId": "ST7-30x64-24",
+  "genVersion": "1",
+  "params": {
+    "rows": 30,
+    "cols": 64,
+    "density": 0.24,
+    "mineCount": 461,
+    "wrap": "cyl",
+    "start": {
+      "r": 15,
+      "c": 32
+    }
+  },
+  "totalAttempts": 501489,
+  "updatedAt": "2026-07-14T09:30:31.474Z",
+  "boards": [
+    {
+      "seed": 37784552,
+      "reporter": null
+    },
+    {
+      "seed": 58465189,
+      "reporter": null
+    },
+    {
+      "seed": 77778371,
+      "reporter": null
+    },
+    {
+      "seed": 174269020,
+      "reporter": null
+    },
+    {
+      "seed": 191763658,
+      "reporter": null
+    },
+    {
+      "seed": 214237219,
+      "reporter": null
+    },
+    {
+      "seed": 252856590,
+      "reporter": null
+    },
+    {
+      "seed": 298229281,
+      "reporter": null
+    },
+    {
+      "seed": 299101268,
+      "reporter": null
+    },
+    {
+      "seed": 415757037,
+      "reporter": null
+    },
+    {
+      "seed": 561543501,
+      "reporter": null
+    },
+    {
+      "seed": 567285653,
+      "reporter": null
+    },
+    {
+      "seed": 634437286,
+      "reporter": null
+    },
+    {
+      "seed": 701322373,
+      "reporter": null
+    },
+    {
+      "seed": 1009128688,
+      "reporter": null
+    },
+    {
+      "seed": 1024392351,
+      "reporter": null
+    },
+    {
+      "seed": 1136070580,
+      "reporter": null
+    },
+    {
+      "seed": 1270611291,
+      "reporter": null
+    },
+    {
+      "seed": 1425539822,
+      "reporter": null
+    },
+    {
+      "seed": 1427868188,
+      "reporter": null
+    },
+    {
+      "seed": 1450217262,
+      "reporter": null
+    },
+    {
+      "seed": 1459987939,
+      "reporter": null
+    },
+    {
+      "seed": 1469629452,
+      "reporter": null
+    },
+    {
+      "seed": 1487192576,
+      "reporter": null
+    },
+    {
+      "seed": 1590765265,
+      "reporter": null
+    },
+    {
+      "seed": 1606615127,
+      "reporter": null
+    },
+    {
+      "seed": 1626596846,
+      "reporter": null
+    },
+    {
+      "seed": 1763964838,
+      "reporter": null
+    },
+    {
+      "seed": 1812150843,
+      "reporter": null
+    },
+    {
+      "seed": 1853631142,
+      "reporter": null
+    },
+    {
+      "seed": 1919895078,
+      "reporter": null
+    },
+    {
+      "seed": 2128779298,
+      "reporter": null
+    },
+    {
+      "seed": 2197745449,
+      "reporter": null
+    },
+    {
+      "seed": 2263162078,
+      "reporter": null
+    },
+    {
+      "seed": 2411637694,
+      "reporter": null
+    },
+    {
+      "seed": 2476134618,
+      "reporter": null
+    },
+    {
+      "seed": 2534066721,
+      "reporter": null
+    },
+    {
+      "seed": 2611988742,
+      "reporter": null
+    },
+    {
+      "seed": 2692990603,
+      "reporter": null
+    },
+    {
+      "seed": 2697925275,
+      "reporter": null
+    },
+    {
+      "seed": 2769766532,
+      "reporter": null
+    },
+    {
+      "seed": 3000372144,
+      "reporter": null
+    },
+    {
+      "seed": 3011978269,
+      "reporter": null
+    },
+    {
+      "seed": 3039178994,
+      "reporter": null
+    },
+    {
+      "seed": 3166971975,
+      "reporter": null
+    },
+    {
+      "seed": 3224592012,
+      "reporter": null
+    },
+    {
+      "seed": 3246327309,
+      "reporter": null
+    },
+    {
+      "seed": 3291826724,
+      "reporter": null
+    },
+    {
+      "seed": 3452991227,
+      "reporter": null
+    },
+    {
+      "seed": 3482273561,
+      "reporter": null
+    },
+    {
+      "seed": 3884914570,
+      "reporter": null
+    },
+    {
+      "seed": 4001443053,
+      "reporter": null
+    },
+    {
+      "seed": 4109427959,
+      "reporter": null
+    },
+    {
+      "seed": 4133034644,
+      "reporter": null
+    },
+    {
+      "seed": 4170019468,
+      "reporter": null
+    },
+    {
+      "seed": 4235816057,
+      "reporter": null
+    },
+    {
+      "seed": 4286212230,
+      "reporter": null
+    }
+  ]
+}

@@ -1044,13 +1044,18 @@ const NovelEngine = (() => {
               ? parseInt(_config.unlockStageOnComplete, 10)
               : parseInt(new URLSearchParams(_config.nextUrl.split('?')[1] || '').get('storyStage'), 10);
             if (!isNaN(_stageToUnlock)) {
+              // saveStageField: 書き込み先フィールド名（既定'unlockedStage'）。
+              // STORY MODE 2等、別キャンペーンの進行を既存STORYの解放カウンタと混在させたくない場合に
+              // config側で'unlockedStage2'等を指定する（互換性のため未指定時は従来どおり）。
               var SAVE_KEY = 'stellarDeleteSave';
+              var SAVE_FIELD = _config.saveStageField || 'unlockedStage';
               var _raw = localStorage.getItem(SAVE_KEY);
-              var _sd = _raw ? JSON.parse(_raw) : { unlockedStage:0, unlockedEpisode:0 };
-              if (_stageToUnlock > (_sd.unlockedStage || 0)) {
-                _sd.unlockedStage = _stageToUnlock;
+              var _sd = _raw ? JSON.parse(_raw) : {};
+              if (_sd[SAVE_FIELD] == null) _sd[SAVE_FIELD] = 0;
+              if (_stageToUnlock > _sd[SAVE_FIELD]) {
+                _sd[SAVE_FIELD] = _stageToUnlock;
                 localStorage.setItem(SAVE_KEY, JSON.stringify(_sd));
-                console.log('[SAVE] novel end: unlockedStage =', _sd.unlockedStage, '| full data:', JSON.stringify(_sd));
+                console.log('[SAVE] novel end: ' + SAVE_FIELD + ' =', _sd[SAVE_FIELD], '| full data:', JSON.stringify(_sd));
                 _showSaveToast();
               }
             }

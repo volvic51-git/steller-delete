@@ -1,14 +1,41 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-12
+作成日: 2026-06-30 / 最終更新: 2026-07-13（chat引き継ぎ時点）
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-12）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-13、chat引き継ぎ時点）
 
-- **`master`はノーフラッグモードまで反映済み**。加えて**`feature/cutin-story2`ブランチで
-  カットイン会話システム＋STORY MODE 2（id:22〜29）を実装済み・未マージ**。
+- **ブランチ順序**：`master` → `feature/cutin-story2` → `feature/story2-novel`（カレント）。
+  いずれも未マージ。
+  - `feature/cutin-story2`：カットイン会話システム実装済み（下記の「旧記述」参照）。
+  - `feature/story2-novel`：STORY MODE 2を`feature/cutin-story2`時点の「グリッド型
+    ステージ選択」から**既存STORY MODEと同じ「EPISODESリスト＋ノベル連動進行」に再設計**。
+    その後ユーザー要望でstage30・novel19/20を追加拡張し、既存STORY（オープニング+9ステージ+
+    エンディング＝ノベル10本）と**完全対称の構成**（stage22〜30の9ステージ、novel11〜20の
+    10本）になった。セーブフィールド分離（`unlockedStage2`/`unlockedEpisode2`、既存STORYと
+    混在させるとEPISODE解放状態が壊れる罠）が最重要ポイント。詳細は[[project-story2-novel]]。
+- **push状況**：origin/`feature/story2-novel`は`bf56efd`（novel2追加、ユーザーpush分）まで。
+  ローカルはそこから5コミット先行——`79b1b07`（stage30/novel19-20追加）、`fc74160`
+  （manual-test.html移動）、`af7c30f`（移動時のgit add漏れ修正）、`0b63b6f`
+  （V2_HANDOFF.md更新）、`0985b58`（tool/サブフォルダ整理）——**未push**（ユーザーの
+  タイミングで実行）。
+- **novel11〜20.htmlの実コンテンツはユーザーが本セッション中に作成済み**
+  （`etc/novel_editor_s2.html`使用、`novel/novel11〜20.html`・`novel/js/script11〜20.js`。
+  いずれも未コミットのユーザー作業でClaudeは一切変更していない）。
+  `endrole_release2.html`（novel20のエンディング遷移先）はユーザー準備中、まだ存在しない。
+- **`tool/`はサブフォルダ整理済み**（2026-07-13、`tool/board/`・`tool/endrole/`・
+  `tool/manual/`。`manual-test.html`もこの整理で`tool/manual/manual-test.html`に。
+  `tool/boadHunter/`のtypoも`boardHunter/`に修正）。フォルダが1階層深くなった影響で
+  `../js/...`等の相対パスが壊れていたため合わせて修正済み（`tool/board/`配下のツールから
+  ルート直下を参照する際は`../../`が正しい）。詳細は[[project-overview]]。
+- **git運用が変更**（2026-07-13、詳細は下記「git運用」項参照）：push以外はすべて
+  許可なしで実行してよい。
+- **保留中の検討**：高密度盤面（地雷率50%等）の生成方法。rejection samplingは原理的に
+  不可能（実測外挿で50%は事実上ゼロ）と判明、事前開示セル方式が本命だが**未着手・保留**。
+  詳細[[project-high-density-boards]]。
+- 旧記述（カットイン会話システム＋STORY MODE 2グリッド型の実装、`feature/cutin-story2`）：
   実装手順書は`etc/V2_CUTIN_WORKORDER.md`（実装済みステータス、rAF制約下での検証結果込み）、
   検討書は`etc/V2_CUTIN_PLAN.md`。実装中に`window.Dialogue`が常にundefinedになる
   重大バグ（トップレベルconstはwindowプロパティにならない）を発見・修正済み
@@ -35,8 +62,9 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   `etc/V2_NOFLAG_CLASSIC_PLAN.md`（検討書）参照。dev serverで検証チェックリスト14項目全PASS
   （EX2ミラー・地雷2,074個の一括消滅は同期的に0msで完了、フリーズ無しを実測確認）。
   ローカルの`feature/noflag-mode`ブランチはマージ済みのため削除して良い（ユーザー任意）。
-- **git運用**：commit / push はユーザーが行う。**マージはClaudeが実行してよい**（2026-07-09に分担確定。
-  ただしマージ前にワーキングツリーがクリーンであることを確認する）。push後の反映はユーザー確認。
+- **git運用**：**push以外はすべて許可なしで実行してよい**（commit・merge・branch作成/削除等。
+  2026-07-13最新版。マージ前にワーキングツリーがクリーンであることは引き続き確認する）。
+  pushのみユーザーが行う。詳細・変遷は[[feedback-git]]参照。
   ⚠️ **リモートブランチの削除・push はこのツール環境からは認証エラーで実行不可**
   （`/dev/tty`が無くgit credentialの対話プロンプトが動かない）。ユーザー側で実行してもらう。
   → `feature/mine-removal-diff`のローカル・リモートブランチ削除もユーザー側で任意に実施。
@@ -47,11 +75,13 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
   → Board Factory / 生成エンジンの設計を触るときはこのブランチを見る。
 
 > **既知の未処理**
-> - `tool/`（単数・既存）と `tools/`（複数）が混在。将来 `tool/` に統一予定。
+> - ~~`tool/`と`tools/`が混在~~ → **解消（2026-07-13）**：`tool/`をサブフォルダ整理
+>   （`board/`・`endrole/`・`manual/`）。`tools/`（複数形）フォルダは現存しない。
+> - ~~`tool/boadHunter/`（typo）~~ → **解消（2026-07-13）**：`tool/board/boardHunter/`へ
+>   移動と同時にtypo修正済み（2026-07-09時点は現状維持の判断だったが、今回のサブフォルダ
+>   整理のタイミングで直った）。
 > - `feature/solver-extraction` に出自不明の `d0a480d「solver.js生成」` コミットあり。
 > - spec-foundation側の未push（密度CSV `59c2a28`・タグ `design/data-foundation-v0.9`）。
-> - `tool/boadHunter/`（typo）は現状維持でよいとユーザー確認済み（2026-07-09、`tool/`直下からの
->   移動・改名は不要という判断）。
 
 ---
 
@@ -193,8 +223,12 @@ push済み（ユーザー実施）。新規ドキュメント3件：`etc/V2_PERF
 ## いま何をしているフェーズか
 
 **Phase 3 Factory盤面（stageEX1/EX2）・SOUND設定・回転速度自動スケール・中断/resume性能改善
-（B+C案）・Factory中断RESTARTバグ修正・数字セル開封演出まで完了（2026-07-11）。
-次の作業はユーザー判断待ち（下記「次セッションの入口」参照）。**
+（B+C案）・Factory中断RESTARTバグ修正・数字セル開封演出（2026-07-11完了）に続き、
+カットイン会話システム・STORY MODE 2のEPISODESリスト化＋ノベル連動進行（stage22〜30・
+novel11〜20）まで実装完了（2026-07-13、`feature/cutin-story2`→`feature/story2-novel`、
+いずれも未マージ・未push）。novel19/20の実コンテンツと`endrole_release2.html`が残作業。
+高密度盤面の生成方法は検討のみで保留中。次の作業はユーザー判断待ち（下記
+「次セッションの入口」参照）。**
 
 ### 2026-07-08 完了した作業（詳細は memory [[project-factory-board]] / [[project-perf-zoomout]]）
 
@@ -542,13 +576,22 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-11 更新）
+## 次セッションの入口（2026-07-13 更新）
 
-0. **まず `git status`**：`master`にマージ・push済みのはず。念のため確認（未コミット変更が
-   残っていないか）。`feature/mine-removal-diff`ブランチ（ローカル・リモート）は削除して良いか
-   ユーザー判断（マージ済み・作業完了）。
+0. **まず `git status` と `git branch --show-current`**：カレントは`feature/story2-novel`の
+   はず。念のため未コミット変更を確認——ただし**`novel/novel11〜20.html`・
+   `novel/js/script11〜20.js`等はユーザーの未コミット作業なので絶対に触らない・
+   discardしない**こと。`feature/cutin-story2`・`feature/story2-novel`ともにローカルが
+   originより先行中（未push、ユーザーのタイミングで実行）。
 
 1. **次の開発候補（優先度はユーザー判断）**：
+   - **STORY MODE 2の残作業**：novel19・novel20の実コンテンツ作成（novel11〜18は作成済み）、
+     `endrole_release2.html`の準備、EPISODES2各行の`sub`（キャラ名）・画像
+     （`assets/images/characters/020〜029.png`）の確定。詳細[[project-story2-novel]]。
+   - **高密度盤面の生成方法**（地雷率50%等）：2026-07-13に検討したが**保留中**。
+     rejection samplingは原理的に不可能と判明。次に着手するなら①board-benchmark.htmlで
+     実用上限密度を二分探索で実測→②事前開示セル方式（任意密度で保証可能・本命）か
+     摂動修復方式（〜30%程度）の検討書作成、の順。詳細[[project-high-density-boards]]。
    - **C案**（セルInstancedMesh化・大改修）：ズームアウトが依然24fps程度（draw call約5,300が
      原因。B案で解消したのは「旗ヒッチ」のみで、こちらの恒常的な低FPSは未着手）。計画書を
      作ってから着手。リプレイ全再構築も激速化するのでPhase 4の前にやる価値あり
@@ -560,17 +603,15 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
    - **盤面お絵描きツール**（`etc/V2_BOARD_COLOR_PLAN.md` §2.3の将来拡張。セルごとの
      `cellPaletteMap`で自由に色を塗れるようにする構想。今の東西2色はこの布石）。
    - **Hunter/Factory/game のパリティ自動テスト**（まだ未着手）。
-   - ~~stageEX2のcharId/BGM/背景/専用stage画像の確定~~ → **完了（2026-07-12ユーザー確認）**。
-   - **カットイン会話システム＋STORY MODE 2**：設計確定済み（`etc/V2_CUTIN_PLAN.md`、
-     2026-07-12・未実装）。器は新モード STORY MODE 2（stage1〜8ミラー、id:22〜29）。
-     ランキング除外は会話JSONのトリガー種別から自動導出（プレイ中トリガーありのみ除外）。
-     警告演出（赤点滅+警告音+イラスト）は同書§14で設計済み・実装は後段。
-     **実装手順書 `etc/V2_CUTIN_WORKORDER.md`（Sonnet 5向け・2026-07-12作成済み）あり**：
-     ブランチ `feature/cutin-story2`、検証チェックリスト20項目付き。実装はこれに従う。
+   - **警告演出システム**（赤点滅+警告音+イラスト）：`etc/V2_CUTIN_PLAN.md §14`で設計済み・
+     実装は未着手（後段扱い）。
    - LIMIT MODE（modes.json enabled:false のまま保留中）。
    - **開封演出の微調整**（任意）：`OPEN_FX_MS`（演出時間220ms）・`OPEN_FX_WAVE_MS`
      （波紋の段あたり遅延6ms）・フラッシュ強度係数1.8は実プレイの手触りで再調整可能
      （`sphere-minesweeper.html`の該当定数のみ触ればよい）。
+   - **ブランチのマージ順序**：master ← feature/cutin-story2 ← feature/story2-novel の
+     順で積まれているため、マージする場合はこの順序を守る（story2-novelをmasterへ直接
+     マージするとcutin-story2の変更が抜け落ちる）。
 
 2. **検証の約束事**：dev server 経由（tool/ とルートの localStorage 共有に必須）。
    起動は許可不要、検証後は必ず音を止める＋サーバー停止（[[feedback-preview-audio]]）。
