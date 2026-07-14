@@ -21,14 +21,8 @@ V1完成後、V2開発を進めるためのハンドオフ文書。
 - **ブランチ整理も完了**：マージ済みだった8ブランチ
   （`feature/cutin-story2`・`feature/factory-board`・`feature/manual-scenario-engine`・
   `feature/mine-removal-diff`・`feature/noflag-mode`・`feature/resume-perf`・
-  `feature/solver-extraction`・`feature/story2-novel`）を**ローカルは削除済み**。
-  **GitHub側のリモートブランチはこのツール環境からは認証エラーで削除不可**
-  （`/dev/tty`が無くgit credential対話が動かない）。ユーザー側で以下を実行すれば消える：
-  ```bash
-  git push origin --delete feature/cutin-story2 feature/factory-board \
-    feature/manual-scenario-engine feature/mine-removal-diff feature/noflag-mode \
-    feature/resume-perf feature/solver-extraction feature/story2-novel
-  ```
+  `feature/solver-extraction`・`feature/story2-novel`）を**ローカル・リモートとも削除済み**
+  （リモート側はユーザーが実行、2026-07-14）。
 - **未マージのまま残っているのは`feature/spec-foundation`のみ**（古い設計docsのみ、
   今回のSTORY2作業とは無関係。merge-baseがmasterよりかなり古く、docs/がここにしか無い：
   00-Architecture / 10-DataSpec / 20-BoardFormat / V2_GENERATION_ENGINE / 密度CSV）。
@@ -634,5 +628,4 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 **整理系（いつでも）:** `docs/10-StellerDataSpec.md`のboardHash記述をv1.0へ整合、
 V2_HANDOFF.md のルート重複解消（`V2_HANDOFF.md` と `etc/V2_HANDOFF.md` の2つが存在。
 2026-07-11時点でルート直下の`V2_HANDOFF.md`は存在せず`etc/`側のみ確認済み。次回念のため再確認）、
-spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）、GitHub側リモートブランチ8本の削除
-（上記コマンド参照、ユーザー実施）。
+spec-foundation側の未push（密度CSV・ORACLE→Judge・タグ）。
