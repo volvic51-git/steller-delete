@@ -51,7 +51,8 @@ const Dialogue = (() => {
       console.warn('[Dialogue] warning演出は未実装のためスキップ:', ev.id);
       return Promise.resolve();
     }
-    if(ev.trigger && ev.trigger.type === 'stage_clear') CutIn.clearPending(); // クリアは他を破棄して優先
+    // クリア／負けイベント終了は他を破棄して優先（stage_overは他のトリガーが起き得ない負けイベント専用だが念のため統一）
+    if(ev.trigger && (ev.trigger.type === 'stage_clear' || ev.trigger.type === 'stage_over')) CutIn.clearPending();
     return CutIn.play(ev.lines || []);
   }
 

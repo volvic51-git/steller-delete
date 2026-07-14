@@ -9,7 +9,7 @@
   "events": [
     { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
       "lines": [
-        { "speaker": "oracle", "text": "この星にも、まだ見ぬ傷が眠っています。\n暴いてあげてください。" } ] },
+        { "text": "【特殊ルール】\n旗禁止\n制限時間：90秒" } ] },
     { "id": "stage_clear", "trigger": { "type": "stage_clear" }, "once": true,
       "lines": [
         { "speaker": "002", "text": "ありがとう……もう大丈夫。" },

@@ -911,12 +911,17 @@ function playSE(key){
 function startBGM(){
   // 既に再生中なら何もしない（周回モードの2周目以降でBGMが頭出しされるのを防止）。
   // 一時停止・停止状態からの再生のみ currentTime を0に戻す。
-  // 将来的にRESCUE PROGRESSの進行度でBGMを切り替えたくなった場合は、
-  // こことは別に「明示的に曲を差し替える」専用関数（例: switchBGM(src)）を作る想定。
   if(SND.bgm.paused){
     SND.bgm.currentTime=0;
     SND.bgm.play().catch(()=>{});
   }
+}
+// RESCUE PROGRESS等の進行度に応じて曲を明示的に差し替える（stage.bgmSwitch用）。
+// startBGMの「再生中なら何もしない」ガードとは別経路で、常に新曲へ切り替えて再生する。
+function switchBGM(file){
+  SND.bgm.src = 'assets/audio/' + file;
+  SND.bgm.currentTime = 0;
+  SND.bgm.play().catch(()=>{});
 }
 function stopBGM(){
   SND.bgm.pause();
@@ -1005,7 +1010,13 @@ function updateCharacterReveal(){
   }
   // クリア確定後の残存セル一括消滅でも呼ばれ続けるため、playing中のみ通知
   // （ガード無しだと勝利演出中に閾値カットインが誤発火する）
-  if(gameState === 'playing') cutinNotify('open_rate', {rate: charRevealRatio});
+  if(gameState === 'playing'){
+    cutinNotify('open_rate', {rate: charRevealRatio});
+    if(window._stageBgmSwitch && !window._bgmSwitched && charRevealRatio >= window._stageBgmSwitch.at){
+      window._bgmSwitched = true;
+      switchBGM(window._stageBgmSwitch.file);
+    }
+  }
 }
 
 // 非地雷セル消滅時に呼ぶ
@@ -2299,6 +2310,7 @@ function replayTimeout(fn, delay){
   return h;
 }
 function digCell(row,col){
+  if(window._stageLoseEvent) return; // 負けイベント：掘削は一切不可
   const cell=board[row][col];
   if(cell.isOpen||cell.hasFlag||cell.isRemoved) return;
   if(gameState!=='playing') return;
@@ -2420,6 +2432,7 @@ function updateOpenFx(){
 }
 
 function flagCell(row,col){
+  if(window._stageLoseEvent) return; // 負けイベント：旗立ても一切不可
   if(gameRule === 'noflag') return; // ノーフラッグモード：旗は一切使用不可（最終防壁）
   const cell=board[row][col];
   if(cell.isOpen||cell.isRemoved) return;
@@ -2654,6 +2667,7 @@ function showSaveToast(){
 let gameOverCheckMode = false;
 
 function triggerGameOverSequence(extraMsg, mistakeCell){
+  if(window._stageLoseEvent){ triggerLoseEventEnding(); return; } // 負けイベント：通常のGAME OVER演出は出さない
   if(replayAutoSave && !_replayMode) saveReplay('lose', elapsed); // 自動保存ON時のみ（再生中は保存しない）
   if(_isReplaySession){ _replayEnded = true; replayAutoStop(); } // 再生が終端（ゲームオーバー）に達した→操作バー全ボタン無効化
   gameState = 'lose'; // 即座に入力（掘削・旗）をブロック。カメラ回転/ズームは引き続き可能
@@ -2680,6 +2694,18 @@ function triggerGameOverSequence(extraMsg, mistakeCell){
       playSE('bell3');
     }, 1000);
   }, 1000);
+}
+
+// 負けイベント用ステージ：制限時間切れをトリガーに、通常のGAME OVERダイアログを出さず
+// 「無理げー」カットイン再生→自動でnovelAfterClearへ遷移する。
+function triggerLoseEventEnding(){
+  gameState = 'lose';
+  clearInterval(timerInterval);
+  pauseBGM();
+  const goNext = () => { window.location.href = window._novelAfterClear || 'index.html'; };
+  const ps = cutinNotify('stage_over');
+  if(ps.length) Promise.all(ps).then(goNext);
+  else goNext();
 }
 
 function revealAllCellsForGameOver(){
@@ -2973,7 +2999,7 @@ function clearHintHighlight(cell){
 
 function giveHint(){
   if(gameState!=='playing') return;
-  if(maxHints > 0 && hintCount >= maxHints) return; // 上限チェック
+  if(hintCount >= maxHints) return; // 上限チェック（maxHints:0 なら常に使用不可）
   const {safe,mines,probs}=runSolver();
 
   function hasNumberedNeighbor(cell){
@@ -3240,7 +3266,7 @@ function openSettingsMenu(){
   if(gameState !== 'idle' && gameState !== 'playing') return;
   gamePaused = true;
   // リプレイ再生中は TITLE・BACK 以外を無効化
-  const _cfgDisableIds = ['cfg-restart-btn','cfg-select-btn','cfg-suspend-btn','cfg-autosave-btn','cfg-help-btn'];
+  const _cfgDisableIds = ['cfg-restart-btn','cfg-select-btn','cfg-autosave-btn','cfg-help-btn'];
   _cfgDisableIds.forEach(id => {
     const btn = document.getElementById(id);
     if(!btn) return;
@@ -3248,6 +3274,14 @@ function openSettingsMenu(){
     btn.style.opacity  = _isReplaySession ? '0.4' : '';
     btn.style.cursor   = _isReplaySession ? 'default' : '';
   });
+  // 中断ボタン：リプレイ再生中 or ステージ指定で中断禁止のとき無効化
+  const suspendBtn = document.getElementById('cfg-suspend-btn');
+  if(suspendBtn){
+    const suspendOff = _isReplaySession || !!window._stageSuspendDisabled;
+    suspendBtn.disabled      = suspendOff;
+    suspendBtn.style.opacity = suspendOff ? '0.4' : '';
+    suspendBtn.style.cursor  = suspendOff ? 'default' : '';
+  }
   // STORY/STORY2（通常 or resume）は「STAGE SELECT」を「EPISODE」に（遷移先も各EPISODES画面）。
   const isStory  = (new URLSearchParams(window.location.search).get('mode') === 'story')  || !!window._resumeStoryMode;
   const isStory2 = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
@@ -3472,6 +3506,22 @@ function _setGameIconsBlocked(blocked){
     if(!el) return;
     el.style.pointerEvents = blocked ? 'none' : '';
     el.style.opacity       = blocked ? '0.25' : '';
+  });
+}
+
+// 負けイベント用ステージ（stage.loseEvent）：ミュート以外の全アイコンを恒久的に無効化する。
+// _REPLAY_BLOCK_IDSと違いCONFIG/HELPも含む（audio-btnのみ除外）。解除は無い（このステージ専用の片道ロック）。
+const _LOSE_EVENT_BLOCK_IDS = [
+  'mode-btns-float','mode-indicator',
+  'hint-btn-float','focus-btn-wrap','misclick-guard-wrap','search-btn-wrap',
+  'settings-btn','manual-btn'
+];
+function applyLoseEventLock(){
+  _LOSE_EVENT_BLOCK_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.pointerEvents = 'none';
+    el.style.opacity       = '0.25';
   });
 }
 
@@ -3722,6 +3772,7 @@ function manualSaveReplay(btnId){
 // ---- 中断してタイトルへ（CONFIGメニュー）----
 function suspendAndExit(){
   if(_isReplaySession) return; // リプレイ再生中は中断不可（ボタンもグレーアウト済み）
+  if(window._stageSuspendDisabled) return; // ステージ指定で中断禁止（ボタンもグレーアウト済み）
   const rec = saveSuspend();
   if(rec){ window.location.href = 'index.html'; }
   else { console.warn('中断できません（プレイ中のみ可）'); }
@@ -3858,6 +3909,7 @@ async function resumeSuspend(rec){
 }
 
 function handleCellAction(row,col,action){
+  if(window._stageLoseEvent) return; // 負けイベント：セルへの操作は一切不可
   // resume再構築（非同期チャンク）中のユーザー入力を無視。内部の再適用ループはdigCell/flagCellを直接呼ぶためここは通らない
   if(_replayInstant) return;
   if(gameState==='playing' && misclickGuard){
@@ -4190,16 +4242,8 @@ function syncTimeLimitGaugeSize(){
   const ring  = document.getElementById('tlg-ring');
   if(!gauge) return;
 
-  // 球体の画面上のピクセルサイズを取得（syncCharaLayerSizeと同じ計算）
-  const vv = window.visualViewport;
-  const w  = vv ? vv.width  : window.innerWidth;
-  const h  = vv ? vv.height : window.innerHeight;
-  const fovRad  = camera.fov * Math.PI/180;
-  const dist    = Math.max(camera.position.z, 0.1);
-  const halfFov = dist * Math.tan(fovRad/2);
-  const spherePxH = 1.5/halfFov*(h/2);
-  const spherePxW = 1.5/(halfFov*w/h)*(w/2);
-  const spherePx  = Math.min(spherePxH, spherePxW);
+  // 球体の画面上のシルエット半径（syncCharaLayerSizeと共通のヘルパー）
+  const spherePx = getSpherePxRadius();
   const r = spherePx + 14; // 球体外周から14px外側
 
   gauge.setAttribute('width',  (r*2+20)+'px');
@@ -4249,10 +4293,27 @@ function cutinNotify(type, payload){
 // 通常の ?stage= 起動（restartGame後）でカットインデータを読み込み、初手前(idle中)に
 // stage_start を通知する。?boot=resume 経路では呼ばない（resumeSuspend側で個別に処理）。
 function _cutinStageStart(){
-  if(!window._cutinSet) return;
+  if(!window._cutinSet){
+    if(window._stageLoseEvent) _startLoseEventCountdown(); // カットイン無しでも負けイベントは開始する
+    return;
+  }
   Dialogue.load(window._cutinSet)
-    .then(() => { Dialogue.notify('stage_start'); })
+    .then(() => {
+      const ps = Dialogue.notify('stage_start');
+      if(window._stageLoseEvent){
+        // イントロのカットインが終わってから自動でタイマー開始（盤面は一切開かない）
+        if(ps.length) Promise.all(ps).then(_startLoseEventCountdown);
+        else _startLoseEventCountdown();
+      }
+    })
     .catch(e => console.warn('[cutin] 会話データ読込失敗（カットイン無効で続行）', e));
+}
+
+// 負けイベント用ステージ：クリックを待たず自動でプレイ中状態に入りタイマーだけ開始する
+function _startLoseEventCountdown(){
+  gameState = 'playing';
+  startTimer();
+  updateStats();
 }
 
 function startTimer(){
@@ -4529,7 +4590,15 @@ function updateHintGauge(){
   const circ = 2 * Math.PI * r;   // 150.796
   const gap  = 4;
   const n    = maxHints;
-  const segLen = n > 0 ? (circ - gap * n) / n : circ;
+  if(n <= 0){
+    // maxHints:0 = ORACLE使用不可。リングは空表示、アイコンは常時グレーアウト
+    bgRing.setAttribute('stroke-dasharray', `0 ${circ}`);
+    fillRing.setAttribute('stroke-dasharray', `0 ${circ}`);
+    const overlay0 = document.getElementById('hint-btn-overlay');
+    if(overlay0) overlay0.style.opacity = '1';
+    return;
+  }
+  const segLen = (circ - gap * n) / n;
   const remaining = Math.max(0, n - hintCount);
 
   // dasharray: セグメント+ギャップ を n回繰り返す
@@ -4687,6 +4756,10 @@ function restartGame(){
   window._resumeStory2Mode = false; // 同上（STORY MODE 2版）
   window._resumeNormalMode = false; // 中断復元由来のNORMAL判定フラグをリセット（resumeSuspendが必要なら再設定）
   stopBGM();
+  if(window._bgmSwitched && window._stageBgmFile){
+    SND.bgm.src = 'assets/audio/' + window._stageBgmFile; // 進行度切替後のRETRYは元曲に戻す
+  }
+  window._bgmSwitched = false;
   SND.clear.pause(); SND.clear.currentTime=0;
   gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
   // 誤操作防止：起動時(リスタート時含む)は必ずOFF
@@ -4719,8 +4792,9 @@ function restartGame(){
   document.getElementById('stat-time').textContent='0:00';
   resetDigitTimer();
   const statHintsR=document.getElementById('stat-hints'); if(statHintsR) statHintsR.textContent='0';
-  if(!window._stageMaxHints) maxHints=3; // ステージ指定がなければデフォルト3
+  if(window._stageMaxHints == null) maxHints=3; // ステージ指定がなければデフォルト3
   hintCount=0; updateHintGauge(); restoreFloatButtons();
+  if(window._stageLoseEvent) applyLoseEventLock(); // restoreFloatButtonsで解除された分を負けイベントは再ロック
   document.getElementById('message').style.display='none';
   document.getElementById('rescue-screen').classList.remove('active');
   document.getElementById('expose-bar-inner').style.width='0%';
@@ -4784,7 +4858,7 @@ function animate(){
 
   // Zoom
   camera.position.z+=(zoomDist-camera.position.z)*0.1;
-  syncCharaLayerSize();
+  syncZoomDependentUI(); // z・画面サイズが変化したフレームだけDOM更新
 
   // 後ろ半球のパネルを非表示（カメラ側を向いているパネルのみ表示）
   _backCullCamDir.set(0,0,1).applyQuaternion(_backCullInvQ.copy(boardGroup.quaternion).invert());
@@ -4891,15 +4965,36 @@ function animate(){
 function easeInOut(t){ return t<0.5?2*t*t:-1+(4-2*t)*t; }
 
 // 球体の投影ピクセルサイズに合わせて #chara-layer のサイズを動的更新
-function syncCharaLayerSize(){
+// 球体（半径1.5）の画面上シルエット半径px。
+// 透視投影では球の輪郭への接線が球中心より手前を通るため、R/d の一次近似では
+// ズームインするほど実際のシルエットより小さく出る（d=2.0で約51%過小 → 外周UIがめり込む）。
+// 正しくは sinθ = R/d → tanθ = (R/d)/√(1-(R/d)²) を使う。
+// なお中心に置かれた球のシルエットpx半径は縦横どちらで計算しても同値（fovH/2の
+// tanがaspect倍になる分wとhが相殺する）ため、縦fovだけで計算すれば足りる。
+function getSpherePxRadius(){
+  const {h} = getViewSize();
+  const R = 1.5;
+  const d = Math.max(camera.position.z, R + 0.05); // 球内侵入時の発散ガード
+  const s = Math.min(R / d, 0.999);
+  const tanTheta = s / Math.sqrt(1 - s * s);
+  return tanTheta / Math.tan(camera.fov * Math.PI / 360) * (h / 2);
+}
+
+// ズーム依存UI（キャラレイヤー・制限時間ゲージ）の一括同期。
+// animate()からはこちらを呼び、camera.position.zと画面サイズが前回から
+// 変化したフレームだけ実際のDOM更新（syncCharaLayerSize）を行う。
+let _lastZoomSync = { z: -1, w: 0, h: 0 };
+function syncZoomDependentUI(){
   const {w, h} = getViewSize();
-  const fovRad  = camera.fov * Math.PI / 180;
-  const dist    = Math.max(camera.position.z, 0.1);
-  const halfFov = dist * Math.tan(fovRad / 2);
-  const spherePxH = 1.5 / halfFov * (h / 2);
-  const spherePxW = 1.5 / (halfFov * w / h) * (w / 2);
-  const spherePx  = Math.min(spherePxH, spherePxW);
-  const diameter  = Math.round(spherePx * 2 * 1.0);
+  const z = camera.position.z;
+  if(Math.abs(z - _lastZoomSync.z) < 0.0005 && w === _lastZoomSync.w && h === _lastZoomSync.h) return;
+  _lastZoomSync.z = z; _lastZoomSync.w = w; _lastZoomSync.h = h;
+  syncCharaLayerSize();
+}
+
+function syncCharaLayerSize(){
+  const spherePx = getSpherePxRadius();
+  const diameter = Math.round(spherePx * 2);
   const layer = document.getElementById('chara-layer');
   if(layer){
     layer.style.width  = diameter + 'px';
@@ -5051,6 +5146,10 @@ if(window.visualViewport){
       window._stageHasCustomBgm = !!stage.bgm;
       window._stageBgmFile = stage.bgm || null; // 中断保存/復元でBGMを引き継ぐために記録
 
+      // 進行度によるBGM切替（任意）。{at: 0〜1のRESCUE PROGRESS閾値, file: ファイル名}
+      window._stageBgmSwitch = (stage.bgmSwitch && stage.bgmSwitch.file) ? stage.bgmSwitch : null;
+      window._bgmSwitched = false;
+
       // 背景画像 適用（canvas-containerはalpha:trueで透過しているのでCSS背景がそのまま見える）
       const canvasContainer = document.getElementById('canvas-container');
       if(canvasContainer){
@@ -5088,6 +5187,13 @@ if(window.visualViewport){
       // gameRule 適用（stage-params.json連携）
       gameRule = (stage.gameRule === 'noflag') ? 'noflag' : 'attack';
 
+      // 中断禁止 適用（stage-params.json連携）
+      window._stageSuspendDisabled = stage.suspendDisabled === true;
+
+      // 負けイベント 適用（stage-params.json連携）：掘削/旗/全アイコンを片道でロックする
+      window._stageLoseEvent = stage.loseEvent === true;
+      if(window._stageLoseEvent) applyLoseEventLock();
+
       // カットイン適用（stage-params.json連携）
       window._cutinSet  = stage.cutin || null;
 
@@ -5115,6 +5221,10 @@ if(window.visualViewport){
         }
         const loopCountInput = document.getElementById('loop-count-input');
         if(loopCountInput) loopCountInput.value = loopCount;
+        // 周ごとの盤面色（任意）。指定が無ければ既定のloopColorsを使い続ける
+        if(Array.isArray(stage.loopColors) && stage.loopColors.length > 0){
+          loopColors = stage.loopColors;
+        }
         // 1周目の盤面色・進行度バーをloopColorsで初期化（toggleLoopMode()と同じ処理）
         currentLoop = 1;
         window._boardPalette = loopColors[0] ? [loopColors[0]] : window._boardPalette;

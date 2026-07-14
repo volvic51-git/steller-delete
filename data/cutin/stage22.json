@@ -1,24 +1,12 @@
 {
   "se": {},
-  "characters": {
-    "001": { "name": "キャラ001", "side": "left",
-             "portraits": { "normal": "cutin_001_normal.png" } },
-    "oracle": { "name": "ORACLE", "side": "right",
-                "portraits": { "normal": "cutin_oracle_normal.png" } }
-  },
+  "characters": {},
   "events": [
     { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
       "lines": [
-        { "speaker": "oracle", "text": "観測を開始します。\nどこからでも掘り始めてください。" } ] },
-    { "id": "rest_notice", "trigger": { "type": "time", "sec": 300 }, "once": true,
+        { "text": "【特殊ルール】\n掘削禁止\n旗禁止\nOracle(HINT) 無し\n再生(∞)\n最初の安全セル不明\nアンチノーゲス盤面\n制限時間：60秒" } ] },
+    { "id": "stage_over", "trigger": { "type": "stage_over" }, "once": true,
       "lines": [
-        { "speaker": "oracle", "text": "5分経過しました。\n少し休憩しませんか？" } ] },
-    { "id": "half_open", "trigger": { "type": "open_rate", "gte": 0.5 }, "once": true,
-      "lines": [
-        { "speaker": "001", "text": "半分まで来たよ！" },
-        { "speaker": "oracle", "text": "この調子です。" } ] },
-    { "id": "stage_clear", "trigger": { "type": "stage_clear" }, "once": true,
-      "lines": [
-        { "speaker": "001", "text": "やった……！全部見つけた！" } ] }
+        { "text": "無理げー" } ] }
   ]
 }

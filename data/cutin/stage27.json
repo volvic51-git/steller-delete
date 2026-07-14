@@ -1,0 +1,9 @@
+{
+  "se": {},
+  "characters": {},
+  "events": [
+    { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
+      "lines": [
+        { "text": "【特殊ルール】\n認証済み盤面\n最初の安全セルを自動開放\n制限時間：660秒" } ] }
+  ]
+}
