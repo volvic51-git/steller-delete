@@ -475,7 +475,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel12.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "cutin": "stage22"
   },
   {
@@ -491,13 +491,13 @@
     "grid_row": 8,
     "total": 128,
     "timeLimitMode": true,
-    "timeLimit": 90,
+    "timeLimit": 60,
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
     "novelAfterClear": "novel/novel13.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "gameRule": "noflag",
     "cutin": "stage23"
   },
@@ -520,7 +520,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel14.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "cutin": "stage24"
   },
   {
@@ -543,7 +543,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel15.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "cutin": "stage25"
   },
   {
@@ -565,7 +565,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel16.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "suspendDisabled": true,
     "cutin": "stage26"
   },
@@ -589,7 +589,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel17.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "cutin": "stage27"
   },
   {
@@ -612,7 +612,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel18.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "cutin": "stage28"
   },
   {
@@ -628,13 +628,13 @@
     "grid_row": 7,
     "total": 84,
     "timeLimitMode": true,
-    "timeLimit": 10,
+    "timeLimit": 15,
     "loopMode": false,
     "loopCount": 3,
     "exMode": false,
     "novelAfterClear": "novel/novel19.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "img_bg04.jpg",
     "cutin": "stage29"
   },
   {
@@ -658,6 +658,6 @@
     "exMode": false,
     "novelAfterClear": "novel/novel20.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "img_bg05.jpg"
   }
 ]
