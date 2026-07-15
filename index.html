@@ -770,6 +770,8 @@
     color: var(--accent);
     text-transform: uppercase;
     text-shadow: 0 0 8px rgba(0,200,255,.6);
+    white-space: nowrap;
+    max-width: 86%;
   }
   .stage-overlay-grid {
     font-family: 'Orbitron', sans-serif;
@@ -1723,6 +1725,10 @@ function buildStageCards() {
     // 固定ステージのみを中央表示。前後カードは出さない
     stageViewport.innerHTML = cardHtml(0, 'pos-center');
     updateStartBtn();
+    // buildStageCards()の直後にstageModal.classList.add('show')が呼ばれる（呼び出し元共通の並び）ため、
+    // ここで同期的に測ると display:none のままで幅0になる。setTimeout(0)でその後ろへ回してから測る
+    // （rAFは非表示タブだと発火が抑制される場合があるため使わない）。
+    setTimeout(fitOverlayDiffText, 0);
     return;
   }
 
@@ -1743,6 +1749,37 @@ function buildStageCards() {
   bindCardClicks();
   updateStartBtn();
   updateStageBestTime();
+  setTimeout(fitOverlayDiffText, 0); // 理由は上のisStoryFixedSelect分岐のコメント参照
+}
+
+// difficulty文字列（stage-overlay-diff）の長さは"初級"〜"L乙女【再生】機能"まで様々で、
+// CSSのclamp()だけだとフォントサイズとカード幅の対応比率がブレークポイントの端で崩れて
+// 特定のウインドウ幅でだけ2行折り返しが起きる（円形オーバーレイの中の文字なので折り返すと見切れる）。
+// 実測して収まるまでフォントサイズを縮める方式にして、どんな文字数・どんなウインドウ幅でも
+// 常に1行に収まるようにする。
+function fitOverlayDiffText() {
+  document.querySelectorAll('.stage-overlay-diff').forEach(el => {
+    el.style.fontSize = ''; // CSSのclamp()基準値へ戻してから測る
+    const maxWidth = el.parentElement.clientWidth * 0.86; // 円の余白を見込んだ安全幅
+    if (maxWidth <= 0) return;
+    let fs = parseFloat(getComputedStyle(el).fontSize);
+    let guard = 30;
+    while (el.scrollWidth > maxWidth && fs > 8 && guard-- > 0) {
+      fs -= 1;
+      el.style.fontSize = fs + 'px';
+    }
+  });
+}
+window.addEventListener('resize', () => {
+  if (!stageModal.classList.contains('show')) return;
+  fitOverlayDiffText();
+});
+// Webフォント(Rajdhani)がbuildStageCards実行時点でまだ未読込だと、フォールバックフォントの
+// 幅で測ってしまい判定を通り抜けることがある→フォント確定後に一度だけ再判定する。
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    if (stageModal.classList.contains('show')) fitOverlayDiffText();
+  });
 }
 
 function updateStageBestTime() {
