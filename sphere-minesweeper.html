@@ -4216,7 +4216,10 @@ function updateTimeLimitGauge(){
 
   // SVGサイズを球体に合わせて更新（syncCharaLayerSizeと同タイミング）
   const r = gauge._radius || 100;
-  const ratio = totalTime > 0 ? Math.max(0, remainingTime/totalTime) : 1;
+  // remainingTime>totalTimeの状態（本来あり得ないが呼び出し元次第では起こり得る）でも
+  // ratio>1にはしない。ratio>1だと後段の色計算(t=(1-ratio)*n)が負になり配列を負インデックスで
+  // 参照してクラッシュするため、ここで確実に[0,1]へクランプする。
+  const ratio = totalTime > 0 ? Math.min(1, Math.max(0, remainingTime/totalTime)) : 1;
   const circ  = 2 * Math.PI * r;
 
   // dashoffset: 0=全表示、circ=全非表示
@@ -4966,7 +4969,11 @@ function animate(){
   // 制限時間ゲージ：毎フレーム滑らかに更新
   if(timeLimitMode && gameState==='playing' && totalTime > 0 && _timePausedAt === null){
     const _elapsedSec = window._timerStartMs ? (performance.now() - window._timerStartMs) / 1000 : elapsed;
-    remainingTime = Math.max(0, totalTime - _elapsedSec);
+    // _timerStartMsがpauseGameTime/resumeGameTimeのシフトで一時的に未来側にずれると
+    // _elapsedSecが負になり得る（カットインの多重発火等）。remainingTimeがtotalTimeを
+    // 超えるとratio>1になりupdateTimeLimitGaugeの配色計算が負インデックス参照でクラッシュする
+    // ため、上限もクランプしておく（本来ここに来る値は0〜totalTimeの範囲のはず）。
+    remainingTime = Math.min(totalTime, Math.max(0, totalTime - _elapsedSec));
     updateTimeLimitGauge();
     // 残り10秒以下で1秒ごとにpin音（0秒は鳴らさない）
     const _remCeil = Math.ceil(remainingTime);
