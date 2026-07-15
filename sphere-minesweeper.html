@@ -825,6 +825,10 @@ let hintCount = 0;
 let maxHints = 3; // stage-params.jsonのmaxHintsで上書き可能
 let timerInterval = null;
 let elapsed = 0;
+// クリア判定が確定した瞬間の精密クリアタイムを保持（演出待ちsetTimeoutの間も時計は
+// 止めず動かし続けるが、表示・保存には「確定した瞬間」の値を使うことで演出時間を
+// 含めない。showRescueScreenで参照。null=未確定（次のcheckWin成立時に上書きされる）。
+let _pendingClearTimeSec = null;
 
 // ===================== TIME LIMIT MODE =====================
 let timeLimitMode  = false;
@@ -1060,9 +1064,12 @@ function showRescueScreen(){
   document.getElementById('rescue-desc').textContent   = currentCharacter.desc;
   // 精密クリアタイム（コンマ3桁）。再生時は「実際にクリアした時のタイム」をrecordから表示する
   // （再生セッションでは実タイマーが走らず0になるため、その場再計算はしない）。
+  // 通常時はcheckWin/debugClearが確定させた_pendingClearTimeSecを使う（ここでその場
+  // 再計算すると、消滅演出・救出演出の待ち時間がクリアタイムに乗ってしまうため）。
   const clearTimeSec = _isReplaySession
     ? ((_replayRecord && _replayRecord.clearTime != null) ? _replayRecord.clearTime : 0)
-    : computeClearTimeSec();
+    : (_pendingClearTimeSec != null ? _pendingClearTimeSec : computeClearTimeSec());
+  _pendingClearTimeSec = null;
   document.getElementById('rescue-time').textContent = formatRankingTime(clearTimeSec);
   // 自動保存（クリア）：表示・ランキングと同一の clearTimeSec で保存し、ゲーム内の全タイムを一致させる。
   if(!_isReplaySession && replayAutoSave && !_replaySavedThisGame) saveReplay('win', clearTimeSec);
@@ -2754,6 +2761,11 @@ function checkWin(){
     if(removedMines!==mineCount) return;
   }
   if(gameState!=='playing') return; // 既に遷移演出が進行中なら無視（連続操作による二重発火を防止）
+  // クリア判定が確定した「いま」の精密タイムを保持する。以降の消滅演出/救出演出の
+  // setTimeoutチェーンは数秒かかるが、精密時計そのものは止めない設計のため、ここで
+  // 確定させないとshowRescueScreenで拾う値に演出時間が丸ごと乗ってしまう
+  // （周回モードの中間クリアでも都度上書きされ、最終クリア時の値が最後に残る）。
+  _pendingClearTimeSec = computeClearTimeSec();
   // 自動保存（win）は showRescueScreen で行う（クリア画面と同一の精密タイムで保存し全タイムを統一するため）。
   if(_isReplaySession){ _replayEnded = true; replayAutoStop(); } // 再生が終端に達した→操作バー全ボタン無効化
   gameState='idle'; // 演出完了まで入力を即座にブロック
@@ -3792,7 +3804,7 @@ function resumeTimer(){
   window._loopTotalStartMs = performance.now() - elapsed * 1000; // 通しタイムは近似（周回中断は限界あり）
   if(timeLimitMode) syncTimeLimitGaugeSize();
   timerInterval = setInterval(()=>{
-    elapsed++;
+    syncElapsedFromClock();
     document.getElementById('stat-time').textContent = formatTime(elapsed);
     updateDigitTimer(elapsed);
   }, 1000);
@@ -4276,8 +4288,16 @@ function resumeGameTime(){
   if(gameState === 'playing') timerInterval = setInterval(_timerTick, 1000);
 }
 
+// elapsedを精密クロック（_loopTotalStartMs基準。周回モードでも1周目開始からの通し時間）
+// から再計算する。setIntervalの発火遅延が蓄積してもここで毎回補正されるためドリフトしない。
+function syncElapsedFromClock(){
+  elapsed = window._loopTotalStartMs
+    ? Math.floor((performance.now() - window._loopTotalStartMs) / 1000)
+    : elapsed + 1;
+}
+
 function _timerTick(){
-  elapsed++;
+  syncElapsedFromClock();
   document.getElementById('stat-time').textContent=formatTime(elapsed);
   updateDigitTimer(elapsed);
   if(gameState === 'playing') cutinNotify('time', {sec: elapsed});
@@ -4684,6 +4704,7 @@ function debugClear(){
     calcTotalNonMineCells();
   }
   if(gameState!=='playing') return;
+  _pendingClearTimeSec = computeClearTimeSec(); // checkWinと同様、演出前の時点で確定
   // 全地雷を除去済みにする
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const cell=board[r][c];
@@ -4761,7 +4782,7 @@ function restartGame(){
   }
   window._bgmSwitched = false;
   SND.clear.pause(); SND.clear.currentTime=0;
-  gameState='idle'; removedMines=0; hintCount=0; elapsed=0;
+  gameState='idle'; removedMines=0; hintCount=0; elapsed=0; _pendingClearTimeSec=null;
   // 誤操作防止：起動時(リスタート時含む)は必ずOFF
   misclickGuard = false;
   gamePaused = false;
@@ -4953,7 +4974,7 @@ function animate(){
       window._lastPinSec = _remCeil;
       SND.pin.currentTime = 0; SND.pin.play().catch(()=>{});
     }
-    if(remainingTime <= 0 && totalTime - elapsed <= 0){
+    if(remainingTime <= 0){
       clearInterval(timerInterval);
       triggerGameOverSequence('__timeup__');
     }
