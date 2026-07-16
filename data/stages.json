@@ -313,7 +313,7 @@
     "description": "時の制約を解き放つ力が眠る。",
     "image": "assets/images/stages/st29.png",
     "locked": false,
-    "difficulty": "L乙女【再生】機能",
+    "difficulty": "乙女【停止】機能",
     "grid_col": 12,
     "grid_row": 7,
     "mines": 10

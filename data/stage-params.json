@@ -536,7 +536,7 @@
     "grid_row": 7,
     "total": 84,
     "timeLimitMode": true,
-    "timeLimit": 60,
+    "timeLimit": 100,
     "loopMode": true,
     "loopCount": 5,
     "loopColors": ["#003d14", "#00551c", "#006622", "#339955", "#66cc88"],
