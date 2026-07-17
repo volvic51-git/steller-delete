@@ -240,6 +240,20 @@
     0%,100%{border-color:rgba(0,255,200,0.8);box-shadow:0 0 10px rgba(0,255,200,0.4);}
     50%{border-color:rgba(255,255,255,0.9);box-shadow:0 0 16px rgba(255,255,255,0.6);}
   }
+  /* 警告バナー：左端から edge-on（rotateY 85deg=ほぼ真横向き）で現れ、正面を向きながら
+     中央でスケールアップ→保持→反対側へ抜けながら再びedge-onで縮んで消える。
+     「裏側から回り込んでくる」の疑似表現。3D空間移動ではなくCSS transformのみ。 */
+  @keyframes warningBannerSwoop{
+    0%   { transform: translateX(-120vw) rotateY(85deg)  scale(0.4); opacity: 0; }
+    10%  { opacity: 1; }
+    45%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
+    55%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateX(120vw)  rotateY(-85deg) scale(0.4); opacity: 0; }
+  }
+  #warning-banner-img.playing{
+    animation: warningBannerSwoop 0.8s cubic-bezier(.22,.7,.3,1) forwards;
+  }
   /* 左下モード切り替えボタン */
   #mode-btns-float {
     position: fixed;
@@ -341,6 +355,11 @@
     <div class="debug-tile">
       <div class="lbl">確率表示</div>
       <button id="debug-btn" onclick="toggleDebug()">確率表示</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">警告演出</div>
+      <button onclick="triggerWarningBanner()">⚠️ 再生</button>
     </div>
 
     <div class="debug-tile">
@@ -508,6 +527,20 @@
 </div>
 <div id="cursor-indicator" id="cursor-ind"></div>
 <div id="save-toast">💾 SAVED</div>
+
+<!-- 警告バナー演出（プロトタイプ）：Three.js空間には置かず、画面最前面のHTMLオーバーレイ。
+     「球体の裏側から高速で回り込んでくる」印象をCSS transformだけで疑似表現する
+     （translateX + rotateY + scale + opacity。実際に3D空間を移動させるわけではない）。
+     WebGLオブジェクトを増やさないため描画負荷（draw call）への影響はゼロ。 -->
+<div id="warning-banner-layer" style="
+  position:fixed;inset:0;z-index:160;display:none;
+  align-items:center;justify-content:center;overflow:hidden;
+  pointer-events:none;perspective:800px;
+">
+  <img id="warning-banner-img" src="assets/images/cutin/警告.png" alt="警告" style="
+    width:min(640px,92vw);height:auto;will-change:transform,opacity;
+  ">
+</div>
 
 <!-- 制限時間 外周SVGゲージ -->
 <svg id="time-limit-gauge" style="
@@ -2670,6 +2703,24 @@ function showSaveToast(){
   clearTimeout(t._timer);
   t.classList.add('visible');
   t._timer = setTimeout(function(){ t.classList.remove('visible'); }, 1600);
+}
+
+// 警告バナー演出（プロトタイプ）。WebGLオブジェクトは使わずCSS transformのみで完結するため、
+// animate()の描画ループ・draw call数には一切影響しない。
+function triggerWarningBanner(){
+  const layer = document.getElementById('warning-banner-layer');
+  const img   = document.getElementById('warning-banner-img');
+  if(!layer || !img) return;
+  layer.style.display = 'flex';
+  img.classList.remove('playing');
+  void img.offsetWidth; // リフローでアニメーションを確実に再スタートさせる（連打対策）
+  img.classList.add('playing');
+  const onEnd = () => {
+    layer.style.display = 'none';
+    img.classList.remove('playing');
+    img.removeEventListener('animationend', onEnd);
+  };
+  img.addEventListener('animationend', onEnd);
 }
 
 // ===================== GAME OVER演出（地雷ヒット／時間切れ共通）=====================
