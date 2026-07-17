@@ -1531,10 +1531,13 @@ function buildThemeColors(hex){
   };
 }
 
-// 数字色：盤面色が明るい（輝度>0.35）場合に暗色セットを使う
+// 数字色：開封セルの実背景は darkenHex(paletteHex, 0.08) でほぼ黒に落ちるため、
+// 盤面（未開封セル）の明暗との関連は薄い。DARK/鮮やかで見た目の差が出ないよう、
+// DARKセットも鮮やかセットと同じ明るさ・彩度に統一する（発光(makeTextCanvasの
+// shadowColor=color)が映えるように）。
 const NUMBER_COLORS_DARK = [
-  '#000000','#0055cc','#007744','#cc2200',
-  '#222299','#991100','#007799','#990099','#333333'
+  '#000000','#33ccff','#00ff88','#ff5555',
+  '#7788ff','#ff4422','#00ffff','#ff00ff','#ffffff'
 ];
 
 function getNumberColor(idx, paletteIndex){
