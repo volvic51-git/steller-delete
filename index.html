@@ -2317,22 +2317,22 @@ function renderStageList(stages, idFilter, noStrFn, titleText){
   });
 }
 
-// NORMAL は stage01-08 + stage9(31, 12x7周回) + stageEX1(10) + stageEX2(11) を使用
+// NORMAL は stage01-08 + stage9(31, 12x7周回) + stageEX2(11) を使用（stageEX1(10)は非表示）
 function renderNormalList(stages){
   renderStageList(
     stages,
-    s => (s.id >= 1 && s.id <= 8) || s.id === 31 || s.id === 10 || s.id === 11,
-    s => s.id === 10 ? 'EX1' : s.id === 11 ? 'EX2' : s.id === 31 ? '09' : String(s.id).padStart(2,'0'),
+    s => (s.id >= 1 && s.id <= 8) || s.id === 31 || s.id === 11,
+    s => s.id === 11 ? 'EX' : s.id === 31 ? '09' : String(s.id).padStart(2,'0'),
     'SIMPLE MODE'
   );
 }
 
-// NO FLAG は stage01-08 + stage9(32, 12x7周回) + stageEX1 + stageEX2 のミラー（新id 12-19, 32, 20, 21）を使用
+// NO FLAG は stage01-08 + stage9(32, 12x7周回) + stageEX2のミラー（新id 12-19, 32, 21）を使用（stageEX1ミラー(20)は非表示）
 function renderNoflagList(stages){
   renderStageList(
     stages,
-    s => (s.id >= 12 && s.id <= 19) || s.id === 32 || s.id === 20 || s.id === 21,
-    s => s.id === 20 ? 'EX1' : s.id === 21 ? 'EX2' : s.id === 32 ? '09' : String(s.id - 11).padStart(2,'0'),
+    s => (s.id >= 12 && s.id <= 19) || s.id === 32 || s.id === 21,
+    s => s.id === 21 ? 'EX' : s.id === 32 ? '09' : String(s.id - 11).padStart(2,'0'),
     'NO FLAG MODE'
   );
 }
