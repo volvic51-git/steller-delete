@@ -88,6 +88,18 @@
     "mines": 500
   },
   {
+    "id": 31,
+    "name": "STAGE 9（仮称）",
+    "description": "（説明文未定）",
+    "image": "assets/images/stages/st09.png",
+    "locked": false,
+    "difficulty": "消滅級",
+    "grid_col": 12,
+    "grid_row": 7,
+    "mines": 10,
+    "badge": "制限時間100sec　周回数5"
+  },
+  {
     "id": 9,
     "name": "消滅星",
     "description": "消滅した星は、星屑となり、やがて果てる",
@@ -207,6 +219,18 @@
     "grid_col": 72,
     "grid_row": 34,
     "mines": 500
+  },
+  {
+    "id": 32,
+    "name": "STAGE 9（仮称）",
+    "description": "（説明文未定）",
+    "image": "assets/images/stages/st09.png",
+    "locked": false,
+    "difficulty": "消滅級",
+    "grid_col": 12,
+    "grid_row": 7,
+    "mines": 10,
+    "badge": "制限時間100sec　周回数5"
   },
   {
     "id": 20,

@@ -1151,6 +1151,15 @@
     color: rgba(170,200,230,.7);
     display: flex; flex-wrap: wrap; gap: .4em 1.2em;
   }
+  .stage-row-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-weight: 700;
+    font-size: clamp(10px,1.4vw,13px);
+    letter-spacing: .06em;
+    color: #ffaa00;
+    text-shadow: 0 0 6px rgba(255,170,0,.5);
+    margin: .3em 0;
+  }
   .stage-row-best {
     font-family: 'Orbitron', sans-serif;
     font-size: clamp(10px,1.4vw,13px);
@@ -2283,6 +2292,7 @@ function renderStageList(stages, idFilter, noStrFn, titleText){
           <span>${total} CELLS</span>
           <span>星傷 ${s.mines}</span>
         </div>
+        ${s.badge ? `<div class="stage-row-badge">${s.badge}</div>` : ''}
         <div class="stage-row-best"><small>BEST</small>${best}</div>
       </div>
       <button class="stage-row-records" data-id="${s.id}" title="RECORDS">🏆</button>
@@ -2308,22 +2318,22 @@ function renderStageList(stages, idFilter, noStrFn, titleText){
   });
 }
 
-// NORMAL は stage01-08 + stageEX1(10) + stageEX2(11) を使用
+// NORMAL は stage01-08 + stage9(31, 12x7周回) + stageEX1(10) + stageEX2(11) を使用
 function renderNormalList(stages){
   renderStageList(
     stages,
-    s => (s.id >= 1 && s.id <= 8) || s.id === 10 || s.id === 11,
-    s => s.id === 10 ? 'EX1' : s.id === 11 ? 'EX2' : String(s.id).padStart(2,'0'),
+    s => (s.id >= 1 && s.id <= 8) || s.id === 31 || s.id === 10 || s.id === 11,
+    s => s.id === 10 ? 'EX1' : s.id === 11 ? 'EX2' : s.id === 31 ? '09' : String(s.id).padStart(2,'0'),
     'SIMPLE MODE'
   );
 }
 
-// NO FLAG は stage01-08 + stageEX1 + stageEX2 のミラー（新id 12-19, 20, 21）を使用
+// NO FLAG は stage01-08 + stage9(32, 12x7周回) + stageEX1 + stageEX2 のミラー（新id 12-19, 32, 20, 21）を使用
 function renderNoflagList(stages){
   renderStageList(
     stages,
-    s => (s.id >= 12 && s.id <= 19) || s.id === 20 || s.id === 21,
-    s => s.id === 20 ? 'EX1' : s.id === 21 ? 'EX2' : String(s.id - 11).padStart(2,'0'),
+    s => (s.id >= 12 && s.id <= 19) || s.id === 32 || s.id === 20 || s.id === 21,
+    s => s.id === 20 ? 'EX1' : s.id === 21 ? 'EX2' : s.id === 32 ? '09' : String(s.id - 11).padStart(2,'0'),
     'NO FLAG MODE'
   );
 }
