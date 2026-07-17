@@ -3081,8 +3081,10 @@ function focusNearestNumberCell(){
   for(let r = 0; r < ROWS; r++){
     for(let c = 0; c < COLS; c++){
       const cell = board[r][c];
-      // 開封済みで数字が表示されているセル（neighborMines > 0）が対象
-      if(!cell.isOpen || cell.isRemoved || cell.isMine || cell.neighborMines <= 0) continue;
+      // 未開封セルで、隣接8マスに「開封済み・数字1以上」のセルがあるもの（＝解析の手がかりがある未開封セル）が対象
+      if(cell.isOpen || cell.isRemoved || cell.hasFlag) continue;
+      const hasNumberedNeighbor = getNeighbors(r,c).some(n => n.isOpen && !n.isRemoved && !n.isMine && n.neighborMines > 0);
+      if(!hasNumberedNeighbor) continue;
       // セルのローカル位置方向
       const p = cellPosition(r, c).normalize();
       const dot = p.dot(camDir);
