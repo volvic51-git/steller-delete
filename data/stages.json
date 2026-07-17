@@ -97,7 +97,7 @@
     "grid_col": 12,
     "grid_row": 7,
     "mines": 10,
-    "badge": "制限時間100sec　周回数5"
+    "badge": "制限時間100sec　再生数5"
   },
   {
     "id": 9,
@@ -230,7 +230,7 @@
     "grid_col": 12,
     "grid_row": 7,
     "mines": 10,
-    "badge": "制限時間100sec　周回数5"
+    "badge": "制限時間100sec　再生数5"
   },
   {
     "id": 20,
