@@ -240,22 +240,29 @@
     0%,100%{border-color:rgba(0,255,200,0.8);box-shadow:0 0 10px rgba(0,255,200,0.4);}
     50%{border-color:rgba(255,255,255,0.9);box-shadow:0 0 16px rgba(255,255,255,0.6);}
   }
-  /* 警告バナー：奥（画面奥のZ軸マイナス方向、perspective:800pxにより遠いほど小さく見える）
-     から回転しながら手前・中央へ迫り出し、正面を向いてスケールアップ→1.0秒静止→
-     再び回転しながら奥へ遠ざかって消える。translateXだけの平行移動だとただの
-     横スライドにしか見えないため、translateZ（奥行き）を組み合わせて「回り込んでくる」
-     見た目にする。3D空間移動ではなくCSS transformのみ（WebGLオブジェクトは使わない）。
-     全体1.6s（突入0.3s＋中央静止1.0s＋離脱0.3s）。 */
-  @keyframes warningBannerSwoop{
-    0%     { transform: translate3d(-45vw, 0, -1400px) rotateY(-115deg) scale(0.45); opacity: 0; }
-    6.3%   { opacity: 1; }
-    18.8%  { transform: translate3d(0, 0, 0)            rotateY(0deg)    scale(1.18); opacity: 1; }
-    81.3%  { transform: translate3d(0, 0, 0)            rotateY(0deg)    scale(1.18); opacity: 1; }
-    93.8%  { opacity: 1; }
-    100%   { transform: translate3d(45vw, 0, -1400px)   rotateY(-115deg) scale(0.45); opacity: 0; }
+  /* 警告バナー：左から中央へスライド→1.5秒静止→右へスライドして消える（3D回転/奥行きは廃止）。
+     全体2.1s（突入0.3s＋中央静止1.5s＋離脱0.3s）。 */
+  @keyframes warningBannerSlide{
+    0%     { transform: translateX(-120vw); opacity: 0; }
+    4.8%   { opacity: 1; }
+    14.3%  { transform: translateX(0); opacity: 1; }
+    85.7%  { transform: translateX(0); opacity: 1; }
+    95.2%  { opacity: 1; }
+    100%   { transform: translateX(120vw); opacity: 0; }
   }
   #warning-banner-img.playing{
-    animation: warningBannerSwoop 1.6s cubic-bezier(.22,.7,.3,1) forwards;
+    animation: warningBannerSlide 2.1s cubic-bezier(.22,.7,.3,1) forwards;
+  }
+  /* バナーの通り道：透過50%程度の青系ライン（高さ=バナー幅×0.8＝パネル比率1.5:1のバナー高さの1.2倍）。
+     バナーと同じタイミングでフェードイン/アウトする専用アニメーション。 */
+  @keyframes warningTrackFade{
+    0%     { opacity: 0; }
+    4.8%   { opacity: 1; }
+    95.2%  { opacity: 1; }
+    100%   { opacity: 0; }
+  }
+  #warning-banner-track.playing{
+    animation: warningTrackFade 2.1s linear forwards;
   }
   /* 左下モード切り替えボタン */
   #mode-btns-float {
@@ -536,16 +543,21 @@
 <div id="save-toast">💾 SAVED</div>
 
 <!-- 警告バナー演出（プロトタイプ）：Three.js空間には置かず、画面最前面のHTMLオーバーレイ。
-     「球体の裏側から高速で回り込んでくる」印象をCSS transformだけで疑似表現する
-     （translateX + rotateY + scale + opacity。実際に3D空間を移動させるわけではない）。
+     左→中央→右へのCSS transform(translateX + opacity)のみで疑似表現する。
      WebGLオブジェクトを増やさないため描画負荷（draw call）への影響はゼロ。 -->
 <div id="warning-banner-layer" style="
   position:fixed;inset:0;z-index:160;display:none;
   align-items:center;justify-content:center;overflow:hidden;
-  pointer-events:none;perspective:800px;
+  pointer-events:none;--wb-w:min(640px,92vw);
 ">
+  <!-- バナーの通り道（透過50%の青系ライン）。バナー本体より背面に敷く -->
+  <div id="warning-banner-track" style="
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    height:calc(var(--wb-w) * 0.8);
+    background:rgba(40,140,255,0.5);opacity:0;will-change:opacity;
+  "></div>
   <img id="warning-banner-img" src="assets/images/cutin/警告.png" alt="警告" style="
-    width:min(640px,92vw);height:auto;will-change:transform,opacity;
+    position:relative;width:var(--wb-w);height:auto;will-change:transform,opacity;
   ">
 </div>
 
@@ -2718,15 +2730,19 @@ function showSaveToast(){
 function triggerWarningBanner(){
   const layer = document.getElementById('warning-banner-layer');
   const img   = document.getElementById('warning-banner-img');
+  const track = document.getElementById('warning-banner-track');
   if(!layer || !img) return;
   window._warningBannerActive = true; // 演出中は掘削・旗立て・各種アイコンを無効化（各所のガード参照）
   layer.style.display = 'flex';
   img.classList.remove('playing');
+  if(track) track.classList.remove('playing');
   void img.offsetWidth; // リフローでアニメーションを確実に再スタートさせる（連打対策）
   img.classList.add('playing');
+  if(track) track.classList.add('playing');
   const onEnd = () => {
     layer.style.display = 'none';
     img.classList.remove('playing');
+    if(track) track.classList.remove('playing');
     img.removeEventListener('animationend', onEnd);
     window._warningBannerActive = false;
   };
