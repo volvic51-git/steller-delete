@@ -241,18 +241,19 @@
     50%{border-color:rgba(255,255,255,0.9);box-shadow:0 0 16px rgba(255,255,255,0.6);}
   }
   /* 警告バナー：左端から edge-on（rotateY 85deg=ほぼ真横向き）で現れ、正面を向きながら
-     中央でスケールアップ→保持→反対側へ抜けながら再びedge-onで縮んで消える。
-     「裏側から回り込んでくる」の疑似表現。3D空間移動ではなくCSS transformのみ。 */
+     中央でスケールアップ→1.5秒静止→反対側へ抜けながら再びedge-onで縮んで消える。
+     「裏側から回り込んでくる」の疑似表現。3D空間移動ではなくCSS transformのみ。
+     全体2.1s（突入0.3s＋中央静止1.5s＋離脱0.3s）。 */
   @keyframes warningBannerSwoop{
-    0%   { transform: translateX(-120vw) rotateY(85deg)  scale(0.4); opacity: 0; }
-    10%  { opacity: 1; }
-    45%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
-    55%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
-    90%  { opacity: 1; }
-    100% { transform: translateX(120vw)  rotateY(-85deg) scale(0.4); opacity: 0; }
+    0%     { transform: translateX(-120vw) rotateY(85deg)  scale(0.4); opacity: 0; }
+    4.8%   { opacity: 1; }
+    14.3%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
+    85.7%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
+    95.2%  { opacity: 1; }
+    100%   { transform: translateX(120vw)  rotateY(-85deg) scale(0.4); opacity: 0; }
   }
   #warning-banner-img.playing{
-    animation: warningBannerSwoop 0.8s cubic-bezier(.22,.7,.3,1) forwards;
+    animation: warningBannerSwoop 2.1s cubic-bezier(.22,.7,.3,1) forwards;
   }
   /* 左下モード切り替えボタン */
   #mode-btns-float {
