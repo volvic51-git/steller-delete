@@ -2025,6 +2025,7 @@ function updateSearchButton(){
 }
 
 function triggerSearchButton(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   if(!_searchAvailable) return;
   const {safe,mines,probs}=runSolver();
   if(stMode && (safe.size>0 || mines.size>0)){
@@ -2716,6 +2717,7 @@ function triggerWarningBanner(){
   const layer = document.getElementById('warning-banner-layer');
   const img   = document.getElementById('warning-banner-img');
   if(!layer || !img) return;
+  window._warningBannerActive = true; // 演出中は掘削・旗立て・各種アイコンを無効化（各所のガード参照）
   layer.style.display = 'flex';
   img.classList.remove('playing');
   void img.offsetWidth; // リフローでアニメーションを確実に再スタートさせる（連打対策）
@@ -2724,6 +2726,7 @@ function triggerWarningBanner(){
     layer.style.display = 'none';
     img.classList.remove('playing');
     img.removeEventListener('animationend', onEnd);
+    window._warningBannerActive = false;
   };
   img.addEventListener('animationend', onEnd);
 }
@@ -3069,6 +3072,7 @@ function clearHintHighlight(cell){
 }
 
 function giveHint(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   if(gameState!=='playing') return;
   if(hintCount >= maxHints) return; // 上限チェック（maxHints:0 なら常に使用不可）
   const {safe,mines,probs}=runSolver();
@@ -3127,6 +3131,7 @@ function rotationSpeedScale(){
 }
 
 function focusNearestNumberCell(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   if(gameState !== 'playing') return;
 
   // カメラ視線方向（0,0,1）をboardGroupのローカル座標に変換
@@ -3419,6 +3424,7 @@ function executeConfirmedAction(){
 }
 
 function toggleMisclickGuard(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   misclickGuard = !misclickGuard;
   const icon  = document.getElementById('misclick-guard-icon');
   const label = document.getElementById('misclick-guard-label');
@@ -3982,6 +3988,7 @@ async function resumeSuspend(rec){
 }
 
 function handleCellAction(row,col,action){
+  if(window._warningBannerActive) return; // 警告バナー演出中は掘削・旗立て不可
   if(window._stageLoseEvent) return; // 負けイベント：セルへの操作は一切不可
   // resume再構築（非同期チャンク）中のユーザー入力を無視。内部の再適用ループはdigCell/flagCellを直接呼ぶためここは通らない
   if(_replayInstant) return;
