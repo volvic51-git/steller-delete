@@ -308,6 +308,10 @@
     <button id="settings-btn" onclick="openSettingsMenu()" title="設定"
       style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚙️</button>
     <button id="audio-btn" onclick="toggleAudio()" title="音声ON/OFF">🔊</button>
+    <!-- 警告バナー演出の動作確認用ボタン（プロトタイプ検証用。DEBUGパネルだと演出が隠れて見えないため
+         ここに仮設置。本結線が済んだら削除する） -->
+    <button id="warning-banner-test-btn" onclick="triggerWarningBanner()" title="警告演出テスト"
+      style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚠️</button>
     <button id="manual-btn" onclick="startManual()" title="あそびかた"
       style="display:none;background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;align-items:center;justify-content:center;">❓</button>
   </div>
