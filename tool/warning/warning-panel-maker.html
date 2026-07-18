@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>警告パネルメーカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-wrap: wrap; gap: 24px;
+    padding: 24px; background: #10151f; color: #dce8f5;
+    font-family: 'Share Tech Mono', 'Hiragino Sans', sans-serif;
+  }
+  h1 { font-size: 16px; letter-spacing: .15em; color: #6fd7ff; margin: 0 0 16px; }
+  #panel-left {
+    flex: 0 0 340px; background: rgba(0,20,40,.6); border: 1px solid rgba(0,200,255,.3);
+    border-radius: 6px; padding: 18px; height: fit-content;
+  }
+  fieldset { border: 1px solid rgba(0,200,255,.25); border-radius: 4px; margin: 0 0 14px; padding: 10px 12px; }
+  legend { font-size: 11px; letter-spacing: .1em; color: #6fd7ff; padding: 0 6px; }
+  label { display: block; font-size: 11px; color: #9fc4dd; margin: 8px 0 4px; }
+  input[type="text"], input[type="color"] {
+    width: 100%; background: rgba(0,10,30,.8); border: 1px solid rgba(0,200,255,.35);
+    color: #eaf6ff; padding: 6px 8px; border-radius: 3px; font-size: 13px;
+  }
+  input[type="range"] { width: 76%; vertical-align: middle; }
+  .num { display: inline-block; width: 20%; text-align: right; font-size: 12px; color: #6fd7ff; }
+  #panel-right { flex: 1 1 480px; }
+  #canvas-wrap { max-width: 100%; overflow: auto; border: 1px solid rgba(0,200,255,.25); border-radius: 6px; }
+  canvas { display: block; max-width: 100%; height: auto; background: #222; }
+  #export-btn {
+    width: 100%; margin-top: 4px; padding: 10px 0; background: rgba(0,160,220,.85); border: none;
+    color: #04141f; font-weight: 700; letter-spacing: .1em; border-radius: 4px; cursor: pointer; font-size: 13px;
+  }
+  #export-btn:hover { background: #24d0ff; }
+  #status { font-size: 11px; color: #7a90a6; margin-top: 8px; min-height: 1.4em; }
+</style>
+</head>
+<body>
+
+<div id="panel-left">
+  <h1>⚠ 警告パネルメーカー</h1>
+
+  <fieldset>
+    <legend>マーク（M_マーク.png）</legend>
+    <label>高さ（パネル比）<span class="num" id="markScaleVal"></span></label>
+    <input type="range" id="markScale" min="0.2" max="0.9" step="0.01" value="0.4">
+    <label>左マージン(px)<span class="num" id="markMarginVal"></span></label>
+    <input type="range" id="markMargin" min="0" max="200" step="1" value="60">
+    <label>縦位置オフセット(px)<span class="num" id="markYVal"></span></label>
+    <input type="range" id="markY" min="-200" max="200" step="1" value="0">
+  </fieldset>
+
+  <fieldset>
+    <legend>上段テキスト</legend>
+    <label>文言</label>
+    <input type="text" id="line1Text" value="警告">
+    <label>サイズ(px)<span class="num" id="line1SizeVal"></span></label>
+    <input type="range" id="line1Size" min="20" max="220" step="1" value="120">
+  </fieldset>
+
+  <fieldset>
+    <legend>下段テキスト</legend>
+    <label>文言</label>
+    <input type="text" id="line2Text" value="海抜度モード">
+    <label>サイズ(px)<span class="num" id="line2SizeVal"></span></label>
+    <input type="range" id="line2Size" min="16" max="160" step="1" value="60">
+  </fieldset>
+
+  <fieldset>
+    <legend>共通</legend>
+    <label>文字色</label>
+    <input type="color" id="textColor" value="#0a5c78">
+    <label>テキスト左端(px、マークからの間隔)<span class="num" id="textGapVal"></span></label>
+    <input type="range" id="textGap" min="0" max="200" step="1" value="40">
+    <label>テキスト右マージン(px)<span class="num" id="textRightVal"></span></label>
+    <input type="range" id="textRight" min="0" max="200" step="1" value="60">
+  </fieldset>
+
+  <button id="export-btn">📥 PNG書き出し</button>
+  <div id="status"></div>
+</div>
+
+<div id="panel-right">
+  <div id="canvas-wrap">
+    <canvas id="cv"></canvas>
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+const panelImg = new Image();
+const markImg  = new Image();
+let assetsReady = 0;
+function onAssetLoad(){ assetsReady++; if(assetsReady >= 2) init(); }
+panelImg.onload = onAssetLoad;
+markImg.onload  = onAssetLoad;
+panelImg.src = 'M_パネル.png';
+markImg.src  = 'M_マーク.png';
+
+const FONT_FAMILY = "'Noto Serif JP'";
+const controls = ['markScale','markMargin','markY','line1Text','line1Size','line2Text','line2Size','textColor','textGap','textRight'];
+const STORAGE_KEY = 'warningPanelMaker_v1';
+
+function init(){
+  cv.width  = panelImg.naturalWidth;
+  cv.height = panelImg.naturalHeight;
+  restoreState();
+  controls.forEach(id => {
+    const el = document.getElementById(id);
+    const evt = (el.type === 'text' || el.type === 'color') ? 'input' : 'input';
+    el.addEventListener(evt, () => { updateLabels(); saveState(); redraw(); });
+  });
+  document.getElementById('export-btn').addEventListener('click', exportPng);
+  // Noto Serif JPの読み込み完了を待ってから初回描画（先に描くとフォールバック書体で描画されるフラッシュが出る）
+  const weightsToLoad = ['700 40px', '900 40px'];
+  Promise.all(weightsToLoad.map(w => document.fonts.load(`${w} ${FONT_FAMILY}`)))
+    .catch(()=>{})
+    .finally(() => { updateLabels(); redraw(); });
+}
+
+function val(id){ return document.getElementById(id).value; }
+function num(id){ return parseFloat(val(id)); }
+
+function updateLabels(){
+  document.getElementById('markScaleVal').textContent  = val('markScale');
+  document.getElementById('markMarginVal').textContent = val('markMargin');
+  document.getElementById('markYVal').textContent      = val('markY');
+  document.getElementById('line1SizeVal').textContent  = val('line1Size');
+  document.getElementById('line2SizeVal').textContent  = val('line2Size');
+  document.getElementById('textGapVal').textContent    = val('textGap');
+  document.getElementById('textRightVal').textContent  = val('textRight');
+}
+
+function redraw(){
+  const W = cv.width, H = cv.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(panelImg, 0, 0, W, H);
+
+  // --- マーク（左側に確保したスペースへ配置） ---
+  const markScale  = num('markScale');
+  const markMargin = num('markMargin');
+  const markYOff   = num('markY');
+  const markH = H * markScale;
+  const markW = markH * (markImg.naturalWidth / markImg.naturalHeight);
+  const markX = markMargin;
+  const markY = (H - markH) / 2 + markYOff;
+  ctx.drawImage(markImg, markX, markY, markW, markH);
+
+  // --- テキスト（マークの右側、上段/下段の固定2スロット） ---
+  const textGap   = num('textGap');
+  const textRight = num('textRight');
+  const textX = markX + markW + textGap;
+  const maxTextWidth = Math.max(10, W - textX - textRight);
+
+  ctx.fillStyle = val('textColor');
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  const line1Size = num('line1Size');
+  const line2Size = num('line2Size');
+  ctx.font = `700 ${line1Size}px ${FONT_FAMILY}`;
+  drawFitText(val('line1Text'), textX, H * 0.38, maxTextWidth, line1Size);
+
+  ctx.font = `500 ${line2Size}px ${FONT_FAMILY}`;
+  drawFitText(val('line2Text'), textX, H * 0.66, maxTextWidth, line2Size);
+}
+
+// 指定幅に収まらない場合だけ縮小して描画（スロットからのはみ出し防止。サイズ入力値そのものは変えない）
+function drawFitText(text, x, y, maxWidth, baseSize){
+  if(!text) return;
+  const w = ctx.measureText(text).width;
+  if(w > maxWidth && w > 0){
+    const scale = maxWidth / w;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, 1);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  } else {
+    ctx.fillText(text, x, y);
+  }
+}
+
+function exportPng(){
+  const link = document.createElement('a');
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  link.download = `warning_panel_${ts}.png`;
+  link.href = cv.toDataURL('image/png');
+  link.click();
+  const status = document.getElementById('status');
+  status.textContent = '書き出しました：' + link.download;
+  setTimeout(() => { if(status.textContent.startsWith('書き出しました')) status.textContent = ''; }, 3000);
+}
+
+function saveState(){
+  const state = {};
+  controls.forEach(id => state[id] = val(id));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+}
+function restoreState(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const state = JSON.parse(raw);
+    controls.forEach(id => { if(state[id] !== undefined) document.getElementById(id).value = state[id]; });
+  } catch(e){}
+}
+</script>
+</body>
+</html>
