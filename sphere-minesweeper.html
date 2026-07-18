@@ -240,17 +240,19 @@
     0%,100%{border-color:rgba(0,255,200,0.8);box-shadow:0 0 10px rgba(0,255,200,0.4);}
     50%{border-color:rgba(255,255,255,0.9);box-shadow:0 0 16px rgba(255,255,255,0.6);}
   }
-  /* 警告バナー：左端から edge-on（rotateY 85deg=ほぼ真横向き）で現れ、正面を向きながら
-     中央でスケールアップ→1.0秒静止→反対側へ抜けながら再びedge-onで縮んで消える。
-     「裏側から回り込んでくる」の疑似表現。3D空間移動ではなくCSS transformのみ。
+  /* 警告バナー：奥（画面奥のZ軸マイナス方向、perspective:800pxにより遠いほど小さく見える）
+     から回転しながら手前・中央へ迫り出し、正面を向いてスケールアップ→1.0秒静止→
+     再び回転しながら奥へ遠ざかって消える。translateXだけの平行移動だとただの
+     横スライドにしか見えないため、translateZ（奥行き）を組み合わせて「回り込んでくる」
+     見た目にする。3D空間移動ではなくCSS transformのみ（WebGLオブジェクトは使わない）。
      全体1.6s（突入0.3s＋中央静止1.0s＋離脱0.3s）。 */
   @keyframes warningBannerSwoop{
-    0%     { transform: translateX(-120vw) rotateY(85deg)  scale(0.4); opacity: 0; }
+    0%     { transform: translate3d(-45vw, 0, -1400px) rotateY(115deg)  scale(0.45); opacity: 0; }
     6.3%   { opacity: 1; }
-    18.8%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
-    81.3%  { transform: translateX(0)      rotateY(0deg)   scale(1.1); opacity: 1; }
+    18.8%  { transform: translate3d(0, 0, 0)            rotateY(0deg)    scale(1.18); opacity: 1; }
+    81.3%  { transform: translate3d(0, 0, 0)            rotateY(0deg)    scale(1.18); opacity: 1; }
     93.8%  { opacity: 1; }
-    100%   { transform: translateX(120vw)  rotateY(-85deg) scale(0.4); opacity: 0; }
+    100%   { transform: translate3d(45vw, 0, -1400px)   rotateY(-115deg) scale(0.45); opacity: 0; }
   }
   #warning-banner-img.playing{
     animation: warningBannerSwoop 1.6s cubic-bezier(.22,.7,.3,1) forwards;
