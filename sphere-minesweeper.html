@@ -2727,16 +2727,32 @@ function showSaveToast(){
 
 // 警告バナー演出（プロトタイプ）。WebGLオブジェクトは使わずCSS transformのみで完結するため、
 // animate()の描画ループ・draw call数には一切影響しない。
-function triggerWarningBanner(){
+// キュー方式：再生中に呼ばれても割り込まず積み上げ、1本終わるごとに次を自動再生する。
+// 画像を差し替えたい場合は triggerWarningBanner('assets/images/cutin/別のパネル.png') のように呼ぶ
+// （省略時は既定の警告.png）。連続再生したいだけなら同じ呼び方を複数回連続で呼べばよい。
+let _warningBannerQueue = [];
+let _warningBannerPlaying = false;
+const WARNING_BANNER_DEFAULT_SRC = 'assets/images/cutin/警告.png';
+
+function triggerWarningBanner(imageSrc){
+  _warningBannerQueue.push(imageSrc || WARNING_BANNER_DEFAULT_SRC);
+  if(!_warningBannerPlaying) _playNextWarningBanner();
+}
+
+function _playNextWarningBanner(){
+  if(_warningBannerQueue.length === 0){ _warningBannerPlaying = false; return; }
+  _warningBannerPlaying = true;
+  const src = _warningBannerQueue.shift();
   const layer = document.getElementById('warning-banner-layer');
   const img   = document.getElementById('warning-banner-img');
   const track = document.getElementById('warning-banner-track');
   if(!layer || !img) return;
   window._warningBannerActive = true; // 演出中は掘削・旗立て・各種アイコンを無効化（各所のガード参照）
+  img.src = src;
   layer.style.display = 'flex';
   img.classList.remove('playing');
   if(track) track.classList.remove('playing');
-  void img.offsetWidth; // リフローでアニメーションを確実に再スタートさせる（連打対策）
+  void img.offsetWidth; // リフローでアニメーションを確実に再スタートさせる
   img.classList.add('playing');
   if(track) track.classList.add('playing');
   const onEnd = () => {
@@ -2745,6 +2761,7 @@ function triggerWarningBanner(){
     if(track) track.classList.remove('playing');
     img.removeEventListener('animationend', onEnd);
     window._warningBannerActive = false;
+    _playNextWarningBanner(); // キューに次があれば続けて再生
   };
   img.addEventListener('animationend', onEnd);
 }
