@@ -785,7 +785,7 @@
   <button id="msg-btn-savereplay" onclick="manualSaveReplay('msg-btn-savereplay')">SAVE REPLAY</button>
   <button id="msg-btn-check"  onclick="enterGameOverCheckMode()">CHECK</button>
   <button id="msg-btn-retry"  onclick="gameOverCheckMode=false;restartGame();document.getElementById('message').style.display='none'">RETRY</button>
-  <button id="msg-btn-select" onclick="window.location.href='index.html?select=1'">STAGE SELECT</button>
+  <button id="msg-btn-select">STAGE SELECT</button>
   <button id="msg-btn-title"  onclick="window.location.href='index.html'">TITLE</button>
 </div>
 
@@ -2825,6 +2825,11 @@ function checkWin(){
 function triggerLoopReplay(){
   gameState = 'idle';
   clearInterval(timerInterval);
+  // 次周startTimer()で_loopTotalStartMsを遷移時間ぶんシフトするための起点
+  // （_timerStartMsは周回繰越の計算式で自動的に遷移時間を除外できるが、
+  // _loopTotalStartMs＝クリアタイムの基準は何もしないと遷移演出の待ち時間を
+  // そのまま呑み込んでしまう＝周回を重ねるほどクリアタイムが余分に伸びるバグになる）。
+  window._loopTransitionStartMs = performance.now();
   greyOutFloatButtons(); // 演出中はサーチ等を非アクティブに（次周の盤面が出たらrestoreFloatButtons()で復帰）
   // モードは継続（強制切り替えなし）
 
@@ -4363,6 +4368,14 @@ function startTimer(){
     ? performance.now() - (totalTime - remainingTime) * 1000
     : performance.now();
   if(currentLoop === 1) window._loopTotalStartMs = performance.now();
+  // 2周目以降：triggerLoopReplayの演出待ち時間ぶん_loopTotalStartMsを後ろにシフトし、
+  // クリアタイム（=_loopTotalStartMs基準）にも遷移演出時間が乗らないようにする
+  // （_timerStartMsは上の式で既に除外できているが、_loopTotalStartMsは何もしないと
+  // 素通しになり、周回を重ねるたびにクリアタイムが遷移演出ぶん余分に伸びてしまう）。
+  if(loopMode && currentLoop > 1 && window._loopTransitionStartMs){
+    window._loopTotalStartMs += (performance.now() - window._loopTransitionStartMs);
+    window._loopTransitionStartMs = null;
+  }
   timerInterval=setInterval(_timerTick,1000);
 }
 function formatTime(s){ return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); }
@@ -4569,7 +4582,17 @@ function updateMsgButtons(){
   const mode = new URLSearchParams(window.location.search).get('mode');
   const isStoryLike = mode === 'story' || mode === 'story2';
   const btnSelect = document.getElementById('msg-btn-select');
-  if(btnSelect) btnSelect.style.display = isStoryLike ? 'none' : '';
+  if(!btnSelect) return;
+  btnSelect.style.display = isStoryLike ? 'none' : '';
+  // NORMAL/NO FLAGはそれぞれのリスト(?normal=1 / ?noflag=1)へ戻す（rescue-btn-selectと同じ規約）。
+  // 以前は常に index.html?select=1（STORYの固定カルーセル）へ飛ばしていたため、
+  // SIMPLE/NO FLAGでゲームオーバーになるとSTORY側の画面に迷い込むバグがあった。
+  const isNormalMode = (mode === 'normal') || !!window._resumeNormalMode;
+  btnSelect.onclick = ()=>{
+    window.location.href = isNormalMode
+      ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
+      : 'index.html?select=1';
+  };
 }
 
 // ===================== NORMAL MODE PENALTY =====================
@@ -4790,7 +4813,7 @@ function restartGame(){
   }
   window._bgmSwitched = false;
   SND.clear.pause(); SND.clear.currentTime=0;
-  gameState='idle'; removedMines=0; hintCount=0; elapsed=0; _pendingClearTimeSec=null;
+  gameState='idle'; removedMines=0; hintCount=0; elapsed=0; _pendingClearTimeSec=null; window._loopTransitionStartMs=null;
   // 誤操作防止：起動時(リスタート時含む)は必ずOFF
   misclickGuard = false;
   gamePaused = false;
