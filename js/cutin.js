@@ -20,11 +20,17 @@ const CutIn = (() => {
     padding-bottom:env(safe-area-inset-bottom);}
   #cutin-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
   #cutin-window{position:relative;width:min(640px,86vw);z-index:2;
-    background:rgba(0,10,30,0.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
-    border:1px solid rgba(0,200,255,0.45);border-radius:6px;
-    padding:14px 20px 18px;box-shadow:0 0 24px rgba(0,150,255,0.25);box-sizing:border-box;
+    padding:14px 20px 18px;box-sizing:border-box;
     opacity:0;transform:translateY(14px);transition:opacity .28s ease, transform .28s ease;}
   #cutin-layer.show #cutin-window{opacity:1;transform:translateY(0);}
+  /* ジグザグ・ホログラムポインタ（tool/zigzag-pointer-maker.html で設計）。
+     ボックス＋尾を1本のpolygonで表現し、話者sideに応じてこのSVGだけをscaleX(-1)反転する
+     （#cutin-name/#cutin-text/#cutin-nextは反転させず、常に正しく読める） */
+  #cutin-window-bg{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;z-index:-1;
+    filter:drop-shadow(0 0 4px #35e7ff) drop-shadow(0 0 10px rgba(53,231,255,0.5));
+    transition:transform .25s ease;}
+  #cutin-window-bg.mirror{transform:scaleX(-1);}
+  #cutin-window-bg polygon{fill:rgba(6,10,16,0.9);stroke:#eef2f8;stroke-width:4;stroke-linejoin:miter;}
   .cutin-char{position:absolute;bottom:8vh;max-height:min(34vh,300px);width:auto;z-index:1;
     opacity:0;transition:transform .32s cubic-bezier(.22,.9,.3,1), opacity .32s ease;
     pointer-events:none;filter:drop-shadow(0 0 12px rgba(0,0,0,0.5));}
@@ -67,6 +73,7 @@ const CutIn = (() => {
         '<img id="cutin-char-left" class="cutin-char left" alt="">' +
         '<img id="cutin-char-right" class="cutin-char right" alt="">' +
         '<div id="cutin-window">' +
+          '<svg id="cutin-window-bg"><polygon></polygon></svg>' +
           '<div id="cutin-name"></div><div id="cutin-text"></div>' +
           '<div id="cutin-next">▼</div>' +
         '</div>' +
@@ -74,6 +81,32 @@ const CutIn = (() => {
     document.body.appendChild(layer);
     layer.addEventListener('click', _onTap);
     layer.addEventListener('touchend', e => { e.preventDefault(); _onTap(e); }, {passive:false});
+    new ResizeObserver(_updateWindowShape).observe(document.getElementById('cutin-window'));
+  }
+
+  // 尾の形状（tool/zigzag-pointer-maker.html で確定した固定デザインを移植）。
+  // ボックス左上を(0,0)として、尾の付け根x座標はボックス幅に比例、尾自体の形は絶対px固定。
+  const TAIL_ANCHOR_RATIO = 29 / 480;
+  const TAIL_REL_POINTS = [[62,-7], [23,14], [43,34], [3,82], [14,44], [-22,30], [0,-9]];
+
+  function _bubblePoints(boxW, boxH){
+    const anchorX = TAIL_ANCHOR_RATIO * boxW;
+    const tail = TAIL_REL_POINTS.map(([dx, dy]) => [anchorX + dx, boxH + dy]);
+    return [[0,0], [boxW,0], [boxW,boxH], ...tail, [0,boxH]];
+  }
+
+  function _updateWindowShape(){
+    const winEl = document.getElementById('cutin-window');
+    const svgEl = document.getElementById('cutin-window-bg');
+    if(!winEl || !svgEl) return;
+    const boxW = winEl.clientWidth, boxH = winEl.clientHeight;
+    if(boxW <= 0 || boxH <= 0) return;
+    const pts = _bubblePoints(boxW, boxH);
+    const maxY = Math.ceil(Math.max(...pts.map(p => p[1])));
+    svgEl.setAttribute('width', boxW);
+    svgEl.setAttribute('height', maxY);
+    svgEl.setAttribute('viewBox', `0 0 ${boxW} ${maxY}`);
+    svgEl.querySelector('polygon').setAttribute('points', pts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' '));
   }
 
   function play(lines){
@@ -93,6 +126,7 @@ const CutIn = (() => {
       layer.style.display = 'block';
       void layer.offsetWidth;               // リフローでtransitionを確実に発火
       layer.classList.add('show');
+      _updateWindowShape();                 // display:none中はResizeObserverが発火しないため明示更新
     }
     while(_queue.length){
       const job = _queue.shift();
@@ -112,6 +146,7 @@ const CutIn = (() => {
       const ch = (_cfg.characters && _cfg.characters[line.speaker]) || {};
       const side = line.side || ch.side || 'left';
       _setPortrait(side, line.speaker, ch, line.portrait || 'normal');
+      document.getElementById('cutin-window-bg').classList.toggle('mirror', side === 'right');
       const nameEl = document.getElementById('cutin-name');
       const nameText = ch.name || line.speaker || '';
       nameEl.textContent = nameText;

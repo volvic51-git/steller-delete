@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ジグザグ・ホログラムポインタメーカー</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-wrap: wrap; gap: 24px;
+    padding: 24px; background: #05070c; color: #dce8f5;
+    font-family: 'Share Tech Mono', 'Hiragino Sans', sans-serif;
+  }
+  h1 { font-size: 16px; letter-spacing: .15em; color: #6fd7ff; margin: 0 0 16px; }
+  #panel-left {
+    flex: 0 0 320px; background: rgba(0,20,40,.6); border: 1px solid rgba(0,200,255,.3);
+    border-radius: 6px; padding: 18px; height: fit-content;
+  }
+  fieldset { border: 1px solid rgba(0,200,255,.25); border-radius: 4px; margin: 0 0 14px; padding: 10px 12px; }
+  legend { font-size: 11px; letter-spacing: .1em; color: #6fd7ff; padding: 0 6px; }
+  label { display: block; font-size: 11px; color: #9fc4dd; margin: 8px 0 4px; }
+  input[type="text"], input[type="color"] {
+    width: 100%; background: rgba(0,10,30,.8); border: 1px solid rgba(0,200,255,.35);
+    padding: 6px 8px; border-radius: 3px; color: #eaf6ff; font-family: inherit; font-size: 12.5px;
+  }
+  input[type="color"] { padding: 2px; height: 30px; }
+  input[type="range"] { width: 76%; vertical-align: middle; }
+  .num { display: inline-block; width: 20%; text-align: right; font-size: 12px; color: #6fd7ff; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row label { flex: 1; margin: 0; }
+
+  button {
+    font-family: inherit; font-size: 12px; letter-spacing: .06em; cursor: pointer;
+    background: rgba(0,160,220,.18); border: 1px solid rgba(0,200,255,.4); color: #bdeeff;
+    padding: 8px 12px; border-radius: 4px;
+  }
+  button:hover { background: rgba(0,160,220,.32); }
+  #regen-btn { width: 100%; margin-top: 4px; background: rgba(0,160,220,.85); color: #04141f; font-weight: 700; }
+  #regen-btn:hover { background: #24d0ff; }
+  .toggle-group { display: flex; gap: 8px; }
+  .toggle-group button[aria-pressed="true"] { background: rgba(0,200,255,.4); color: #04141f; font-weight: 700; }
+
+  #panel-right { flex: 1 1 480px; min-width: 320px; }
+  #stage {
+    position: relative; height: 560px; border-radius: 8px; overflow: auto;
+    background: radial-gradient(ellipse at 30% 15%, rgba(53,231,255,.06), transparent 55%), linear-gradient(180deg, #0a0f1a 0%, #05070c 100%);
+    border: 1px solid rgba(255,255,255,.08); margin-bottom: 18px;
+  }
+  #hint { position:absolute; top:10px; right:14px; font-size:10.5px; color:#5b7085; letter-spacing:.04em; z-index:1; }
+  #edit-svg { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); overflow: visible; }
+  #edit-svg.mirror { transform: translateX(-50%) scaleX(-1); }
+  .handle { cursor: grab; touch-action: none; }
+  .handle:active { cursor: grabbing; }
+  .handle-mid { fill: #6fd7ff; }
+  .handle-tip { fill: #ff5f8f; }
+
+  #output textarea {
+    width: 100%; height: 64px; resize: vertical; background: rgba(0,10,20,.8);
+    border: 1px solid rgba(0,200,255,.3); color: #bdeeff; font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; padding: 10px; border-radius: 5px; margin-bottom: 8px;
+  }
+  #snippet {
+    background: rgba(0,10,20,.8); border: 1px solid rgba(0,200,255,.25); border-radius: 6px;
+    padding: 14px 16px; font-size: 11.5px; line-height: 1.7; color: #9fe6b0; overflow-x: auto;
+    white-space: pre;
+  }
+  #status { font-size: 11px; color: #7a90a6; margin-top: 8px; min-height: 1.4em; }
+</style>
+</head>
+<body>
+
+<div id="panel-left">
+  <h1>⚡ ジグザグ・ホログラムポインタメーカー</h1>
+
+  <fieldset>
+    <legend>ウインドウ本体</legend>
+    <div class="row"><label>ボックス幅<span class="num" id="boxWidthVal"></span></label></div>
+    <input type="range" id="boxWidth" min="160" max="480" step="1" value="340">
+    <div class="row"><label>ボックス高さ<span class="num" id="boxHeightVal"></span></label></div>
+    <input type="range" id="boxHeight" min="60" max="220" step="1" value="90">
+  </fieldset>
+
+  <fieldset>
+    <legend>尾（自動生成・ボックス下辺から延長）</legend>
+    <div class="row"><label>尾の幅<span class="num" id="topWidthVal"></span></label></div>
+    <input type="range" id="topWidth" min="40" max="200" step="1" value="90">
+    <div class="row"><label>接続位置(左〜右)<span class="num" id="tailPosVal"></span></label></div>
+    <input type="range" id="tailPos" min="0" max="1" step="0.01" value="0.12">
+    <div class="row"><label>長さ<span class="num" id="lengthVal"></span></label></div>
+    <input type="range" id="length" min="60" max="260" step="1" value="150">
+    <div class="row"><label>片側の折れ数<span class="num" id="segmentsVal"></span></label></div>
+    <input type="range" id="segments" min="1" max="4" step="1" value="2">
+    <div class="row"><label>先端の位置(左〜右)<span class="num" id="tipRatioVal"></span></label></div>
+    <input type="range" id="tipRatio" min="0" max="1" step="0.01" value="0.4">
+    <div class="row"><label>ギザギザの深さ<span class="num" id="ampVal"></span></label></div>
+    <input type="range" id="amp" min="0" max="60" step="1" value="22">
+    <div class="row"><label>不規則さ（ジッター）<span class="num" id="jitterVal"></span></label></div>
+    <input type="range" id="jitter" min="0" max="40" step="1" value="10">
+    <button id="regen-btn">🎲 尾をランダム再生成</button>
+  </fieldset>
+
+  <fieldset>
+    <legend>見た目</legend>
+    <label>線の太さ<span class="num" id="strokeWidthVal"></span></label>
+    <input type="range" id="strokeWidth" min="1" max="8" step="0.5" value="4">
+    <label>縁取り色</label>
+    <input type="color" id="strokeColor" value="#eef2f8">
+    <label>塗り色</label>
+    <input type="color" id="fillColor" value="#060a10">
+    <label>グロー色</label>
+    <input type="color" id="glowColor" value="#35e7ff">
+    <label style="margin-top:10px;">プレビューの向き</label>
+    <div class="toggle-group">
+      <button id="side-left" aria-pressed="true">◀ 左向き</button>
+      <button id="side-right" aria-pressed="false">右向き ▶</button>
+    </div>
+  </fieldset>
+
+  <div id="output">
+    <label style="margin:0 0 4px;">points 属性値（コピー用）</label>
+    <textarea id="points-text" readonly></textarea>
+    <button id="copy-points" style="width:100%;">📋 points をコピー</button>
+    <div id="status"></div>
+  </div>
+</div>
+
+<div id="panel-right">
+  <div id="stage">
+    <span id="hint">◯ハンドルをドラッグして尾を手動調整できます</span>
+    <svg id="edit-svg" width="680" height="520" viewBox="0 0 680 520"></svg>
+  </div>
+
+  <div id="snippet"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'zigzagPointerMaker_v2';
+const svg = document.getElementById('edit-svg');
+const NS = 'http://www.w3.org/2000/svg';
+// 編集キャンバス内でのローカル原点オフセット（ボックス左上=ローカル0,0）。書き出す座標には影響しない。
+// 編集用SVGは常に固定サイズ（HTML側でwidth/height/viewBoxを固定済み）。ドラッグで内容が
+// 変わってもSVG自体のサイズ・位置は動かさないことで、座標変換が破綻しないようにしている。
+const ORIGIN = { x: 170, y: 50 };
+const TEXT_PAD = 20; // テキストはここでは描画しない。後段で別レイヤーとして重ねる想定の目安余白
+
+const sliderIds = ['boxWidth','boxHeight','topWidth','tailPos','length','segments','tipRatio','amp','jitter'];
+const styleIds  = ['strokeWidth','strokeColor','fillColor','glowColor'];
+let points = [];   // ローカル座標 [[x,y], ...]（ボックス左上=0,0。ボックス→尾の順の1本の閉多角形）
+let side = 'left';
+
+function val(id){ return document.getElementById(id).value; }
+function num(id){ return parseFloat(val(id)); }
+function rand(range){ return (Math.random()*2 - 1) * range; }
+
+// ボックス4隅（ドラッグ不可・スライダー制御）の pts 配列内index
+function isBoxCorner(i){ return i === 0 || i === 1 || i === 2 || i === points.length - 1; }
+function tipIndex(){ return 4 + Math.round(num('segments')); }
+
+function generate(){
+  const boxW = num('boxWidth'), boxH = num('boxHeight');
+  const tailW = Math.min(num('topWidth'), boxW - 20);
+  const tailPos = num('tailPos');
+  const length  = num('length');
+  const segments = Math.round(num('segments'));
+  const amp = num('amp'), jitter = num('jitter');
+
+  const attachX   = tailPos * (boxW - tailW);
+  const tailLeftX = attachX, tailRightX = attachX + tailW;
+  const tipX = tailLeftX + num('tipRatio') * tailW;
+
+  const pts = [];
+  // ボックス本体（時計回り。4隅は固定＝ドラッグ対象外）
+  pts.push([0, 0]);
+  pts.push([boxW, 0]);
+  pts.push([boxW, boxH]);
+  pts.push([tailRightX, boxH]);          // 尾の右肩（ボックス下辺上）
+
+  // 尾・右辺ジグザグ（右肩 → 先端）
+  for(let k = 1; k <= segments; k++){
+    const t = k / (segments + 1);
+    const trend = tailRightX + (tipX - tailRightX) * t;
+    const sign = (k % 2 === 1) ? -1 : 1;
+    pts.push([trend + sign * amp + rand(jitter), boxH + length * t]);
+  }
+  pts.push([tipX, boxH + length]);       // 先端
+
+  // 尾・左辺ジグザグ（先端 → 左肩）
+  for(let k = segments; k >= 1; k--){
+    const t = k / (segments + 1);
+    const trend = tailLeftX + (tipX - tailLeftX) * t;
+    const sign = (k % 2 === 1) ? 1 : -1;
+    pts.push([trend + sign * amp + rand(jitter), boxH + length * t]);
+  }
+
+  pts.push([tailLeftX, boxH]);           // 尾の左肩（ボックス下辺上）
+  pts.push([0, boxH]);                   // box bottom-left
+
+  points = pts;
+  render();
+  saveState();
+}
+
+function render(){
+  svg.innerHTML = '';
+  const boxW = num('boxWidth'), boxH = num('boxHeight');
+
+  // ボックス＋尾＝1本の閉多角形
+  const polygon = document.createElementNS(NS, 'polygon');
+  polygon.setAttribute('points', points.map(p => `${(p[0]+ORIGIN.x).toFixed(1)},${(p[1]+ORIGIN.y).toFixed(1)}`).join(' '));
+  polygon.setAttribute('fill', val('fillColor'));
+  polygon.setAttribute('stroke', val('strokeColor'));
+  polygon.setAttribute('stroke-width', val('strokeWidth'));
+  polygon.setAttribute('stroke-linejoin', 'miter');
+  svg.appendChild(polygon);
+
+  // 本文テキストはここでは描画しない（後段で別レイヤーとして重ねる想定）。
+  // どこまでがテキスト安全域かの目安として、点線ガイドだけ表示する。
+  const guide = document.createElementNS(NS, 'rect');
+  guide.setAttribute('x', ORIGIN.x + TEXT_PAD);
+  guide.setAttribute('y', ORIGIN.y + TEXT_PAD);
+  guide.setAttribute('width', Math.max(0, boxW - TEXT_PAD * 2));
+  guide.setAttribute('height', Math.max(0, boxH - TEXT_PAD * 2));
+  guide.setAttribute('fill', 'none');
+  guide.setAttribute('stroke', 'rgba(255,255,255,0.25)');
+  guide.setAttribute('stroke-dasharray', '6 5');
+  svg.appendChild(guide);
+
+  // ドラッグ用ハンドル（尾の部分のみ。ボックス4隅はスライダー制御なので対象外）
+  const tipIdx = tipIndex();
+  points.forEach((p, i) => {
+    if(isBoxCorner(i)) return;
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', p[0] + ORIGIN.x);
+    c.setAttribute('cy', p[1] + ORIGIN.y);
+    c.setAttribute('r', 6);
+    c.classList.add('handle', i === tipIdx ? 'handle-tip' : 'handle-mid');
+    c.dataset.idx = i;
+    c.addEventListener('pointerdown', onHandleDown);
+    svg.appendChild(c);
+  });
+
+  const glow = val('glowColor');
+  svg.style.filter = `drop-shadow(0 0 4px ${glow}) drop-shadow(0 0 10px ${glow}80)`;
+
+  updateOutput();
+}
+
+let dragIdx = -1;
+function onHandleDown(e){
+  dragIdx = parseInt(e.target.dataset.idx, 10);
+  e.target.setPointerCapture(e.pointerId);
+  window.addEventListener('pointermove', onHandleMove);
+  window.addEventListener('pointerup', onHandleUp);
+}
+function onHandleMove(e){
+  if(dragIdx < 0) return;
+  const rect = svg.getBoundingClientRect();
+  const scaleX = svg.viewBox.baseVal.width / rect.width;
+  const scaleY = svg.viewBox.baseVal.height / rect.height;
+  const mirrored = svg.classList.contains('mirror');
+  const rawX = mirrored ? (rect.right - e.clientX) : (e.clientX - rect.left);
+  const x = rawX * scaleX - ORIGIN.x;
+  const y = (e.clientY - rect.top) * scaleY - ORIGIN.y;
+  points[dragIdx] = [x, y];
+  render();
+}
+function onHandleUp(){
+  dragIdx = -1;
+  window.removeEventListener('pointermove', onHandleMove);
+  window.removeEventListener('pointerup', onHandleUp);
+  saveState();
+}
+
+function updateOutput(){
+  // ドラッグで尾の点が原点より外(負の座標)へ動くこともあるため、
+  // 実際のバウンディングボックスを基準に (0,0) 開始へ正規化してから書き出す
+  // （そのまま素の座標を使うと負の幅/高さの壊れた viewBox になる）
+  const minX = Math.min(...points.map(p => p[0]));
+  const minY = Math.min(...points.map(p => p[1]));
+  const maxX = Math.max(...points.map(p => p[0]));
+  const maxY = Math.max(...points.map(p => p[1]));
+  const w = maxX - minX, h = maxY - minY;
+
+  const normPts = points.map(p => [p[0] - minX, p[1] - minY]);
+  const ptsStr = normPts.map(p => `${Math.round(p[0])},${Math.round(p[1])}`).join(' ');
+  document.getElementById('points-text').value = ptsStr;
+
+  const textSafeX = Math.round(0 - minX + TEXT_PAD);
+  const textSafeY = Math.round(0 - minY + TEXT_PAD);
+  const sw = val('strokeWidth'), sc = val('strokeColor'), fc = val('fillColor'), gc = val('glowColor');
+
+  document.getElementById('snippet').textContent =
+`<svg class="hbubble" viewBox="0 0 ${Math.ceil(w)} ${Math.ceil(h)}" width="${Math.ceil(w)}" height="${Math.ceil(h)}">
+  <polygon points="${ptsStr}" />
+</svg>
+<!-- テキストはこの形には含めない。実装側で別レイヤーとして
+     (${textSafeX}, ${textSafeY}) を左上に、${TEXT_PAD}px内側の余白を目安に重ねる想定 -->
+
+.hbubble{ overflow:visible;
+  filter: drop-shadow(0 0 4px ${gc}) drop-shadow(0 0 10px ${gc}80); }
+.hbubble polygon{ fill:${fc}; stroke:${sc}; stroke-width:${sw}; stroke-linejoin:miter; }
+.hbubble.mirror{ transform:scaleX(-1); }`;
+}
+
+function updateLabels(){
+  document.getElementById('boxWidthVal').textContent   = val('boxWidth');
+  document.getElementById('boxHeightVal').textContent  = val('boxHeight');
+  document.getElementById('topWidthVal').textContent   = val('topWidth');
+  document.getElementById('tailPosVal').textContent    = val('tailPos');
+  document.getElementById('lengthVal').textContent     = val('length');
+  document.getElementById('segmentsVal').textContent   = val('segments');
+  document.getElementById('tipRatioVal').textContent   = val('tipRatio');
+  document.getElementById('ampVal').textContent        = val('amp');
+  document.getElementById('jitterVal').textContent     = val('jitter');
+  document.getElementById('strokeWidthVal').textContent = val('strokeWidth');
+}
+
+function setSide(s){
+  side = s;
+  svg.classList.toggle('mirror', s === 'right');
+  document.getElementById('side-left').setAttribute('aria-pressed', s === 'left');
+  document.getElementById('side-right').setAttribute('aria-pressed', s === 'right');
+}
+
+function saveState(){
+  try {
+    const state = { points, side };
+    sliderIds.forEach(id => state[id] = val(id));
+    styleIds.forEach(id => state[id] = val(id));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch(e){}
+}
+function restoreState(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const state = JSON.parse(raw);
+    sliderIds.forEach(id => { if(state[id] !== undefined) document.getElementById(id).value = state[id]; });
+    styleIds.forEach(id => { if(state[id] !== undefined) document.getElementById(id).value = state[id]; });
+    if(state.side) setSide(state.side);
+    if(Array.isArray(state.points) && state.points.length) { points = state.points; return true; }
+    return false;
+  } catch(e){ return false; }
+}
+
+function init(){
+  const restoredPoints = restoreState();
+  updateLabels();
+  sliderIds.forEach(id => {
+    document.getElementById(id).addEventListener('input', () => { updateLabels(); generate(); });
+  });
+  styleIds.forEach(id => {
+    document.getElementById(id).addEventListener('input', () => { render(); saveState(); });
+  });
+  document.getElementById('regen-btn').addEventListener('click', generate);
+  document.getElementById('side-left').addEventListener('click', () => { setSide('left'); render(); saveState(); });
+  document.getElementById('side-right').addEventListener('click', () => { setSide('right'); render(); saveState(); });
+  document.getElementById('copy-points').addEventListener('click', () => {
+    const ta = document.getElementById('points-text');
+    ta.select();
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).catch(()=>{});
+    else document.execCommand('copy');
+    const status = document.getElementById('status');
+    status.textContent = 'コピーしました';
+    setTimeout(() => { if(status.textContent === 'コピーしました') status.textContent = ''; }, 2000);
+  });
+
+  if(restoredPoints){ render(); } else { generate(); }
+}
+init();
+</script>
+</body>
+</html>
