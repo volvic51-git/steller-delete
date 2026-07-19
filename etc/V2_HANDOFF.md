@@ -1,11 +1,118 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-14（V2基礎工事完了・master統合時点）
+作成日: 2026-06-30 / 最終更新: 2026-07-19（stage9追加・警告バナー演出まで完了時点）
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-14、V2基礎工事完了）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-19）
+
+**カレントブランチは`master`。2026-07-15〜19の作業（下記①〜⑦）はすべて
+`master`にno-ffマージ済み・ローカルの作業ブランチも削除済み。ただし
+`V1.7`ブランチだけはユーザーの意向で意図的に未マージのまま残っている**
+（STORY MODE2/LIMIT MODEをPLAY MODE SELECTから非表示＋デバッグメニューの
+🐞DEBUGボタン非表示化。「このまま残す、マージしない」と明言済み）。
+
+### 2026-07-15〜19 完了した作業（新しい順）
+
+7. **警告バナー演出＋警告パネルメーカーツール**（2026-07-19、`feature/warning-banner-fx`・
+   `tool/warning-panel-maker`→master）
+   - `tool/warning/warning-panel-maker.html`新規作成：`M_パネル.png`+`M_マーク.png`+
+     上段/下段2スロットのテキストを合成してPNG書き出しするツール。フォントは
+     源ノ明朝（Google Fonts「Noto Serif JP」）固定、文字色は濃い水色（カラーピッカーで
+     調整可）、マークは左側確保・サイズ/マージン調整可、入力値はlocalStorageに保存。
+   - `sphere-minesweeper.html`に`triggerWarningBanner(imageSrc, variantKey)`を新設。
+     画面最前面のHTMLオーバーレイ＋CSS transformのみで実装（WebGLオブジェクト追加なし・
+     draw call影響ゼロ、実測確認済み）。試行錯誤の末、**3D回転(奥行き表現)は廃止**し、
+     単純な`translateX`スライドに着地（左→中央1.5秒静止→右へ抜けて消える、全体2.1s）。
+     バナーの通り道に半透明ラインを追加（色・太さはCSS変数`--wb-track-color`/
+     `--wb-track-h-mult`で切替）。`WARNING_BANNER_VARIANTS`に`default`（青・左→右）と
+     `orangeRTL`（オレンジ・右→左・太いライン）の2種を定義済み、追加は連想配列に足すだけ。
+     **キュー方式**（`_warningBannerQueue`）：再生中に呼んでも割り込まず、1本終わるごとに
+     自動で次を再生＝複数連続再生に対応。演出中は`window._warningBannerActive`フラグで
+     掘削・旗立て・FOCUS/GUARD/JUDGE/ORACLEの各アイコン操作を無効化。
+   - デバッグメニューに再生ボタン2種（既定／`orangeRTL`）、加えてミュートボタン隣にも
+     テスト用ボタンを設置（DEBUGパネルが演出を隠して見えないため）。
+   - **未着手**：`etc/V2_CUTIN_PLAN.md §14`の警告演出システム（Dialogueの`type:"warning"`
+     トリガーとの本結線）はまだ。今回作ったのは見た目のプロトタイプのみで、ゲームロジック
+     （ステージ進行トリガーからの自動発火）には未接続。
+
+6. **NO FLAG/SIMPLE MODEにstage9追加、stageEX1非表示**（2026-07-18、
+   `feature/stage9-simple-noflag`→master、その後バグ修正2件を追加コミット）
+   - stage8とEX1の間に新規「STAGE 09」を追加：SIMPLE MODE側id:31、NO FLAG MODE側id:32
+     （ミラー、`gameRule:"noflag"`）。盤面は12×7・地雷10・周回5・制限時間100秒
+     （既存stage9=消滅星と同一構成、`DIFF_PRESETS.x1`流用）。キャラは101-199ランダム
+     プール対象外として固定（`_exFixedCharIds`にid追加）。ステージ選択カードに
+     「制限時間100sec　再生数5」を専用badge欄（`stages.json`の`badge`フィールド、
+     色は当初オレンジ→ユーザー指定でアクセントカラーの青に変更、フォントは
+     `.stage-row-meta`と統一）で表示。名前・説明文・画像・盤面色はプレースホルダーの
+     まま（ユーザーが後日差し替え予定、一部は既にご自身で編集済み）。
+   - stageEX1（id10/NO FLAGミラーid20）をSIMPLE/NO FLAG両リストから非表示に。
+     残るEX2の表記をSIMPLE MODE側「EXTRA STAGE I」・NO FLAG MODE側「EXTRA STAGE II」
+     （`[banning]`除去）に変更、短縮ラベルも「EX2」→「EX」に統一。
+   - **バグ修正2件**（ユーザーの実地テストで発覚）：
+     ① ゲームオーバー画面の「STAGE SELECT」ボタンが常に`index.html?select=1`
+        （STORYの固定カルーセル）にハードコードされていたため、SIMPLE/NO FLAGで
+        ゲームオーバーになるとSTORY側の画面に迷い込むバグ（既存の全SIMPLE/NO FLAG
+        ステージに存在した一般バグ、stage9テストで発覚）。クリア画面の
+        `rescue-btn-select`と同じ規約（`mode=normal`時は`gameRule`に応じ
+        `?normal=1`/`?noflag=1`）に統一して修正。
+     ② 周回モード＋制限時間モード併用時、周回間の遷移演出待ち時間
+        （約0.85秒×ループ数-1回ぶん）がクリアタイムに丸ごと乗っていたバグ。
+        `_timerStartMs`（各周の残り時間計算用）はstartTimer()の繰越計算式で遷移時間を
+        自動除外できていたが、`_loopTotalStartMs`（クリアタイム算出の基準）は何もせず
+        素通しにしていたのが原因。`triggerLoopReplay()`開始時に`_loopTransitionStartMs`を
+        記録し、次周`startTimer()`でその差分ぶん`_loopTotalStartMs`を後ろへシフトする形で修正。
+        stage9がloopMode+timeLimitMode併用の唯一のSIMPLE/NO FLAGステージだったため
+        今まで顕在化していなかった。
+
+5. **FOCUSボタンの対象変更**（2026-07-18、`feature/focus-frontier-cell`→master）
+   `focusNearestNumberCell()`の対象を「開封済み数字セル」から「数字セルに隣接する
+   未開封セル（フロンティア）」に変更。8近傍判定は既存`getNeighbors()`を流用
+   （円柱ラップ込み）。72×144でも1クリックあたり約21ms、負荷は誤差レベル。
+
+4. **数字色の統一**（2026-07-18、`fix/simple-mode-number-glow`→master）
+   `getNumberColor()`が盤面背景の明度>0.35で暗色セット(`NUMBER_COLORS_DARK`)に
+   切り替わる仕様だったが、実際に数字が乗る開封セルの背景は
+   `darkenHex(paletteHex, 0.08)`でほぼ黒に落ちるため盤面パレットの明暗との相関が薄く、
+   発光演出（`makeTextCanvas`の`shadowColor=文字色`）も暗い色では映えなかった。
+   stage1/4/7/12/15/18/24/26/27/29の10ステージで数字が暗く見える不具合の原因。
+   `NUMBER_COLORS_DARK`を鮮やかセットと同一配色に統一して解消。
+
+3. **制限時間ゲージのratio>1クラッシュ防御修正**（2026-07-15、
+   `fix/timelimit-gauge-crash`→master）
+   STORY MODE2 stage22（loseEvent）で`Uncaught TypeError`がコンソールに出た。
+   `updateTimeLimitGauge()`の`ratio=remainingTime/totalTime`に上限クランプが無く、
+   `remainingTime`が`totalTime`を超えるとratio>1になり配色計算の配列を負インデックス
+   参照してクラッシュ（クラッシュのたびそのフレームの`renderer.render()`がスキップされ、
+   「欠けが埋まってからカウントが始まる」ような異常表示にもなっていた）。
+   `remainingTime`/`ratio`双方に上限クランプを追加して防御。**根本原因（`_timerStartMs`が
+   なぜ未来にずれるか）は未解明のまま**。詳細・次回調査の手がかりは[[feedback-dev]]参照。
+
+2. **タイマー統一・クリアタイムバグ修正**（2026-07-15、`feature/timer-unify`→master）
+   ①右上タイマーとクリアタイムが約2秒ズレる、②制限時間60秒でもクリアタイムが
+   60秒を超える、③クリアタイムに消滅演出・救出演出の待ち時間（2〜3秒）が乗る、
+   の3件を修正。根本原因は`elapsed`変数が`setInterval`の発火遅延でドリフトすること。
+   `elapsed`を精密クロック(`_loopTotalStartMs`基準)から毎tick再計算する
+   `syncElapsedFromClock()`に変更、タイムアップ判定を`remainingTime<=0`単独に簡略化、
+   `checkWin()`成立の瞬間に`_pendingClearTimeSec`へクリアタイムをスナップショットして
+   `showRescueScreen`はその値を使うよう変更（演出時間を含めない）。
+
+1. **`data/modes.json`からSTORY MODE2・LIMIT MODEを除外、デバッグメニュー非表示化**
+   （`V1.7`ブランチ、**意図的に未マージのまま**）：PLAY MODE SELECTの表示カードを
+   STORY MODE1/SIMPLE MODE/NO FLAG MODEの3枚に絞り、CONFIGメニューの🐞DEBUGボタンを
+   `display:none`に（機能は温存、導線だけ隠す）。マージするかはユーザー判断待ち。
+
+### git運用の変更（2026-07-19、重要）
+
+**「ユーザーから明示的に指示されない限り、新規ブランチを作成しない」に変更。**
+commit・merge・ローカルブランチ削除は引き続き許可不要で実行してよいが、
+**新規branch作成だけはユーザーが「ブランチ切って」等と言った時のみ**行う。
+作業を頼まれただけでは現在のブランチ上にそのままcommitする。詳細[[feedback-git]]。
+
+---
+
+## ⚠️（旧）最初に読む：現在のブランチ状態（2026-07-14、V2基礎工事完了）
 
 **カレントブランチは`master`。ユーザーより「V2の基礎工事は完了」と明言され、
 `feature/cutin-story2`・`feature/story2-novel`を順にmasterへマージ・push済み。**
@@ -584,13 +691,28 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-14 更新）
+## 次セッションの入口（2026-07-19 更新）
 
 0. **まず `git status` と `git branch --show-current`**：カレントは`master`のはず。
-   `master`はorigin/masterとpush済みで同期済み。未マージなのは`feature/spec-foundation`
-   のみ（古い設計docs、今回の作業とは無関係）。
+   `master`はorigin/masterとpush済みで同期済み（要再確認、直近のマージは未push状態で
+   終わっている可能性あり）。**新規ブランチはユーザーの指示が無い限り作らないこと**
+   （2026-07-19に運用変更、[[feedback-git]]）。未マージ状態のブランチは2つ：
+   - `V1.7`（STORY MODE2/LIMIT MODE非表示・デバッグボタン非表示。**意図的に未マージ**、
+     マージするかはユーザー判断待ち）
+   - `feature/spec-foundation`（古い設計docsのみ、今回の作業とは無関係）
 
 1. **次の開発候補（優先度はユーザー判断）**：
+   - **警告演出システムの本結線**：見た目のプロトタイプ（`triggerWarningBanner()`、
+     2026-07-19実装）はできたが、`etc/V2_CUTIN_PLAN.md §14`で設計した
+     Dialogueの`type:"warning"`トリガーとの結線（ステージ進行に応じた自動発火・
+     赤点滅・警告音との統合）はまだ。プロトタイプの呼び出しAPI
+     （`triggerWarningBanner(imageSrc, variantKey)`、キュー方式・
+     `WARNING_BANNER_VARIANTS`）を土台にできるはず。
+   - **stage9（id31/32）のプレースホルダー解消**：名前「STAGE 9（仮称）」・説明文
+     「（説明文未定）」・盤面色`#552255`（既存stage9流用）が仮のまま。一部は
+     ユーザーが既に画像等を差し替え済み（`011.png`/`st31.png`等）なので現状を要確認。
+   - **`V1.7`ブランチをマージするか**：STORY MODE2/LIMIT MODEを恒久的に隠す方針で
+     確定なら、そのままmasterへマージしてよい。
    - **`endrole_release2.html`の準備**（ユーザー担当）：novel20のエンディング遷移先が
      まだ存在しない。これが無いとnovel20を最後までプレイした時にリンク切れになる。
    - **STORY MODE 2の細部確定**：EPISODES2各行の`sub`（キャラ名）は空欄のまま。
@@ -610,9 +732,6 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
    - **盤面お絵描きツール**（`etc/V2_BOARD_COLOR_PLAN.md` §2.3の将来拡張。セルごとの
      `cellPaletteMap`で自由に色を塗れるようにする構想。今の東西2色はこの布石）。
    - **Hunter/Factory/game のパリティ自動テスト**（まだ未着手）。
-   - **警告演出システム**（赤点滅+警告音+イラスト）：`etc/V2_CUTIN_PLAN.md §14`で設計済み・
-     実装は未着手（後段扱い）。
-   - LIMIT MODE（modes.json enabled:false のまま保留中）。
    - **開封演出の微調整**（任意）：`OPEN_FX_MS`（演出時間220ms）・`OPEN_FX_WAVE_MS`
      （波紋の段あたり遅延6ms）・フラッシュ強度係数1.8は実プレイの手触りで再調整可能
      （`sphere-minesweeper.html`の該当定数のみ触ればよい）。
