@@ -37,8 +37,10 @@ const CutIn = (() => {
   .cutin-char.left{left:2vw;transform:translateX(-45%);}
   .cutin-char.right{right:2vw;transform:translateX(45%);}
   .cutin-char.in{opacity:1;transform:translateX(0);}
-  #cutin-name{font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:.25em;
-    color:#00ffff;margin-bottom:8px;min-height:1em;}
+  /* ウインドウ内ではなく、ウインドウ下の尾（右肩あたり）に添える形に配置 */
+  #cutin-name{position:absolute;left:calc(19% + 8px);top:calc(100% + 10px);z-index:1;
+    font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:.25em;
+    color:#ffffff;white-space:nowrap;text-shadow:0 0 6px rgba(0,0,0,0.85);pointer-events:none;}
   #cutin-text{font-size:clamp(13px,3.4vw,16px);line-height:1.9;color:#dde8ff;min-height:3.8em;}
   #cutin-next{position:absolute;right:14px;bottom:8px;font-size:11px;color:#00ccff;
     opacity:0;transition:opacity .2s;animation:cutinBounce .8s ease-in-out infinite alternate;}
