@@ -240,6 +240,48 @@
     0%,100%{border-color:rgba(0,255,200,0.8);box-shadow:0 0 10px rgba(0,255,200,0.4);}
     50%{border-color:rgba(255,255,255,0.9);box-shadow:0 0 16px rgba(255,255,255,0.6);}
   }
+  /* 警告バナー：左→中央（1.5秒静止）→右へスライドして消える基本形（LTR）と、
+     その左右反転版（RTL、右から左へ）の2種類。3D回転/奥行きは廃止済み。
+     全体2.1s（突入0.3s＋中央静止1.5s＋離脱0.3s）。 */
+  @keyframes warningBannerSlideLTR{
+    0%     { transform: translateX(-120vw); opacity: 0; }
+    4.8%   { opacity: 1; }
+    14.3%  { transform: translateX(0); opacity: 1; }
+    85.7%  { transform: translateX(0); opacity: 1; }
+    95.2%  { opacity: 1; }
+    100%   { transform: translateX(120vw); opacity: 0; }
+  }
+  @keyframes warningBannerSlideRTL{
+    0%     { transform: translateX(120vw); opacity: 0; }
+    4.8%   { opacity: 1; }
+    14.3%  { transform: translateX(0); opacity: 1; }
+    85.7%  { transform: translateX(0); opacity: 1; }
+    95.2%  { opacity: 1; }
+    100%   { transform: translateX(-120vw); opacity: 0; }
+  }
+  #warning-banner-img.playing{
+    animation-name: warningBannerSlideLTR;
+    animation-duration: 2.1s;
+    animation-timing-function: cubic-bezier(.22,.7,.3,1);
+    animation-fill-mode: forwards;
+  }
+  #warning-banner-img.playing.rtl{ animation-name: warningBannerSlideRTL; }
+  /* バナーの通り道：色・太さはJS側で --wb-track-color / --wb-track-h-mult を書き換えて
+     バリエーションを切り替える（既定=青・高さ倍率0.8。派手めの警告用に太いオレンジ等も可）。
+     バナーと同じタイミングでフェードイン/アウトする専用アニメーション。 */
+  @keyframes warningTrackFade{
+    0%     { opacity: 0; }
+    4.8%   { opacity: 1; }
+    95.2%  { opacity: 1; }
+    100%   { opacity: 0; }
+  }
+  #warning-banner-track{
+    background: var(--wb-track-color, rgba(40,140,255,0.5));
+    height: calc(var(--wb-w) * var(--wb-track-h-mult, 0.8));
+  }
+  #warning-banner-track.playing{
+    animation: warningTrackFade 2.1s linear forwards;
+  }
   /* 左下モード切り替えボタン */
   #mode-btns-float {
     position: fixed;
@@ -294,6 +336,10 @@
     <button id="settings-btn" onclick="openSettingsMenu()" title="設定"
       style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚙️</button>
     <button id="audio-btn" onclick="toggleAudio()" title="音声ON/OFF">🔊</button>
+    <!-- 警告バナー演出の動作確認用ボタン（プロトタイプ検証用。DEBUGパネルだと演出が隠れて見えないため
+         ここに仮設置。本結線が済んだら削除する） -->
+    <button id="warning-banner-test-btn" onclick="triggerWarningBanner()" title="警告演出テスト"
+      style="background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">⚠️</button>
     <button id="manual-btn" onclick="startManual()" title="あそびかた"
       style="display:none;background:rgba(0,20,50,0.85);border:1px solid rgba(0,200,255,0.4);color:#00ccff;cursor:pointer;font-size:14px;border-radius:50%;transition:all 0.2s;width:32px;height:32px;align-items:center;justify-content:center;">❓</button>
   </div>
@@ -341,6 +387,16 @@
     <div class="debug-tile">
       <div class="lbl">確率表示</div>
       <button id="debug-btn" onclick="toggleDebug()">確率表示</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">警告演出</div>
+      <button onclick="triggerWarningBanner()">⚠️ 再生</button>
+    </div>
+
+    <div class="debug-tile">
+      <div class="lbl">警告演出（逆・太オレンジ）</div>
+      <button onclick="triggerWarningBanner(undefined,'orangeRTL')">⚠️ 再生</button>
     </div>
 
     <div class="debug-tile">
@@ -508,6 +564,25 @@
 </div>
 <div id="cursor-indicator" id="cursor-ind"></div>
 <div id="save-toast">💾 SAVED</div>
+
+<!-- 警告バナー演出（プロトタイプ）：Three.js空間には置かず、画面最前面のHTMLオーバーレイ。
+     左→中央→右へのCSS transform(translateX + opacity)のみで疑似表現する。
+     WebGLオブジェクトを増やさないため描画負荷（draw call）への影響はゼロ。 -->
+<div id="warning-banner-layer" style="
+  position:fixed;inset:0;z-index:160;display:none;
+  align-items:center;justify-content:center;overflow:hidden;
+  pointer-events:none;--wb-w:min(640px,92vw);
+">
+  <!-- バナーの通り道。色・太さは#warning-banner-trackのCSSルール側（--wb-track-color/--wb-track-h-mult）で
+       バリエーションを切り替える。バナー本体より背面に敷く -->
+  <div id="warning-banner-track" style="
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    opacity:0;will-change:opacity;
+  "></div>
+  <img id="warning-banner-img" src="assets/images/cutin/警告.png" alt="警告" style="
+    position:relative;width:var(--wb-w);height:auto;will-change:transform,opacity;
+  ">
+</div>
 
 <!-- 制限時間 外周SVGゲージ -->
 <svg id="time-limit-gauge" style="
@@ -1987,6 +2062,7 @@ function updateSearchButton(){
 }
 
 function triggerSearchButton(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   if(!_searchAvailable) return;
   const {safe,mines,probs}=runSolver();
   if(stMode && (safe.size>0 || mines.size>0)){
@@ -2672,6 +2748,60 @@ function showSaveToast(){
   t._timer = setTimeout(function(){ t.classList.remove('visible'); }, 1600);
 }
 
+// 警告バナー演出（プロトタイプ）。WebGLオブジェクトは使わずCSS transformのみで完結するため、
+// animate()の描画ループ・draw call数には一切影響しない。
+// キュー方式：再生中に呼ばれても割り込まず積み上げ、1本終わるごとに次を自動再生する。
+// 呼び方: triggerWarningBanner() … 既定（青・左から右）
+//         triggerWarningBanner('assets/images/cutin/別のパネル.png', 'orangeRTL') … 画像とバリエーションを指定
+// 連続再生したいだけなら同じ呼び方を複数回連続で呼べばよい（割り込まず順番に流れる）。
+let _warningBannerQueue = [];
+let _warningBannerPlaying = false;
+const WARNING_BANNER_DEFAULT_SRC = 'assets/images/cutin/警告.png';
+// バリエーション定義：direction(ltr/rtl)・通り道ラインの色・太さ(バナー幅に対する倍率)。
+// 新しい見た目が欲しくなったらここに追加するだけでtriggerWarningBanner(src, 'キー名')で呼べる。
+const WARNING_BANNER_VARIANTS = {
+  default:   { direction: 'ltr', trackColor: 'rgba(40,140,255,0.5)',  trackHeightMult: 0.8 },
+  orangeRTL: { direction: 'rtl', trackColor: 'rgba(255,120,0,0.55)', trackHeightMult: 1.2 } // 右から左・太いオレンジ
+};
+
+function triggerWarningBanner(imageSrc, variantKey){
+  _warningBannerQueue.push({
+    src: imageSrc || WARNING_BANNER_DEFAULT_SRC,
+    variant: WARNING_BANNER_VARIANTS[variantKey] || WARNING_BANNER_VARIANTS.default
+  });
+  if(!_warningBannerPlaying) _playNextWarningBanner();
+}
+
+function _playNextWarningBanner(){
+  if(_warningBannerQueue.length === 0){ _warningBannerPlaying = false; return; }
+  _warningBannerPlaying = true;
+  const {src, variant} = _warningBannerQueue.shift();
+  const layer = document.getElementById('warning-banner-layer');
+  const img   = document.getElementById('warning-banner-img');
+  const track = document.getElementById('warning-banner-track');
+  if(!layer || !img) return;
+  window._warningBannerActive = true; // 演出中は掘削・旗立て・各種アイコンを無効化（各所のガード参照）
+  img.src = src;
+  layer.style.setProperty('--wb-track-color', variant.trackColor);
+  layer.style.setProperty('--wb-track-h-mult', variant.trackHeightMult);
+  layer.style.display = 'flex';
+  img.classList.remove('playing', 'rtl');
+  if(track) track.classList.remove('playing');
+  void img.offsetWidth; // リフローでアニメーションを確実に再スタートさせる
+  img.classList.add('playing');
+  if(variant.direction === 'rtl') img.classList.add('rtl');
+  if(track) track.classList.add('playing');
+  const onEnd = () => {
+    layer.style.display = 'none';
+    img.classList.remove('playing', 'rtl');
+    if(track) track.classList.remove('playing');
+    img.removeEventListener('animationend', onEnd);
+    window._warningBannerActive = false;
+    _playNextWarningBanner(); // キューに次があれば続けて再生
+  };
+  img.addEventListener('animationend', onEnd);
+}
+
 // ===================== GAME OVER演出（地雷ヒット／時間切れ共通）=====================
 // STEP1: 入力停止＋鐘SE① → 0.5s後 STEP2: 全セル公開＋鐘SE② → 0.5s後 STEP3: ダイアログ表示＋鐘SE③
 let gameOverCheckMode = false;
@@ -3018,6 +3148,7 @@ function clearHintHighlight(cell){
 }
 
 function giveHint(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   if(gameState!=='playing') return;
   if(hintCount >= maxHints) return; // 上限チェック（maxHints:0 なら常に使用不可）
   const {safe,mines,probs}=runSolver();
@@ -3076,6 +3207,7 @@ function rotationSpeedScale(){
 }
 
 function focusNearestNumberCell(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   if(gameState !== 'playing') return;
 
   // カメラ視線方向（0,0,1）をboardGroupのローカル座標に変換
@@ -3368,6 +3500,7 @@ function executeConfirmedAction(){
 }
 
 function toggleMisclickGuard(){
+  if(window._warningBannerActive) return; // 警告バナー演出中は操作不可
   misclickGuard = !misclickGuard;
   const icon  = document.getElementById('misclick-guard-icon');
   const label = document.getElementById('misclick-guard-label');
@@ -3931,6 +4064,7 @@ async function resumeSuspend(rec){
 }
 
 function handleCellAction(row,col,action){
+  if(window._warningBannerActive) return; // 警告バナー演出中は掘削・旗立て不可
   if(window._stageLoseEvent) return; // 負けイベント：セルへの操作は一切不可
   // resume再構築（非同期チャンク）中のユーザー入力を無視。内部の再適用ループはdigCell/flagCellを直接呼ぶためここは通らない
   if(_replayInstant) return;
