@@ -1209,7 +1209,14 @@
      スマホ縦画面で全項目が1画面に収まるよう、共通の.screen-overlay/.screen-title/
      .screen-scroll/.screen-footerの余白をこの画面だけID/id経由で半分程度に詰める
      （他画面=STORY/SIMPLE/SOUND等の.screen-*は共用クラスなので触らない）。 */
-  #limit-mode-modal { padding: clamp(28px,5vh,45px) 0 clamp(36px,6vh,55px); }
+  #limit-mode-modal {
+    padding: clamp(28px,5vh,45px) 0 clamp(36px,6vh,55px);
+    /* 背景画像＋読みやすさ確保用の暗幕（#bgの手法と同じ） */
+    background-image: linear-gradient(rgba(3,8,24,.82), rgba(3,8,24,.92)), url('assets/images/etc/mod02.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
   #limit-mode-modal .screen-title { margin-bottom: clamp(8px,1.5vh,14px); }
   #limit-scroll { gap: clamp(7px,1.2vh,11px); }
   #limit-mode-modal .screen-footer { margin-top: clamp(8px,1.5vh,13px); }
