@@ -1,0 +1,63 @@
+{
+  "unitThresholdExp": 8,
+  "units": [
+    { "exp": 8,  "name": "億" },
+    { "exp": 12, "name": "兆" },
+    { "exp": 16, "name": "京" },
+    { "exp": 20, "name": "垓" },
+    { "exp": 24, "name": "秭" },
+    { "exp": 28, "name": "穣" },
+    { "exp": 32, "name": "溝" },
+    { "exp": 36, "name": "澗" },
+    { "exp": 40, "name": "正" },
+    { "exp": 44, "name": "載" },
+    { "exp": 48, "name": "極" },
+    { "exp": 52, "name": "恒河沙" },
+    { "exp": 56, "name": "阿僧祇" },
+    { "exp": 60, "name": "那由他" },
+    { "exp": 64, "name": "不可思議" },
+    { "exp": 68, "name": "無量大数" }
+  ],
+  "boards": {
+    "1":  { "label": "STAGE 01", "baseScore": 1000 },
+    "2":  { "label": "STAGE 02", "baseScore": 1200 },
+    "3":  { "label": "STAGE 03", "baseScore": 1500 },
+    "4":  { "label": "STAGE 04", "baseScore": 1800 },
+    "5":  { "label": "STAGE 05", "baseScore": 2200 },
+    "6":  { "label": "STAGE 06", "baseScore": 2600 },
+    "7":  { "label": "STAGE 07", "baseScore": 3200 },
+    "8":  { "label": "STAGE 08", "baseScore": 4000 },
+    "31": { "label": "STAGE 09", "baseScore": 6000 }
+  },
+  "time": {
+    "3600": 1.0,
+    "3000": 1.3,
+    "2400": 1.8,
+    "1800": 2.5,
+    "1200": 4.0,
+    "600":  8.0
+  },
+  "loop": {
+    "table": {
+      "1": 1.0, "2": 1.6, "3": 2.5, "4": 3.8,
+      "5": 5.6, "6": 8.0, "7": 11.0, "8": 15.0
+    },
+    "perExtraLoopGrowth": 1.28,
+    "minLoops": 1,
+    "maxLoops": 368
+  },
+  "hint": {
+    "10": 1.0, "9": 1.15, "8": 1.3, "7": 1.5, "6": 1.75, "5": 2.1,
+    "4": 2.6, "3": 3.3, "2": 4.5, "1": 7.0, "0": 12.0
+  },
+  "noflag": { "off": 1.0, "on": 4.0 },
+  "difficultyStars": [
+    { "min": 0,    "stars": 1 },
+    { "min": 3,    "stars": 2 },
+    { "min": 10,   "stars": 3 },
+    { "min": 50,   "stars": 4 },
+    { "min": 300,  "stars": 5 }
+  ],
+  "rankingKey": "stellarDeleteRanking_limit",
+  "rankingMax": 10
+}
