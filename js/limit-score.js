@@ -56,23 +56,29 @@ window.LimitScore = (() => {
     return '×' + mult.toFixed(1);
   }
 
-  // 億未満はカンマ区切り整数、以上は日本語単位（万〜無量大数）。末尾に「点」を付ける。
-  // 表示単位の小数第3位未満は切り捨て（四捨五入しない）。
-  function formatScore(score, config){
+  // 億未満はカンマ区切り整数（unit=''）、以上は日本語単位（万〜無量大数）に分けて返す。
+  // 表示単位の小数第3位未満は切り捨て（四捨五入しない）。number/unitを別々に表示したい
+  // 場面（ランキング一覧の2行表示など）向けに、formatScoreはこれを組み合わせるだけにする。
+  function formatScoreParts(score, config){
     const th = Math.pow(10, config.unitThresholdExp);
     if(score < th){
-      return Math.floor(score).toLocaleString('en-US') + '点';
+      return { number: Math.floor(score).toLocaleString('en-US'), unit: '' };
     }
     const units = config.units.slice().sort((a, b) => a.exp - b.exp);
     let unit = units[0];
     for(const u of units){ if(Math.pow(10, u.exp) <= score) unit = u; else break; }
     const scale = Math.pow(10, unit.exp);
     const v = Math.floor((score / scale) * 1000) / 1000; // 第3位以下切り捨て
-    return v.toFixed(3) + ' ' + unit.name + '点';
+    return { number: v.toFixed(3), unit: unit.name };
+  }
+
+  function formatScore(score, config){
+    const { number, unit } = formatScoreParts(score, config);
+    return (unit ? `${number} ${unit}` : number) + '点';
   }
 
   return {
     computeBonusMult, computeScore, optionPercent, formatBonus,
-    formatScore, loopMult, factorMult: tableLookup
+    formatScore, formatScoreParts, loopMult, factorMult: tableLookup
   };
 })();

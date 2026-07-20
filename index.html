@@ -1204,6 +1204,12 @@
   .records-row.top3 .rk { color: #e0925a; }
   .records-row .tm { flex: 1 1 auto; color: #00ffcc; font-size: clamp(13px,2vw,16px); letter-spacing: .04em; }
   .records-row .dt { flex: 0 0 auto; color: #789; font-size: clamp(10px,1.5vw,12px); }
+  /* LIMIT RANKINGだけの上書き（#records-modalの通常RECORDS一覧には影響させない）。
+     得点が2行（数値/単位）になるため上揃えにし、数値・単位の各行は折り返し禁止にして
+     文字単位でバラバラに改行されるのを防ぐ。右側の設定・倍率・日時は白字にして視認性を上げる。 */
+  #limit-ranking-list .records-row { align-items: flex-start; }
+  #limit-ranking-list .records-row .tm { flex: 0 0 auto; width: 92px; white-space: nowrap; line-height: 1.5; }
+  #limit-ranking-list .records-row .dt { flex: 1 1 auto; min-width: 0; color: var(--ice-white); line-height: 1.6; }
 
   /* ── LIMIT MODE 設定画面 ──
      スマホ縦画面で全項目が1画面に収まるよう、共通の.screen-overlay/.screen-title/
@@ -2708,15 +2714,19 @@ function openLimitRankingModal(){
         const dt = r.ts ? fmtLocalDateTime(r.ts) : '';
         const boardLabel = (cfg.boards[r.board] && cfg.boards[r.board].label) || ('STAGE ' + r.board);
         const tlStr = (r.tl === 'none') ? 'NONE' : `${r.tl}s`;
-        // BOARD COLOR/BACKGROUND/BGMはキーで保存しているため、表示のたびにラベルへ解決する
-        // （'auto'または未保存の旧レコードはラベル自体を出さない）。
-        const palLabel = (r.pal && r.pal !== 'auto' && cfg.palettes[r.pal]) ? cfg.palettes[r.pal].label : null;
-        const bgLabel  = (r.bg  && r.bg  !== 'auto' && cfg.backgrounds[r.bg]) ? cfg.backgrounds[r.bg].label : null;
-        const bgmLabel = (r.bgm && r.bgm !== 'auto' && cfg.bgms[r.bgm]) ? cfg.bgms[r.bgm].label : null;
-        const cosmeticStr = [palLabel, bgLabel, bgmLabel].filter(Boolean).join(' / ');
-        const settingsStr = `${boardLabel} / ${tlStr} / ${r.lp}周 / H${r.hint} / ${r.nf ? 'NF' : '-'}` +
-          (cosmeticStr ? ` / ${cosmeticStr}` : '');
-        return `<div class="records-row${topCls}"><span class="rk">${rank}</span><span class="tm">${LimitScore.formatScore(r.score, cfg)}</span><span class="dt">${settingsStr}<br>${dt}</span></div>`;
+        // 得点は「数値」「単位」を別々の行にする（単位名は途中で改行できない語なので、
+        // まとめて1本のテキストにすると幅次第で文字単位に折り返って読みにくくなるため）。
+        const scoreParts = LimitScore.formatScoreParts(r.score, cfg);
+        const scoreHtml = scoreParts.unit
+          ? `${scoreParts.number}<br>${scoreParts.unit}点`
+          : `${scoreParts.number}点`;
+        // 盤面/制限時間/再生数/ORACLE数/NFを1行に（背景・BGMは表示しない）。
+        const settingsStr = `${boardLabel} / ${tlStr} / ${r.lp}周 / ORACLE${r.hint} / ${r.nf ? 'NF' : '-'}`;
+        // 倍率は保存していないため、保存済みの設定(tl/lp/hint/nf)から再計算して表示する。
+        const bonusStr = LimitScore.formatBonus(LimitScore.computeBonusMult(
+          { tl: r.tl, lp: r.lp, hint: r.hint, nf: r.nf }, cfg
+        ));
+        return `<div class="records-row${topCls}"><span class="rk">${rank}</span><span class="tm">${scoreHtml}</span><span class="dt">${settingsStr}<br>${bonusStr}　${dt}</span></div>`;
       }).join('');
     }
     document.getElementById('limit-ranking-modal').style.display = 'flex';
