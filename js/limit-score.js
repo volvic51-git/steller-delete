@@ -56,19 +56,19 @@ window.LimitScore = (() => {
     return '×' + mult.toFixed(1);
   }
 
-  // 億未満はカンマ区切り整数、以上は日本語単位（万〜無量大数）。
+  // 億未満はカンマ区切り整数、以上は日本語単位（万〜無量大数）。末尾に「点」を付ける。
   // 表示単位の小数第3位未満は切り捨て（四捨五入しない）。
   function formatScore(score, config){
     const th = Math.pow(10, config.unitThresholdExp);
     if(score < th){
-      return Math.floor(score).toLocaleString('en-US');
+      return Math.floor(score).toLocaleString('en-US') + '点';
     }
     const units = config.units.slice().sort((a, b) => a.exp - b.exp);
     let unit = units[0];
     for(const u of units){ if(Math.pow(10, u.exp) <= score) unit = u; else break; }
     const scale = Math.pow(10, unit.exp);
     const v = Math.floor((score / scale) * 1000) / 1000; // 第3位以下切り捨て
-    return v.toFixed(3) + ' ' + unit.name;
+    return v.toFixed(3) + ' ' + unit.name + '点';
   }
 
   return {
