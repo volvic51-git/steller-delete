@@ -4295,7 +4295,9 @@ function addLimitRecord(score, boardId, settings, config){
   try{ records = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){}
   const rec = {
     score, board: boardId, tl: settings.tl, lp: settings.lp,
-    hint: settings.hint, nf: settings.nf, ts: new Date().toISOString()
+    hint: settings.hint, nf: settings.nf,
+    pal: settings.pal ?? 'auto', bg: settings.bg ?? 'auto', bgm: settings.bgm ?? 'auto',
+    ts: new Date().toISOString()
   };
   records.push(rec);
   records.sort((a, b) => b.score - a.score); // 降順
@@ -5501,12 +5503,43 @@ if(window.visualViewport){
       // ⚠️ 必ず下の boardSource（seedプール盤面。EXステージ等）分岐より前に置くこと。
       // boardSource分岐はrestartGame()を呼んでreturnするため、後ろに置くとEXステージ選択時に
       // LIMIT上書きが一切適用されないまま盤面が構築されてしまう。
+      // 盤面構築・起動処理（LIMIT／通常の両経路から呼ぶ共通処理）。
+      const _startBoardAndGame = () => {
+        if(stage.boardSource){
+          fetch(stage.boardSource)
+            .then(r => r.json())
+            .then(bd => {
+              ROWS = bd.params.rows; COLS = bd.params.cols;
+              window._stageMines = bd.params.mineCount;
+              window._seedPoolBoard = bd;
+              window._seedPoolMode = true;
+              restartGame();
+              _cutinStageStart();
+            })
+            .catch(e => {
+              console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
+              window._seedPoolMode = false;
+              restartGame();
+              _cutinStageStart();
+            });
+          return;
+        }
+        restartGame();
+        _cutinStageStart();
+      };
+
       if(urlParams.get('mode') === 'limit'){
         const limTlRaw = urlParams.get('tl');
         const limTl    = (limTlRaw === 'none') ? 'none' : parseInt(limTlRaw, 10);
         const limLp    = parseInt(urlParams.get('lp'),   10);
         const limHint  = parseInt(urlParams.get('hint'), 10);
         const limNf    = urlParams.get('nf') === '1';
+        // BOARD COLOR/BACKGROUND/BGMはラベルの元になるキーのまま受け取る（'auto'=ステージ既定）。
+        // 実際の色/ファイルはdata/limit-config.jsonを見てラベルと一緒に解決する
+        // （URLにファイル名を直書きしない＝表示名の管理をJSON側に一本化するため）。
+        const limPalKey = urlParams.get('pal')   || 'auto';
+        const limBgKey  = urlParams.get('bgimg') || 'auto';
+        const limBgmKey = urlParams.get('bgm')   || 'auto';
 
         // 制限時間：'none'なら制限時間モード自体をOFFにし、ゲージも非表示にする。それ以外は
         // 通し（_loopTimeLimits=nullで周回をまたいでもtotalTimeが一定になる。remainingTimeは
@@ -5570,69 +5603,55 @@ if(window.visualViewport){
         // NoFlag
         gameRule = limNf ? 'noflag' : 'attack';
 
-        // クリア画面のスコア計算・ランキング保存で使う
+        // クリア画面のスコア計算・ランキング保存で使う（pal/bg/bgmはキーのまま保持。ラベル表示や
+        // 実ファイル解決は常にlimit-config.json経由に統一し、URLやsettingsにファイル名を持たせない）。
         window._limitMode     = true;
         window._limitBoardId  = urlParams.get('stage');
-        window._limitSettings = { tl: limTl, lp: limLp, hint: limHint, nf: limNf };
+        window._limitSettings = { tl: limTl, lp: limLp, hint: limHint, nf: limNf, pal: limPalKey, bg: limBgKey, bgm: limBgmKey };
 
-        // BOARD COLOR / BACKGROUND / BGM（見た目・音のみでスコアに影響しない。'auto'ならステージ
-        // 既定（stage.boardPalette/background/bgm、この上のブロックで既に適用済み）のまま何もしない）。
-        const limPal = urlParams.get('pal');
-        if(limPal && limPal !== 'auto'){
-          window._boardPalette = limPal.split(',').map(c => '#' + c);
-          const limDbgColorSel = document.getElementById('debug-color-select');
-          const limDbgColorSelEast = document.getElementById('debug-color-select-east');
-          if(limDbgColorSel) limDbgColorSel.value = window._boardPalette[0] || '';
-          if(limDbgColorSelEast) limDbgColorSelEast.value = window._boardPalette[1] || '';
-        }
-        const limBgImg = urlParams.get('bgimg');
-        if(limBgImg && limBgImg !== 'auto'){
-          const limCanvasContainer = document.getElementById('canvas-container');
-          if(limCanvasContainer){
-            limCanvasContainer.style.backgroundImage  = `url('assets/images/${limBgImg}')`;
-            limCanvasContainer.style.backgroundSize     = 'cover';
-            limCanvasContainer.style.backgroundPosition = 'center';
-          }
-        }
-        const limBgm = urlParams.get('bgm');
-        if(limBgm && limBgm !== 'auto'){
-          const limWasPlaying = !SND.bgm.paused;
-          SND.bgm.src = 'assets/audio/' + limBgm;
-          if(limWasPlaying){ SND.bgm.currentTime = 0; SND.bgm.play().catch(() => {}); }
-          window._stageHasCustomBgm = true;
-          window._stageBgmFile = limBgm;
-        }
-
-        // ?boot=resume はこの関数を通らないため、resume側でも別途fetchする（resumeSuspend参照）
+        // limit-config.jsonはBOARD COLOR/BACKGROUND/BGMのキー→実値解決にも必要なため、
+        // 読み込みを待ってから盤面構築(_startBoardAndGame)する（?boot=resumeはこの関数を
+        // 通らないため、resume側でも別途fetchする＝resumeSuspend参照）。
         fetch('data/limit-config.json', {cache:'no-store'})
           .then(r => r.json())
-          .then(cfg => { window._limitConfig = cfg; })
-          .catch(() => { console.warn('limit-config.jsonの読込に失敗しました'); });
-      }
+          .then(cfg => {
+            window._limitConfig = cfg;
 
-      if(stage.boardSource){
-        fetch(stage.boardSource)
-          .then(r => r.json())
-          .then(bd => {
-            ROWS = bd.params.rows; COLS = bd.params.cols;
-            window._stageMines = bd.params.mineCount;
-            window._seedPoolBoard = bd;
-            window._seedPoolMode = true;
-            restartGame();
-            _cutinStageStart();
+            if(limPalKey !== 'auto' && cfg.palettes && cfg.palettes[limPalKey] && cfg.palettes[limPalKey].colors){
+              window._boardPalette = cfg.palettes[limPalKey].colors;
+              const limDbgColorSel = document.getElementById('debug-color-select');
+              const limDbgColorSelEast = document.getElementById('debug-color-select-east');
+              if(limDbgColorSel) limDbgColorSel.value = window._boardPalette[0] || '';
+              if(limDbgColorSelEast) limDbgColorSelEast.value = window._boardPalette[1] || '';
+            }
+            if(limBgKey !== 'auto' && cfg.backgrounds && cfg.backgrounds[limBgKey] && cfg.backgrounds[limBgKey].file){
+              const limCanvasContainer = document.getElementById('canvas-container');
+              if(limCanvasContainer){
+                limCanvasContainer.style.backgroundImage  = `url('assets/images/${cfg.backgrounds[limBgKey].file}')`;
+                limCanvasContainer.style.backgroundSize     = 'cover';
+                limCanvasContainer.style.backgroundPosition = 'center';
+              }
+            }
+            if(limBgmKey !== 'auto' && cfg.bgms && cfg.bgms[limBgmKey] && cfg.bgms[limBgmKey].file){
+              const limBgmFile = cfg.bgms[limBgmKey].file;
+              const limWasPlaying = !SND.bgm.paused;
+              SND.bgm.src = 'assets/audio/' + limBgmFile;
+              if(limWasPlaying){ SND.bgm.currentTime = 0; SND.bgm.play().catch(() => {}); }
+              window._stageHasCustomBgm = true;
+              window._stageBgmFile = limBgmFile;
+            }
+
+            _startBoardAndGame();
           })
-          .catch(e => {
-            console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
-            window._seedPoolMode = false;
-            restartGame();
-            _cutinStageStart();
+          .catch(() => {
+            console.warn('limit-config.jsonの読込に失敗しました。見た目上書き無しで起動します。');
+            _startBoardAndGame();
           });
         return;
       }
 
       // 設定を反映してリスタート
-      restartGame();
-      _cutinStageStart();
+      _startBoardAndGame();
     })
     .catch(() => {
       console.warn('stage-params.json not found, using defaults.');

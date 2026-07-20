@@ -2674,18 +2674,12 @@ document.getElementById('limit-start-btn').addEventListener('click', () => {
     _titleNavLocked = true;
     playSelect();
     const s = _limitState;
-    // palette/bg/bgmは実際の値（色コード・ファイル名）に解決してURLへ渡す。ゲーム側で
-    // limit-config.jsonを再フェッチせずに済ませるため（非同期取得の完了待ちを避ける）。
-    const palEntry = cfg.palettes[s.palette];
-    const bgEntry  = cfg.backgrounds[s.bg];
-    const bgmEntry = cfg.bgms[s.bgm];
-    const palParam = (s.palette === 'auto' || !palEntry || !palEntry.colors)
-      ? 'auto' : palEntry.colors.map(c => c.replace('#', '')).join(',');
-    const bgParam  = (s.bg === 'auto' || !bgEntry || !bgEntry.file) ? 'auto' : bgEntry.file;
-    const bgmParam = (s.bgm === 'auto' || !bgmEntry || !bgmEntry.file) ? 'auto' : bgmEntry.file;
+    // palette/bg/bgmはキー（data/limit-config.jsonのpalettes/backgrounds/bgmsのキー）のまま
+    // URLへ渡す。ラベル→実ファイルの解決は常にゲーム側でlimit-config.jsonを見て行う
+    // （表示名の管理をJSON側に一本化し、URLやランキング記録にファイル名を持たせないため）。
     window.location.href =
       `sphere-minesweeper.html?stage=${s.board}&mode=limit&tl=${s.tl}&lp=${s.lp}&hint=${s.hint}&nf=${s.nf ? 1 : 0}` +
-      `&pal=${encodeURIComponent(palParam)}&bgimg=${encodeURIComponent(bgParam)}&bgm=${encodeURIComponent(bgmParam)}`;
+      `&pal=${encodeURIComponent(s.palette)}&bgimg=${encodeURIComponent(s.bg)}&bgm=${encodeURIComponent(s.bgm)}`;
   });
 });
 
@@ -2711,7 +2705,14 @@ function openLimitRankingModal(){
         const dt = r.ts ? fmtLocalDateTime(r.ts) : '';
         const boardLabel = (cfg.boards[r.board] && cfg.boards[r.board].label) || ('STAGE ' + r.board);
         const tlStr = (r.tl === 'none') ? 'NONE' : `${r.tl}s`;
-        const settingsStr = `${boardLabel} / ${tlStr} / ${r.lp}周 / H${r.hint} / ${r.nf ? 'NF' : '-'}`;
+        // BOARD COLOR/BACKGROUND/BGMはキーで保存しているため、表示のたびにラベルへ解決する
+        // （'auto'または未保存の旧レコードはラベル自体を出さない）。
+        const palLabel = (r.pal && r.pal !== 'auto' && cfg.palettes[r.pal]) ? cfg.palettes[r.pal].label : null;
+        const bgLabel  = (r.bg  && r.bg  !== 'auto' && cfg.backgrounds[r.bg]) ? cfg.backgrounds[r.bg].label : null;
+        const bgmLabel = (r.bgm && r.bgm !== 'auto' && cfg.bgms[r.bgm]) ? cfg.bgms[r.bgm].label : null;
+        const cosmeticStr = [palLabel, bgLabel, bgmLabel].filter(Boolean).join(' / ');
+        const settingsStr = `${boardLabel} / ${tlStr} / ${r.lp}周 / H${r.hint} / ${r.nf ? 'NF' : '-'}` +
+          (cosmeticStr ? ` / ${cosmeticStr}` : '');
         return `<div class="records-row${topCls}"><span class="rk">${rank}</span><span class="tm">${LimitScore.formatScore(r.score, cfg)}</span><span class="dt">${settingsStr}<br>${dt}</span></div>`;
       }).join('');
     }
