@@ -26,7 +26,7 @@
   {
     "id": "limit",
     "label": "LIMIT MODE",
-    "desc": "自分で制約を課してハイスコアを狙う挑戦モード。\n厳しい設定ほどスコアが跳ね上がる。",
+    "desc": "自分で制約を課してハイスコアを狙おう。\n目指せ無量大数点！！",
     "image": "assets/images/etc/mod02.png",
     "color": "blue",
     "enabled": true
