@@ -3515,10 +3515,11 @@ function executeConfirmedAction(){
     closeSettingsMenu();
     restartGame();
   } else if(action === 'select'){
-    // STORY/STORY2 はそれぞれのEPISODES画面へ、それ以外は NORMAL/NOFLAG リストへ。
+    // STORY/STORY2 はそれぞれのEPISODES画面へ、LIMITはLIMIT MODE画面へ、それ以外は NORMAL/NOFLAG リストへ。
     const isStory  = (new URLSearchParams(window.location.search).get('mode') === 'story')  || !!window._resumeStoryMode;
     const isStory2 = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
-    window.location.href = isStory ? 'index.html?story=1' : isStory2 ? 'index.html?story2=1' : (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
+    const isLimit  = (new URLSearchParams(window.location.search).get('mode') === 'limit')   || !!window._resumeLimitMode;
+    window.location.href = isStory ? 'index.html?story=1' : isStory2 ? 'index.html?story2=1' : isLimit ? 'index.html?limit=1' : (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
   } else if(action === 'title'){
     window.location.href = 'index.html';
   }
@@ -4776,14 +4777,16 @@ function updateMsgButtons(){
   const btnSelect = document.getElementById('msg-btn-select');
   if(!btnSelect) return;
   btnSelect.style.display = isStoryLike ? 'none' : '';
-  // NORMAL/NO FLAGはそれぞれのリスト(?normal=1 / ?noflag=1)へ戻す（rescue-btn-selectと同じ規約）。
-  // 以前は常に index.html?select=1（STORYの固定カルーセル）へ飛ばしていたため、
-  // SIMPLE/NO FLAGでゲームオーバーになるとSTORY側の画面に迷い込むバグがあった。
+  // NORMAL/NO FLAGはそれぞれのリスト(?normal=1 / ?noflag=1)へ、LIMITはLIMIT MODE画面(?limit=1)へ戻す
+  // （rescue-btn-selectと同じ規約）。以前は常に index.html?select=1（STORYの固定カルーセル）へ
+  // 飛ばしていたため、SIMPLE/NO FLAG/LIMITでゲームオーバーになるとSTORY側の画面に迷い込むバグがあった。
   const isNormalMode = (mode === 'normal') || !!window._resumeNormalMode;
+  const isLimitMode  = (mode === 'limit')  || !!window._resumeLimitMode;
   btnSelect.onclick = ()=>{
-    window.location.href = isNormalMode
-      ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
-      : 'index.html?select=1';
+    window.location.href = isLimitMode ? 'index.html?limit=1'
+      : isNormalMode
+        ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
+        : 'index.html?select=1';
   };
 }
 
