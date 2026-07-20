@@ -70,29 +70,20 @@
     "cp":     { "label": "水×桃", "colors": ["#7FE7D8", "#FF67B3"] }
   },
   "backgrounds": {
-    "auto": { "label": "AUTO（ステージ既定）" },
-    "bg01": { "label": "背景01", "file": "img_bg01.jpg" },
-    "bg02": { "label": "背景02", "file": "img_bg02.jpg" },
-    "bg03": { "label": "背景03", "file": "img_bg03.jpg" },
-    "bg06": { "label": "背景06", "file": "img_bg06.jpg" },
-    "bg07": { "label": "背景07", "file": "img_bg07.jpg" },
-    "bg08": { "label": "背景08", "file": "img_bg08.jpg" },
-    "bg09": { "label": "背景09", "file": "img_bg09.jpg" },
-    "bg10": { "label": "背景10", "file": "img_bg10.jpg" },
-    "bg11": { "label": "背景11", "file": "img_bg11.jpg" },
-    "bg12": { "label": "背景12", "file": "img_bg12.jpg" }
+    "bg01": { "label": "迷子達の宇宙", "file": "img_bg01.jpg" },
+    "bg02": { "label": "消滅宇宙", "file": "img_bg02.jpg" },
+    "bg03": { "label": "イセラの宇宙", "file": "img_bg03.jpg" },
+    "bg04": { "label": "宇宙・ボーダー", "file": "img_bg04.jpg" },
+    "bg05": { "label": "加速する宇宙", "file": "img_bg05.jpg" },
+    "bg06": { "label": "宇宙と宇宙", "file": "img_bg06.jpg" }
   },
   "bgms": {
-    "auto":     { "label": "AUTO（ステージ既定）" },
-    "play":     { "label": "PLAY", "file": "SND_02_play.mp3" },
-    "stage":    { "label": "STAGE", "file": "SND_04_stage.mp3" },
-    "flat":     { "label": "FLAT", "file": "SND_05_flat.mp3" },
-    "itsd":     { "label": "ITSD", "file": "SND_06_ITSD.mp3" },
-    "simpleex": { "label": "SIMPLE EX", "file": "SND_07_simpleEX.mp3" },
-    "play2":    { "label": "PLAY 2", "file": "SND_11_play2.mp3" },
-    "bgm02":    { "label": "BGM 02", "file": "SND_12_bgm02.mp3" },
-    "yj2k":     { "label": "YJ2K", "file": "SND_15_YJ2K.mp3" },
-    "black":    { "label": "IN THE BLACK", "file": "SND_16_inTheBlack.mp3" }
+    "play":     { "label": "STELLAR", "file": "SND_02_play.mp3" },
+    "flat":     { "label": "DELETE", "file": "SND_05_flat.mp3" },
+    "simpleex": { "label": "ISELA", "file": "SND_07_simpleEX.mp3" },
+    "play2":    { "label": "LIMIT", "file": "SND_11_play2.mp3" },
+    "BIGPOINT1":    { "label": "BGM 02", "file": "SND_13_BIGPOINT1.mp3" },
+    "BIGPOINT2":    { "label": "BGM 02", "file": "SND_14_BIGPOINT2.mp3" }
   },
   "rankingKey": "stellarDeleteRanking_limit",
   "rankingMax": 10
