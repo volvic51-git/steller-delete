@@ -5358,17 +5358,18 @@ if(window.visualViewport){
       // novelAfterClear 保存（クリア後「つづきを見る」ボタンの遷移先）
       window._novelAfterClear = stage.novelAfterClear || null;
 
-      // NORMAL MODE: 盤面等は stage-params を流用しつつ、キャラは 011〜020 からランダムに差し替え。
+      // NORMAL MODE / LIMIT MODE: 盤面等は stage-params を流用しつつ、キャラは 011〜020 からランダムに差し替え。
       // 物語進行ではないので novelAfterClear は無効化（クリア画面に NEXT を出さない）。
       // ランダム値はページ読込時にここで一度だけ確定し、以降は currentCharacter に保持される
       // （RETRYでも同一）。?boot=replay/resume ではこのブロックは走らず、記録済み charId を復元するので再現も一致。
       // stageEX（id:10）/ stageEX2（id:11）、およびそのノーフラッグ版ミラー（id:20/21）は
       // キャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
       // stage9（SIMPLE:31 / NO FLAG:32、12x7周回ステージ）も同様にEX系と並ぶ特別枠として固定。
-      // それ以外のSIMPLE MODEステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
+      // それ以外のSIMPLE/LIMITステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
       // 011〜020は旧プール・上限10体で頭打ちだったため移行）。
       const _exFixedCharIds = [10, 11, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32];
-      if(urlParams.get('mode') === 'normal' && !_exFixedCharIds.includes(Number(stage.id))){
+      const _randomCharModes = ['normal', 'limit'];
+      if(_randomCharModes.includes(urlParams.get('mode')) && !_exFixedCharIds.includes(Number(stage.id))){
         const pool = CHARACTER_LIST.filter(c => {
           const n = parseInt(c.id, 10);
           return n >= 101 && n <= 199;
