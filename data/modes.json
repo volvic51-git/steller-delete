@@ -34,9 +34,9 @@
   {
     "id": "limit",
     "label": "LIMIT MODE",
-    "desc": "開発中",
+    "desc": "自分で制約を課してハイスコアを狙う挑戦モード。\n厳しい設定ほどスコアが跳ね上がる。",
     "image": "assets/images/etc/mod02.png",
     "color": "blue",
-    "enabled": false
+    "enabled": true
   }
 ]
