@@ -1162,7 +1162,7 @@ function showRescueScreen(){
     const limSettings = window._limitSettings;
     if(limCfg && limSettings){
       const limScore = Math.floor(LimitScore.computeScore(limBoardId, limSettings, limCfg));
-      document.getElementById('rescue-time').textContent = 'LIMIT SCORE ' + LimitScore.formatScore(limScore, limCfg);
+      document.getElementById('rescue-time').textContent = LimitScore.formatScore(limScore, limCfg);
       const limRank = addLimitRecord(limScore, limBoardId, limSettings, limCfg);
       if(limRank === 1){
         rankEl.innerHTML = '<span style="color:#ffd700;">👑 NEW RECORD!　BEST1 達成！</span>';
