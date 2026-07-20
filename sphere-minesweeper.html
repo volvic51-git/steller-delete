@@ -5498,27 +5498,40 @@ if(window.visualViewport){
       // boardSource分岐はrestartGame()を呼んでreturnするため、後ろに置くとEXステージ選択時に
       // LIMIT上書きが一切適用されないまま盤面が構築されてしまう。
       if(urlParams.get('mode') === 'limit'){
-        const limTl   = parseInt(urlParams.get('tl'),   10);
-        const limLp   = parseInt(urlParams.get('lp'),   10);
-        const limHint = parseInt(urlParams.get('hint'), 10);
-        const limNf   = urlParams.get('nf') === '1';
+        const limTlRaw = urlParams.get('tl');
+        const limTl    = (limTlRaw === 'none') ? 'none' : parseInt(limTlRaw, 10);
+        const limLp    = parseInt(urlParams.get('lp'),   10);
+        const limHint  = parseInt(urlParams.get('hint'), 10);
+        const limNf    = urlParams.get('nf') === '1';
 
-        // 制限時間：通し。_loopTimeLimits=null にすると周回をまたいでも totalTime が一定になる
-        // （remainingTimeはstartTimer内でcurrentLoop===1の時だけリセットされる既存挙動を利用）。
-        timeLimitMode = true;
-        window._customTimeLimit = limTl;
+        // 制限時間：'none'なら制限時間モード自体をOFFにし、ゲージも非表示にする。それ以外は
+        // 通し（_loopTimeLimits=nullで周回をまたいでもtotalTimeが一定になる。remainingTimeは
+        // startTimer内でcurrentLoop===1の時だけリセットされる既存挙動を利用）。
+        timeLimitMode = (limTl !== 'none');
         window._loopTimeLimits = null;
         const limTlBtn = document.getElementById('time-limit-btn');
-        if(limTlBtn){
-          limTlBtn.textContent = '制限時間 ON';
-          limTlBtn.style.background  = 'rgba(80,20,0,0.9)';
-          limTlBtn.style.borderColor = 'rgba(255,100,0,0.8)';
-          limTlBtn.style.color       = '#ffaa00';
-        }
-        const limTlInput = document.getElementById('time-limit-input');
-        if(limTlInput) limTlInput.value = limTl;
         const limGaugeEl = document.getElementById('time-limit-gauge');
-        if(limGaugeEl) limGaugeEl.style.display = '';
+        if(timeLimitMode){
+          window._customTimeLimit = limTl;
+          if(limTlBtn){
+            limTlBtn.textContent = '制限時間 ON';
+            limTlBtn.style.background  = 'rgba(80,20,0,0.9)';
+            limTlBtn.style.borderColor = 'rgba(255,100,0,0.8)';
+            limTlBtn.style.color       = '#ffaa00';
+          }
+          const limTlInput = document.getElementById('time-limit-input');
+          if(limTlInput) limTlInput.value = limTl;
+          if(limGaugeEl) limGaugeEl.style.display = '';
+        } else {
+          window._customTimeLimit = null;
+          if(limTlBtn){
+            limTlBtn.textContent = '制限時間 OFF';
+            limTlBtn.style.background  = 'rgba(40,0,20,0.8)';
+            limTlBtn.style.borderColor = 'rgba(255,100,0,0.4)';
+            limTlBtn.style.color       = '#ff6600';
+          }
+          if(limGaugeEl) limGaugeEl.style.display = 'none';
+        }
 
         // 周回：lp>1なら周回モードON、そうでなければOFF（stage9(id31)はstage-paramsで元々ON
         // だが、ここで明示的に上書きするのでプレイヤー選択（lp=1）が優先される）

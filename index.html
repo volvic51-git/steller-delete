@@ -1246,39 +1246,6 @@
     padding: 8px 10px;
     outline: none;
   }
-  .limit-loop-controls { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 220px; }
-  .limit-loop-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-  .limit-loop-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 1px;
-    min-width: 44px; padding: 5px 6px;
-    font-family: 'Share Tech Mono', monospace;
-    background: rgba(0,20,50,.7);
-    border: 1px solid rgba(0,200,255,.35);
-    border-radius: 4px;
-    color: var(--ice-white);
-    cursor: pointer;
-    transition: background .15s, border-color .15s;
-  }
-  .limit-loop-btn .n { font-size: 13px; font-weight: 700; }
-  .limit-loop-btn .pct { font-size: 9px; color: rgba(232,244,255,.55); }
-  .limit-loop-btn:hover { background: rgba(0,40,80,.85); border-color: var(--accent); }
-  .limit-loop-btn.active { background: rgba(0,80,140,.9); border-color: var(--accent); box-shadow: 0 0 10px rgba(0,200,255,.5); }
-  .limit-loop-btn.active .pct { color: var(--accent); }
-  .limit-loop-add {
-    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .05em;
-    padding: 5px 10px;
-    background: rgba(40,10,60,.7);
-    border: 1px solid rgba(180,100,255,.5);
-    border-radius: 4px;
-    color: #d6aaff;
-    cursor: pointer;
-  }
-  .limit-loop-add:hover { background: rgba(60,16,90,.85); box-shadow: 0 0 10px rgba(180,100,255,.4); }
-  .limit-loop-value {
-    font-family: 'Share Tech Mono', monospace; font-size: 12px;
-    color: rgba(232,244,255,.75);
-  }
-  .limit-pct { color: var(--accent); }
   .limit-toggle-group { display: flex; gap: 8px; }
   .limit-toggle-btn {
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .1em;
@@ -1555,16 +1522,8 @@
     </div>
 
     <div class="limit-row">
-      <span class="limit-row-label">REPLAY COUNT</span>
-      <div class="limit-loop-controls">
-        <div class="limit-loop-btns" id="limit-loop-btns"></div>
-        <div class="limit-loop-btns">
-          <button type="button" class="limit-loop-add" data-add="10">+10</button>
-          <button type="button" class="limit-loop-add" data-add="100">+100</button>
-          <button type="button" class="limit-loop-add" data-add="reset">RESET</button>
-        </div>
-        <div class="limit-loop-value">周回数: <b id="limit-loop-value">1</b>　<span class="limit-pct" id="limit-loop-pct"></span></div>
-      </div>
+      <span class="limit-row-label">LOOP COUNT</span>
+      <select id="limit-loop" class="limit-select"></select>
     </div>
 
     <div class="limit-row">
@@ -2617,9 +2576,14 @@ function renderLimitMode(cfg){
   if(_limitState.board == null || !cfg.boards[_limitState.board]) _limitState.board = boardIds[0];
   boardSel.value = _limitState.board;
 
+  // TIME LIMIT：'none'（制限時間なし）は数値キーではないので数値ソートから外し、先頭（最弱＝既定）に置く。
   const timeSel = document.getElementById('limit-time');
-  const timeKeys = Object.keys(cfg.time).map(Number).sort((a, b) => b - a);
-  timeSel.innerHTML = timeKeys.map(t => `<option value="${t}">${t} sec — ${LimitScore.optionPercent(cfg.time[t])}</option>`).join('');
+  const timeNumKeys = Object.keys(cfg.time).filter(k => k !== 'none').map(Number).sort((a, b) => b - a);
+  const timeKeys = cfg.time.none !== undefined ? ['none', ...timeNumKeys] : timeNumKeys;
+  timeSel.innerHTML = timeKeys.map(t => {
+    const label = t === 'none' ? 'NONE（制限時間なし）' : `${t} sec`;
+    return `<option value="${t}">${label} — ${LimitScore.optionPercent(cfg.time[t])}</option>`;
+  }).join('');
   if(_limitState.tl == null || cfg.time[_limitState.tl] === undefined) _limitState.tl = timeKeys[0];
   timeSel.value = _limitState.tl;
 
@@ -2629,29 +2593,11 @@ function renderLimitMode(cfg){
   if(_limitState.hint == null || cfg.hint[_limitState.hint] === undefined) _limitState.hint = hintKeys[0];
   hintSel.value = _limitState.hint;
 
-  const loopBtnsEl = document.getElementById('limit-loop-btns');
+  const loopSel = document.getElementById('limit-loop');
   const loopKeys = Object.keys(cfg.loop.table).map(Number).sort((a, b) => a - b);
-  loopBtnsEl.innerHTML = loopKeys.map(n => {
-    const pct = LimitScore.optionPercent(cfg.loop.table[n]);
-    return `<button type="button" class="limit-loop-btn" data-lp="${n}"><span class="n">${n}</span><span class="pct">${pct}</span></button>`;
-  }).join('');
-  loopBtnsEl.querySelectorAll('.limit-loop-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _limitState.lp = parseInt(btn.dataset.lp, 10);
-      updateLimitLoopUI(cfg);
-      updateLimitPreview(cfg);
-    });
-  });
-  document.querySelectorAll('#limit-scroll .limit-loop-add').forEach(btn => {
-    btn.onclick = () => {
-      const add = btn.dataset.add;
-      _limitState.lp = (add === 'reset')
-        ? cfg.loop.minLoops
-        : Math.min(cfg.loop.maxLoops, _limitState.lp + parseInt(add, 10));
-      updateLimitLoopUI(cfg);
-      updateLimitPreview(cfg);
-    };
-  });
+  loopSel.innerHTML = loopKeys.map(n => `<option value="${n}">${n} — ${LimitScore.optionPercent(cfg.loop.table[n])}</option>`).join('');
+  if(_limitState.lp == null || cfg.loop.table[_limitState.lp] === undefined) _limitState.lp = loopKeys[0];
+  loopSel.value = _limitState.lp;
 
   document.querySelectorAll('#limit-noflag-toggle .limit-toggle-btn').forEach(btn => {
     btn.onclick = () => {
@@ -2662,19 +2608,11 @@ function renderLimitMode(cfg){
   });
 
   boardSel.onchange = () => { _limitState.board = boardSel.value; updateLimitPreview(cfg); };
-  timeSel.onchange  = () => { _limitState.tl = parseInt(timeSel.value, 10); updateLimitPreview(cfg); };
+  timeSel.onchange  = () => { _limitState.tl = timeSel.value === 'none' ? 'none' : parseInt(timeSel.value, 10); updateLimitPreview(cfg); };
+  loopSel.onchange  = () => { _limitState.lp = parseInt(loopSel.value, 10); updateLimitPreview(cfg); };
   hintSel.onchange  = () => { _limitState.hint = parseInt(hintSel.value, 10); updateLimitPreview(cfg); };
 
-  updateLimitLoopUI(cfg);
   updateLimitPreview(cfg);
-}
-
-function updateLimitLoopUI(cfg){
-  document.querySelectorAll('#limit-loop-btns .limit-loop-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.lp, 10) === _limitState.lp);
-  });
-  document.getElementById('limit-loop-value').textContent = _limitState.lp;
-  document.getElementById('limit-loop-pct').textContent = LimitScore.optionPercent(LimitScore.loopMult(_limitState.lp, cfg.loop));
 }
 
 // 設定変更のたびに呼ばれる：LIMIT SCORE / BONUS ×N / DIFFICULTY をリアルタイム更新
@@ -2723,7 +2661,8 @@ function openLimitRankingModal(){
         const topCls = rank <= 3 ? ' top' + rank : '';
         const dt = r.ts ? fmtLocalDateTime(r.ts) : '';
         const boardLabel = (cfg.boards[r.board] && cfg.boards[r.board].label) || ('STAGE ' + r.board);
-        const settingsStr = `${boardLabel} / ${r.tl}s / ${r.lp}周 / H${r.hint} / ${r.nf ? 'NF' : '-'}`;
+        const tlStr = (r.tl === 'none') ? 'NONE' : `${r.tl}s`;
+        const settingsStr = `${boardLabel} / ${tlStr} / ${r.lp}周 / H${r.hint} / ${r.nf ? 'NF' : '-'}`;
         return `<div class="records-row${topCls}"><span class="rk">${rank}</span><span class="tm">${LimitScore.formatScore(r.score, cfg)}</span><span class="dt">${settingsStr}<br>${dt}</span></div>`;
       }).join('');
     }
