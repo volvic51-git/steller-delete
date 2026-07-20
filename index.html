@@ -2568,7 +2568,7 @@ document.getElementById('records-close').addEventListener('click', ()=>{ documen
 // ── LIMIT MODE：制約設定ハイスコア挑戦モード ──
 // 倍率・baseScore・単位は全て data/limit-config.json 側で定義（js/limit-score.js が数値定数を持たない純関数群）。
 let _limitConfigCache = null;
-let _limitState = { board: null, tl: null, lp: 1, hint: null, nf: false, palette: 'auto', bg: 'auto', bgm: 'auto' };
+let _limitState = { board: null, tl: null, lp: 1, hint: null, nf: false, palette: 'auto', bg: null, bgm: null };
 
 function fetchLimitConfig(){
   if(_limitConfigCache) return Promise.resolve(_limitConfigCache);
@@ -2635,14 +2635,17 @@ function renderLimitMode(cfg){
   if(_limitState.palette == null || !cfg.palettes[_limitState.palette]) _limitState.palette = 'auto';
   paletteSel.value = _limitState.palette;
 
+  // BACKGROUND/BGMには'auto'が無い（JSON側で削除済み）ため、既定値はJSON記述順の先頭キーにする。
+  const bgKeys = Object.keys(cfg.backgrounds);
   const bgSel = document.getElementById('limit-bg');
-  bgSel.innerHTML = Object.keys(cfg.backgrounds).map(k => `<option value="${k}">${cfg.backgrounds[k].label}</option>`).join('');
-  if(_limitState.bg == null || !cfg.backgrounds[_limitState.bg]) _limitState.bg = 'auto';
+  bgSel.innerHTML = bgKeys.map(k => `<option value="${k}">${cfg.backgrounds[k].label}</option>`).join('');
+  if(_limitState.bg == null || !cfg.backgrounds[_limitState.bg]) _limitState.bg = bgKeys[0];
   bgSel.value = _limitState.bg;
 
+  const bgmKeys = Object.keys(cfg.bgms);
   const bgmSel = document.getElementById('limit-bgm');
-  bgmSel.innerHTML = Object.keys(cfg.bgms).map(k => `<option value="${k}">${cfg.bgms[k].label}</option>`).join('');
-  if(_limitState.bgm == null || !cfg.bgms[_limitState.bgm]) _limitState.bgm = 'auto';
+  bgmSel.innerHTML = bgmKeys.map(k => `<option value="${k}">${cfg.bgms[k].label}</option>`).join('');
+  if(_limitState.bgm == null || !cfg.bgms[_limitState.bgm]) _limitState.bgm = bgmKeys[0];
   bgmSel.value = _limitState.bgm;
 
   boardSel.onchange = () => { _limitState.board = boardSel.value; updateLimitPreview(cfg); };
