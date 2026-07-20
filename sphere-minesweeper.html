@@ -5553,6 +5553,11 @@ if(window.visualViewport){
         } else {
           loopMode = false;
           window._loopMode = false;
+          // stage自身がloopMode:trueを持つ場合（例: stage9/id31）、ここより前の
+          // stage-native側の初期化でwindow._boardPaletteがloopColors[0]に上書き
+          // されている。LIMITで周回OFFにする以上、元のstage.boardPaletteへ戻す
+          // （戻さないと周回OFFでもloopColors[0]固定の色になってしまう）。
+          window._boardPalette = normalizePalette(stage.boardPalette ?? stage.boardColor);
         }
 
         // ORACLE数
@@ -5566,6 +5571,34 @@ if(window.visualViewport){
         window._limitMode     = true;
         window._limitBoardId  = urlParams.get('stage');
         window._limitSettings = { tl: limTl, lp: limLp, hint: limHint, nf: limNf };
+
+        // BOARD COLOR / BACKGROUND / BGM（見た目・音のみでスコアに影響しない。'auto'ならステージ
+        // 既定（stage.boardPalette/background/bgm、この上のブロックで既に適用済み）のまま何もしない）。
+        const limPal = urlParams.get('pal');
+        if(limPal && limPal !== 'auto'){
+          window._boardPalette = limPal.split(',').map(c => '#' + c);
+          const limDbgColorSel = document.getElementById('debug-color-select');
+          const limDbgColorSelEast = document.getElementById('debug-color-select-east');
+          if(limDbgColorSel) limDbgColorSel.value = window._boardPalette[0] || '';
+          if(limDbgColorSelEast) limDbgColorSelEast.value = window._boardPalette[1] || '';
+        }
+        const limBgImg = urlParams.get('bgimg');
+        if(limBgImg && limBgImg !== 'auto'){
+          const limCanvasContainer = document.getElementById('canvas-container');
+          if(limCanvasContainer){
+            limCanvasContainer.style.backgroundImage  = `url('assets/images/${limBgImg}')`;
+            limCanvasContainer.style.backgroundSize     = 'cover';
+            limCanvasContainer.style.backgroundPosition = 'center';
+          }
+        }
+        const limBgm = urlParams.get('bgm');
+        if(limBgm && limBgm !== 'auto'){
+          const limWasPlaying = !SND.bgm.paused;
+          SND.bgm.src = 'assets/audio/' + limBgm;
+          if(limWasPlaying){ SND.bgm.currentTime = 0; SND.bgm.play().catch(() => {}); }
+          window._stageHasCustomBgm = true;
+          window._stageBgmFile = limBgm;
+        }
 
         // ?boot=resume はこの関数を通らないため、resume側でも別途fetchする（resumeSuspend参照）
         fetch('data/limit-config.json', {cache:'no-store'})

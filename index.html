@@ -1546,6 +1546,21 @@
       </div>
     </div>
 
+    <div class="limit-row">
+      <span class="limit-row-label">BOARD COLOR</span>
+      <select id="limit-palette" class="limit-select"></select>
+    </div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">BACKGROUND</span>
+      <select id="limit-bg" class="limit-select"></select>
+    </div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">BGM</span>
+      <select id="limit-bgm" class="limit-select"></select>
+    </div>
+
     <div class="limit-feedback">
       <div class="limit-feedback-label">EXPECT THE SCORE</div>
       <div class="limit-feedback-score" id="limit-score-display">0</div>
@@ -2553,7 +2568,7 @@ document.getElementById('records-close').addEventListener('click', ()=>{ documen
 // ── LIMIT MODE：制約設定ハイスコア挑戦モード ──
 // 倍率・baseScore・単位は全て data/limit-config.json 側で定義（js/limit-score.js が数値定数を持たない純関数群）。
 let _limitConfigCache = null;
-let _limitState = { board: null, tl: null, lp: 1, hint: null, nf: false };
+let _limitState = { board: null, tl: null, lp: 1, hint: null, nf: false, palette: 'auto', bg: 'auto', bgm: 'auto' };
 
 function fetchLimitConfig(){
   if(_limitConfigCache) return Promise.resolve(_limitConfigCache);
@@ -2613,10 +2628,30 @@ function renderLimitMode(cfg){
     };
   });
 
+  // BOARD COLOR / BACKGROUND / BGM：スコアには影響しない見た目・音の選択（既定はAUTO＝ステージの元設定）。
+  // "auto"以外のキーは整数文字列ではないためObject.keys()がJSON記述順のまま列挙される。
+  const paletteSel = document.getElementById('limit-palette');
+  paletteSel.innerHTML = Object.keys(cfg.palettes).map(k => `<option value="${k}">${cfg.palettes[k].label}</option>`).join('');
+  if(_limitState.palette == null || !cfg.palettes[_limitState.palette]) _limitState.palette = 'auto';
+  paletteSel.value = _limitState.palette;
+
+  const bgSel = document.getElementById('limit-bg');
+  bgSel.innerHTML = Object.keys(cfg.backgrounds).map(k => `<option value="${k}">${cfg.backgrounds[k].label}</option>`).join('');
+  if(_limitState.bg == null || !cfg.backgrounds[_limitState.bg]) _limitState.bg = 'auto';
+  bgSel.value = _limitState.bg;
+
+  const bgmSel = document.getElementById('limit-bgm');
+  bgmSel.innerHTML = Object.keys(cfg.bgms).map(k => `<option value="${k}">${cfg.bgms[k].label}</option>`).join('');
+  if(_limitState.bgm == null || !cfg.bgms[_limitState.bgm]) _limitState.bgm = 'auto';
+  bgmSel.value = _limitState.bgm;
+
   boardSel.onchange = () => { _limitState.board = boardSel.value; updateLimitPreview(cfg); };
   timeSel.onchange  = () => { _limitState.tl = timeSel.value === 'none' ? 'none' : parseInt(timeSel.value, 10); updateLimitPreview(cfg); };
   loopSel.onchange  = () => { _limitState.lp = parseInt(loopSel.value, 10); updateLimitPreview(cfg); };
   hintSel.onchange  = () => { _limitState.hint = parseInt(hintSel.value, 10); updateLimitPreview(cfg); };
+  paletteSel.onchange = () => { _limitState.palette = paletteSel.value; };
+  bgSel.onchange       = () => { _limitState.bg = bgSel.value; };
+  bgmSel.onchange      = () => { _limitState.bgm = bgmSel.value; };
 
   updateLimitPreview(cfg);
 }
@@ -2639,8 +2674,18 @@ document.getElementById('limit-start-btn').addEventListener('click', () => {
     _titleNavLocked = true;
     playSelect();
     const s = _limitState;
+    // palette/bg/bgmは実際の値（色コード・ファイル名）に解決してURLへ渡す。ゲーム側で
+    // limit-config.jsonを再フェッチせずに済ませるため（非同期取得の完了待ちを避ける）。
+    const palEntry = cfg.palettes[s.palette];
+    const bgEntry  = cfg.backgrounds[s.bg];
+    const bgmEntry = cfg.bgms[s.bgm];
+    const palParam = (s.palette === 'auto' || !palEntry || !palEntry.colors)
+      ? 'auto' : palEntry.colors.map(c => c.replace('#', '')).join(',');
+    const bgParam  = (s.bg === 'auto' || !bgEntry || !bgEntry.file) ? 'auto' : bgEntry.file;
+    const bgmParam = (s.bgm === 'auto' || !bgmEntry || !bgmEntry.file) ? 'auto' : bgmEntry.file;
     window.location.href =
-      `sphere-minesweeper.html?stage=${s.board}&mode=limit&tl=${s.tl}&lp=${s.lp}&hint=${s.hint}&nf=${s.nf ? 1 : 0}`;
+      `sphere-minesweeper.html?stage=${s.board}&mode=limit&tl=${s.tl}&lp=${s.lp}&hint=${s.hint}&nf=${s.nf ? 1 : 0}` +
+      `&pal=${encodeURIComponent(palParam)}&bgimg=${encodeURIComponent(bgParam)}&bgm=${encodeURIComponent(bgmParam)}`;
   });
 });
 
