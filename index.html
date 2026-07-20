@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <script src="js/tab-guard.js"></script>
 <script src="js/audio-settings.js"></script>
+<script src="js/limit-score.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Stellar Delete</title>
 <link rel="icon" href="assets/images/etc/favicon.ico">
@@ -1203,6 +1204,142 @@
   .records-row.top3 .rk { color: #e0925a; }
   .records-row .tm { flex: 1 1 auto; color: #00ffcc; font-size: clamp(13px,2vw,16px); letter-spacing: .04em; }
   .records-row .dt { flex: 0 0 auto; color: #789; font-size: clamp(10px,1.5vw,12px); }
+
+  /* ── LIMIT MODE 設定画面 ── */
+  .limit-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(11px,1.6vw,14px);
+    letter-spacing: .1em;
+    color: rgba(232,244,255,.55);
+    text-align: center;
+    margin: -8px 0 4px;
+  }
+  .limit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(10px,2vw,18px);
+    width: 100%;
+    padding: clamp(12px,2vh,18px) clamp(16px,3vw,24px);
+    border: 1.5px solid rgba(0,200,255,.35);
+    border-radius: 10px;
+    background: rgba(6,20,48,.5);
+    flex-wrap: wrap;
+  }
+  .limit-row-label {
+    flex: 0 0 auto;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: clamp(11px,1.6vw,14px);
+    letter-spacing: .15em;
+    color: var(--ice-white);
+  }
+  .limit-select {
+    flex: 1 1 auto;
+    max-width: 60%;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(11px,1.6vw,13px);
+    color: var(--accent);
+    background: rgba(0,20,50,.8);
+    border: 1px solid rgba(0,200,255,.4);
+    border-radius: 4px;
+    padding: 8px 10px;
+    outline: none;
+  }
+  .limit-loop-controls { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 220px; }
+  .limit-loop-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .limit-loop-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+    min-width: 44px; padding: 5px 6px;
+    font-family: 'Share Tech Mono', monospace;
+    background: rgba(0,20,50,.7);
+    border: 1px solid rgba(0,200,255,.35);
+    border-radius: 4px;
+    color: var(--ice-white);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .limit-loop-btn .n { font-size: 13px; font-weight: 700; }
+  .limit-loop-btn .pct { font-size: 9px; color: rgba(232,244,255,.55); }
+  .limit-loop-btn:hover { background: rgba(0,40,80,.85); border-color: var(--accent); }
+  .limit-loop-btn.active { background: rgba(0,80,140,.9); border-color: var(--accent); box-shadow: 0 0 10px rgba(0,200,255,.5); }
+  .limit-loop-btn.active .pct { color: var(--accent); }
+  .limit-loop-add {
+    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: .05em;
+    padding: 5px 10px;
+    background: rgba(40,10,60,.7);
+    border: 1px solid rgba(180,100,255,.5);
+    border-radius: 4px;
+    color: #d6aaff;
+    cursor: pointer;
+  }
+  .limit-loop-add:hover { background: rgba(60,16,90,.85); box-shadow: 0 0 10px rgba(180,100,255,.4); }
+  .limit-loop-value {
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    color: rgba(232,244,255,.75);
+  }
+  .limit-pct { color: var(--accent); }
+  .limit-toggle-group { display: flex; gap: 8px; }
+  .limit-toggle-btn {
+    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .1em;
+    padding: 8px 16px;
+    background: rgba(0,20,50,.7);
+    border: 1px solid rgba(0,200,255,.35);
+    border-radius: 4px;
+    color: rgba(232,244,255,.7);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .limit-toggle-btn:hover { border-color: var(--accent); }
+  .limit-toggle-btn.active { background: rgba(0,80,140,.9); border-color: var(--accent); color: var(--ice-white); box-shadow: 0 0 10px rgba(0,200,255,.5); }
+  .limit-feedback {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    width: 100%;
+    padding: clamp(14px,2.4vh,20px) 0;
+    border: 1.5px solid rgba(0,200,255,.35);
+    border-radius: 10px;
+    background: rgba(6,20,48,.6);
+  }
+  .limit-feedback-label {
+    font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: .3em;
+    color: rgba(232,244,255,.55);
+  }
+  .limit-feedback-score {
+    font-family: 'Orbitron', sans-serif; font-weight: 700;
+    font-size: clamp(24px,5vw,36px);
+    color: #ffd23c;
+    text-shadow: 0 0 16px rgba(255,210,60,.5);
+    letter-spacing: .04em;
+  }
+  .limit-feedback-bonus {
+    font-family: 'Share Tech Mono', monospace; font-size: clamp(13px,2vw,16px);
+    color: var(--accent);
+  }
+  .limit-feedback-stars { font-size: clamp(14px,2.2vw,18px); color: #ffd23c; letter-spacing: .1em; }
+  .limit-start-btn {
+    width: 100%;
+    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: clamp(14px,2.4vw,18px); letter-spacing: .3em;
+    padding: clamp(12px,2vh,16px) 0;
+    background: rgba(0,60,100,.6);
+    border: 1.5px solid var(--accent);
+    border-radius: 8px;
+    color: var(--ice-white);
+    cursor: pointer;
+    box-shadow: 0 0 18px rgba(0,200,255,.35);
+    transition: background .2s, box-shadow .2s;
+  }
+  .limit-start-btn:hover { background: rgba(0,90,150,.75); box-shadow: 0 0 26px rgba(0,200,255,.55); }
+  .limit-ranking-btn {
+    width: 100%;
+    font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .2em;
+    padding: 10px 0;
+    background: transparent;
+    border: 1px solid rgba(255,210,60,.5);
+    border-radius: 8px;
+    color: #ffd23c;
+    cursor: pointer;
+  }
+  .limit-ranking-btn:hover { background: rgba(255,210,60,.1); }
   /* REPLAY一覧の行（★お気に入り / 本体 / 🗑削除） */
   .replay-row { display: flex; align-items: stretch; gap: 6px; margin: 6px 0; }
   .replay-fav, .replay-del {
@@ -1401,6 +1538,64 @@
   </div>
 </div>
 
+<!-- LIMIT MODE 設定画面 -->
+<div id="limit-mode-modal" class="screen-overlay">
+  <div class="screen-title">LIMIT MODE</div>
+  <div class="screen-scroll" id="limit-scroll">
+    <div class="limit-sub">SET YOUR LIMITS. CHALLENGE YOURSELF.</div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">BOARD</span>
+      <select id="limit-board" class="limit-select"></select>
+    </div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">TIME LIMIT</span>
+      <select id="limit-time" class="limit-select"></select>
+    </div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">REPLAY COUNT</span>
+      <div class="limit-loop-controls">
+        <div class="limit-loop-btns" id="limit-loop-btns"></div>
+        <div class="limit-loop-btns">
+          <button type="button" class="limit-loop-add" data-add="10">+10</button>
+          <button type="button" class="limit-loop-add" data-add="100">+100</button>
+          <button type="button" class="limit-loop-add" data-add="reset">RESET</button>
+        </div>
+        <div class="limit-loop-value">周回数: <b id="limit-loop-value">1</b>　<span class="limit-pct" id="limit-loop-pct"></span></div>
+      </div>
+    </div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">HINT COUNT</span>
+      <select id="limit-hint" class="limit-select"></select>
+    </div>
+
+    <div class="limit-row">
+      <span class="limit-row-label">NO FLAG</span>
+      <div class="limit-toggle-group" id="limit-noflag-toggle">
+        <button type="button" class="limit-toggle-btn active" data-nf="0">OFF</button>
+        <button type="button" class="limit-toggle-btn" data-nf="1">ON</button>
+      </div>
+    </div>
+
+    <div class="limit-feedback">
+      <div class="limit-feedback-label">LIMIT SCORE</div>
+      <div class="limit-feedback-score" id="limit-score-display">0</div>
+      <div class="limit-feedback-bonus" id="limit-bonus-display">BONUS ×1.0</div>
+      <div class="limit-feedback-stars" id="limit-stars-display">☆☆☆☆☆</div>
+    </div>
+
+    <button type="button" class="limit-start-btn" id="limit-start-btn">START MISSION</button>
+    <button type="button" class="limit-ranking-btn" id="limit-ranking-open-btn">🏆 LIMIT RANKING</button>
+  </div>
+  <div class="screen-footer">
+    <button id="limit-mode-mode-btn">MODE SELECT</button>
+    <button id="limit-mode-title-btn">TITLE</button>
+  </div>
+</div>
+
 <!-- SOUND 設定画面 -->
 <div id="sound-modal" class="screen-overlay">
   <div class="screen-title">SOUND</div>
@@ -1498,6 +1693,17 @@
     <div id="records-list" style="max-height:52vh;overflow:auto;width:100%;"></div>
     <div class="modal-btns" style="margin-top:10px;">
       <button class="modal-btn" id="records-close">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIMIT MODE ランキング（専用単一・降順・top10） -->
+<div id="limit-ranking-modal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);align-items:center;justify-content:center;">
+  <div class="modal-box" style="max-width:min(460px,92vw);width:100%;">
+    <div class="modal-msg" style="font-family:'Orbitron',sans-serif;letter-spacing:.2em;color:#ffd23c;margin-bottom:10px;">LIMIT RANKING</div>
+    <div id="limit-ranking-list" style="max-height:52vh;overflow:auto;width:100%;"></div>
+    <div class="modal-btns" style="margin-top:10px;">
+      <button class="modal-btn" id="limit-ranking-close">CLOSE</button>
     </div>
   </div>
 </div>
@@ -2205,6 +2411,7 @@ function withDiscardConfirm(fn){
 const modeSelectModal = document.getElementById('mode-select-modal');
 const normalListModal = document.getElementById('normal-list-modal');
 const storyListModal  = document.getElementById('story-list-modal');
+const limitModeModal  = document.getElementById('limit-mode-modal');
 let _modesCache = null;
 let _normalStagesCache = null;
 
@@ -2257,6 +2464,7 @@ function renderModeSelect(modes){
       else if(id === 'story2'){ playSelect(); modeSelectModal.classList.remove('show'); openStory2List(); }
       else if(id === 'normal'){ playSelect(); modeSelectModal.classList.remove('show'); openNormalList(); }
       else if(id === 'noflag'){ playSelect(); modeSelectModal.classList.remove('show'); openNoflagList(); }
+      else if(id === 'limit'){ playSelect(); modeSelectModal.classList.remove('show'); openLimitMode(); }
       // 将来モードを追加する場合はここに分岐を足す
     });
   });
@@ -2377,6 +2585,147 @@ function openRecordsModal(stageId, noStrFn){
 }
 document.getElementById('records-close').addEventListener('click', ()=>{ document.getElementById('records-modal').style.display = 'none'; });
 
+// ── LIMIT MODE：制約設定ハイスコア挑戦モード ──
+// 倍率・baseScore・単位は全て data/limit-config.json 側で定義（js/limit-score.js が数値定数を持たない純関数群）。
+let _limitConfigCache = null;
+let _limitState = { board: null, tl: null, lp: 1, hint: null, nf: false };
+
+function fetchLimitConfig(){
+  if(_limitConfigCache) return Promise.resolve(_limitConfigCache);
+  return fetch('data/limit-config.json', {cache:'no-store'}).then(r => r.json()).then(cfg => {
+    _limitConfigCache = cfg;
+    return cfg;
+  });
+}
+
+function openLimitMode(){
+  fetchLimitConfig().then(cfg => {
+    renderLimitMode(cfg);
+    limitModeModal.classList.add('show');
+  });
+}
+
+function renderLimitMode(cfg){
+  const boardSel = document.getElementById('limit-board');
+  const boardIds = Object.keys(cfg.boards).map(Number).sort((a, b) => a - b);
+  boardSel.innerHTML = boardIds.map(id => `<option value="${id}">${cfg.boards[id].label}</option>`).join('');
+  if(_limitState.board == null || !cfg.boards[_limitState.board]) _limitState.board = boardIds[0];
+  boardSel.value = _limitState.board;
+
+  const timeSel = document.getElementById('limit-time');
+  const timeKeys = Object.keys(cfg.time).map(Number).sort((a, b) => b - a);
+  timeSel.innerHTML = timeKeys.map(t => `<option value="${t}">${t} sec — ${LimitScore.optionPercent(cfg.time[t])}</option>`).join('');
+  if(_limitState.tl == null || cfg.time[_limitState.tl] === undefined) _limitState.tl = timeKeys[0];
+  timeSel.value = _limitState.tl;
+
+  const hintSel = document.getElementById('limit-hint');
+  const hintKeys = Object.keys(cfg.hint).map(Number).sort((a, b) => b - a);
+  hintSel.innerHTML = hintKeys.map(h => `<option value="${h}">${h} — ${LimitScore.optionPercent(cfg.hint[h])}</option>`).join('');
+  if(_limitState.hint == null || cfg.hint[_limitState.hint] === undefined) _limitState.hint = hintKeys[0];
+  hintSel.value = _limitState.hint;
+
+  const loopBtnsEl = document.getElementById('limit-loop-btns');
+  const loopKeys = Object.keys(cfg.loop.table).map(Number).sort((a, b) => a - b);
+  loopBtnsEl.innerHTML = loopKeys.map(n => {
+    const pct = LimitScore.optionPercent(cfg.loop.table[n]);
+    return `<button type="button" class="limit-loop-btn" data-lp="${n}"><span class="n">${n}</span><span class="pct">${pct}</span></button>`;
+  }).join('');
+  loopBtnsEl.querySelectorAll('.limit-loop-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _limitState.lp = parseInt(btn.dataset.lp, 10);
+      updateLimitLoopUI(cfg);
+      updateLimitPreview(cfg);
+    });
+  });
+  document.querySelectorAll('#limit-scroll .limit-loop-add').forEach(btn => {
+    btn.onclick = () => {
+      const add = btn.dataset.add;
+      _limitState.lp = (add === 'reset')
+        ? cfg.loop.minLoops
+        : Math.min(cfg.loop.maxLoops, _limitState.lp + parseInt(add, 10));
+      updateLimitLoopUI(cfg);
+      updateLimitPreview(cfg);
+    };
+  });
+
+  document.querySelectorAll('#limit-noflag-toggle .limit-toggle-btn').forEach(btn => {
+    btn.onclick = () => {
+      _limitState.nf = btn.dataset.nf === '1';
+      document.querySelectorAll('#limit-noflag-toggle .limit-toggle-btn').forEach(b => b.classList.toggle('active', b === btn));
+      updateLimitPreview(cfg);
+    };
+  });
+
+  boardSel.onchange = () => { _limitState.board = boardSel.value; updateLimitPreview(cfg); };
+  timeSel.onchange  = () => { _limitState.tl = parseInt(timeSel.value, 10); updateLimitPreview(cfg); };
+  hintSel.onchange  = () => { _limitState.hint = parseInt(hintSel.value, 10); updateLimitPreview(cfg); };
+
+  updateLimitLoopUI(cfg);
+  updateLimitPreview(cfg);
+}
+
+function updateLimitLoopUI(cfg){
+  document.querySelectorAll('#limit-loop-btns .limit-loop-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.lp, 10) === _limitState.lp);
+  });
+  document.getElementById('limit-loop-value').textContent = _limitState.lp;
+  document.getElementById('limit-loop-pct').textContent = LimitScore.optionPercent(LimitScore.loopMult(_limitState.lp, cfg.loop));
+}
+
+// 設定変更のたびに呼ばれる：LIMIT SCORE / BONUS ×N / DIFFICULTY をリアルタイム更新
+// （このモードの気持ちよさ＝数字が増えていくのを見せる部分）。
+function updateLimitPreview(cfg){
+  const settings = { tl: _limitState.tl, lp: _limitState.lp, hint: _limitState.hint, nf: _limitState.nf };
+  const bonusMult = LimitScore.computeBonusMult(settings, cfg);
+  const score = Math.floor(LimitScore.computeScore(_limitState.board, settings, cfg));
+  document.getElementById('limit-score-display').textContent = LimitScore.formatScore(score, cfg);
+  document.getElementById('limit-bonus-display').textContent = 'BONUS ' + LimitScore.formatBonus(bonusMult);
+  const stars = LimitScore.difficultyStars(bonusMult, cfg);
+  document.getElementById('limit-stars-display').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+}
+
+document.getElementById('limit-start-btn').addEventListener('click', () => {
+  if(_titleNavLocked) return;
+  const cfg = _limitConfigCache;
+  if(!cfg) return;
+  withDiscardConfirm(function(){
+    _titleNavLocked = true;
+    playSelect();
+    const s = _limitState;
+    window.location.href =
+      `sphere-minesweeper.html?stage=${s.board}&mode=limit&tl=${s.tl}&lp=${s.lp}&hint=${s.hint}&nf=${s.nf ? 1 : 0}`;
+  });
+});
+
+document.getElementById('limit-ranking-open-btn').addEventListener('click', openLimitRankingModal);
+document.getElementById('limit-ranking-close').addEventListener('click', () => {
+  document.getElementById('limit-ranking-modal').style.display = 'none';
+});
+
+// LIMIT専用の単一ランキング（降順・stellarDeleteRanking_limit）。設定スナップショットも表示。
+function openLimitRankingModal(){
+  playSelect();
+  fetchLimitConfig().then(cfg => {
+    let records = [];
+    try{ records = JSON.parse(localStorage.getItem(cfg.rankingKey) || '[]'); }catch(e){}
+    records = records.slice().sort((a, b) => b.score - a.score);
+    const listEl = document.getElementById('limit-ranking-list');
+    if(!records.length){
+      listEl.innerHTML = '<div style="color:#889;padding:16px;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:12px;">まだ記録がありません</div>';
+    } else {
+      listEl.innerHTML = records.slice(0, cfg.rankingMax || 10).map((r, i) => {
+        const rank = i + 1;
+        const topCls = rank <= 3 ? ' top' + rank : '';
+        const dt = r.ts ? fmtLocalDateTime(r.ts) : '';
+        const boardLabel = (cfg.boards[r.board] && cfg.boards[r.board].label) || ('STAGE ' + r.board);
+        const settingsStr = `${boardLabel} / ${r.tl}s / ${r.lp}周 / H${r.hint} / ${r.nf ? 'NF' : '-'}`;
+        return `<div class="records-row${topCls}"><span class="rk">${rank}</span><span class="tm">${LimitScore.formatScore(r.score, cfg)}</span><span class="dt">${settingsStr}<br>${dt}</span></div>`;
+      }).join('');
+    }
+    document.getElementById('limit-ranking-modal').style.display = 'flex';
+  });
+}
+
 // STORY MODE / STORY MODE 2 共通：EPISODESを、キャラ画像＋エピソード文（白字）のリストで表示。
 // 行タップは従来どおり該当novelへ遷移。未解放EPは非表示（先頭EPは常時表示）。
 // #story-list-modal・#story-list-title・#story-listを両モードで共用し、呼び出しごとに中身を差し替える。
@@ -2427,14 +2776,17 @@ document.getElementById('normal-list-mode-btn').addEventListener('click', ()=>{ 
 document.getElementById('normal-list-title-btn').addEventListener('click', ()=>{ playSelect(); normalListModal.classList.remove('show'); });
 document.getElementById('story-list-mode-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); openModeSelect(); });
 document.getElementById('story-list-title-btn').addEventListener('click', ()=>{ playSelect(); storyListModal.classList.remove('show'); });
+document.getElementById('limit-mode-mode-btn').addEventListener('click', ()=>{ playSelect(); limitModeModal.classList.remove('show'); openModeSelect(); });
+document.getElementById('limit-mode-title-btn').addEventListener('click', ()=>{ playSelect(); limitModeModal.classList.remove('show'); });
 
-// ?normal=1 / ?noflag=1 / ?story=1 / ?story2=1 で各リストを直接開く（クリア後・ノベル戻り等の戻り先）。タイトル階層なので title BGM のままでよい。
+// ?normal=1 / ?noflag=1 / ?story=1 / ?story2=1 / ?limit=1 で各リストを直接開く（クリア後・戻り先）。タイトル階層なので title BGM のままでよい。
 (function(){
   const p = new URLSearchParams(window.location.search);
   if(p.get('normal') === '1') openNormalList();
   if(p.get('noflag') === '1') openNoflagList();
   if(p.get('story')  === '1') openStoryList();
   if(p.get('story2') === '1') openStory2List();
+  if(p.get('limit')  === '1') openLimitMode();
 })();
 
 // RANKING RESET（隠しコマンド：長押し）
