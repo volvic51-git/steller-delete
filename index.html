@@ -1205,14 +1205,22 @@
   .records-row .tm { flex: 1 1 auto; color: #00ffcc; font-size: clamp(13px,2vw,16px); letter-spacing: .04em; }
   .records-row .dt { flex: 0 0 auto; color: #789; font-size: clamp(10px,1.5vw,12px); }
 
-  /* ── LIMIT MODE 設定画面 ── */
+  /* ── LIMIT MODE 設定画面 ──
+     スマホ縦画面で全項目が1画面に収まるよう、共通の.screen-overlay/.screen-title/
+     .screen-scroll/.screen-footerの余白をこの画面だけID/id経由で半分程度に詰める
+     （他画面=STORY/SIMPLE/SOUND等の.screen-*は共用クラスなので触らない）。 */
+  #limit-mode-modal { padding: clamp(28px,5vh,45px) 0 clamp(36px,6vh,55px); }
+  #limit-mode-modal .screen-title { margin-bottom: clamp(8px,1.5vh,14px); }
+  #limit-scroll { gap: clamp(7px,1.2vh,11px); }
+  #limit-mode-modal .screen-footer { margin-top: clamp(8px,1.5vh,13px); }
+
   .limit-sub {
     font-family: 'Rajdhani', sans-serif;
     font-size: clamp(11px,1.6vw,14px);
     letter-spacing: .1em;
     color: rgba(232,244,255,.55);
     text-align: center;
-    margin: -8px 0 4px;
+    margin: -4px 0 2px;
   }
   .limit-row {
     display: flex;
@@ -1220,7 +1228,7 @@
     justify-content: space-between;
     gap: clamp(10px,2vw,18px);
     width: 100%;
-    padding: clamp(12px,2vh,18px) clamp(16px,3vw,24px);
+    padding: clamp(6px,1vh,9px) clamp(16px,3vw,24px);
     border: 1.5px solid rgba(0,200,255,.35);
     border-radius: 10px;
     background: rgba(6,20,48,.5);
@@ -1249,7 +1257,7 @@
   .limit-toggle-group { display: flex; gap: 8px; }
   .limit-toggle-btn {
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .1em;
-    padding: 8px 16px;
+    padding: 4px 16px;
     background: rgba(0,20,50,.7);
     border: 1px solid rgba(0,200,255,.35);
     border-radius: 4px;
@@ -1260,33 +1268,32 @@
   .limit-toggle-btn:hover { border-color: var(--accent); }
   .limit-toggle-btn.active { background: rgba(0,80,140,.9); border-color: var(--accent); color: var(--ice-white); box-shadow: 0 0 10px rgba(0,200,255,.5); }
   .limit-feedback {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
     width: 100%;
-    padding: clamp(14px,2.4vh,20px) 0;
+    padding: clamp(7px,1.2vh,10px) 0;
     border: 1.5px solid rgba(0,200,255,.35);
     border-radius: 10px;
     background: rgba(6,20,48,.6);
   }
   .limit-feedback-label {
     font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: .3em;
-    color: rgba(232,244,255,.55);
+    color: var(--ice-white);
   }
   .limit-feedback-score {
     font-family: 'Orbitron', sans-serif; font-weight: 700;
     font-size: clamp(24px,5vw,36px);
-    color: #ffd23c;
-    text-shadow: 0 0 16px rgba(255,210,60,.5);
+    color: var(--ice-white);
+    text-shadow: 0 0 16px rgba(232,244,255,.5);
     letter-spacing: .04em;
   }
   .limit-feedback-bonus {
     font-family: 'Share Tech Mono', monospace; font-size: clamp(13px,2vw,16px);
     color: var(--accent);
   }
-  .limit-feedback-stars { font-size: clamp(14px,2.2vw,18px); color: #ffd23c; letter-spacing: .1em; }
   .limit-start-btn {
     width: 100%;
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: clamp(14px,2.4vw,18px); letter-spacing: .3em;
-    padding: clamp(12px,2vh,16px) 0;
+    padding: clamp(6px,1vh,8px) 0;
     background: rgba(0,60,100,.6);
     border: 1.5px solid var(--accent);
     border-radius: 8px;
@@ -1299,7 +1306,7 @@
   .limit-ranking-btn {
     width: 100%;
     font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: .2em;
-    padding: 10px 0;
+    padding: 5px 0;
     background: transparent;
     border: 1px solid rgba(255,210,60,.5);
     border-radius: 8px;
@@ -1540,10 +1547,9 @@
     </div>
 
     <div class="limit-feedback">
-      <div class="limit-feedback-label">LIMIT SCORE</div>
+      <div class="limit-feedback-label">EXPECT THE SCORE</div>
       <div class="limit-feedback-score" id="limit-score-display">0</div>
       <div class="limit-feedback-bonus" id="limit-bonus-display">BONUS ×1.0</div>
-      <div class="limit-feedback-stars" id="limit-stars-display">☆☆☆☆☆</div>
     </div>
 
     <button type="button" class="limit-start-btn" id="limit-start-btn">START MISSION</button>
@@ -2623,8 +2629,6 @@ function updateLimitPreview(cfg){
   const score = Math.floor(LimitScore.computeScore(_limitState.board, settings, cfg));
   document.getElementById('limit-score-display').textContent = LimitScore.formatScore(score, cfg);
   document.getElementById('limit-bonus-display').textContent = 'BONUS ' + LimitScore.formatBonus(bonusMult);
-  const stars = LimitScore.difficultyStars(bonusMult, cfg);
-  document.getElementById('limit-stars-display').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars);
 }
 
 document.getElementById('limit-start-btn').addEventListener('click', () => {

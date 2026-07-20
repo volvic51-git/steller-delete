@@ -28,12 +28,15 @@ window.LimitScore = (() => {
   }
 
   // settings = { tl, lp, hint, nf(bool) }
+  // NoFlag ONの時は「NoFlag以外の合計倍率」自体をNoFlagの倍率として使う（＝他の合計倍率を2乗する）。
+  // OFFの時はconfig.noflag.off（通常1.0）をそのまま掛けるだけ。
   function computeBonusMult(settings, config){
-    const timeMult = tableLookup(config.time, settings.tl, 1);
-    const lpMult   = loopMult(settings.lp, config.loop);
-    const hintMult = tableLookup(config.hint, settings.hint, 1);
-    const nfMult   = settings.nf ? config.noflag.on : config.noflag.off;
-    return timeMult * lpMult * hintMult * nfMult;
+    const timeMult  = tableLookup(config.time, settings.tl, 1);
+    const lpMult    = loopMult(settings.lp, config.loop);
+    const hintMult  = tableLookup(config.hint, settings.hint, 1);
+    const otherMult = timeMult * lpMult * hintMult;
+    const nfMult    = settings.nf ? otherMult : config.noflag.off;
+    return otherMult * nfMult;
   }
 
   function computeScore(boardId, settings, config){
@@ -46,7 +49,10 @@ window.LimitScore = (() => {
     return Math.round(mult * 100) + '%';
   }
 
+  // Number.prototype.toFixedは10^21以上だと指数表記のtoString相当にフォールバックして
+  // 表示が崩れるため、NoFlag(2乗)込みで巨大化しうるbonusMultは指数表記に切り替える。
   function formatBonus(mult){
+    if(mult >= 1e15) return '×' + mult.toExponential(2);
     return '×' + mult.toFixed(1);
   }
 
@@ -65,15 +71,8 @@ window.LimitScore = (() => {
     return v.toFixed(3) + ' ' + unit.name;
   }
 
-  function difficultyStars(bonusMult, config){
-    const buckets = config.difficultyStars.slice().sort((a, b) => a.min - b.min);
-    let stars = buckets.length ? buckets[0].stars : 1;
-    for(const b of buckets){ if(bonusMult >= b.min) stars = b.stars; else break; }
-    return stars;
-  }
-
   return {
     computeBonusMult, computeScore, optionPercent, formatBonus,
-    formatScore, difficultyStars, loopMult, factorMult: tableLookup
+    formatScore, loopMult, factorMult: tableLookup
   };
 })();
