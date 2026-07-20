@@ -2607,7 +2607,12 @@ function openLimitMode(){
 
 function renderLimitMode(cfg){
   const boardSel = document.getElementById('limit-board');
-  const boardIds = Object.keys(cfg.boards).map(Number).sort((a, b) => a - b);
+  // 表示順は cfg.boardOrder を優先する（JSのオブジェクトキーは整数文字列だと常に数値昇順で
+  // 列挙されてしまうため、JSON側でboardsの記述順を変えるだけでは並びを制御できない）。
+  // boardOrderが無い/古いデータには数値昇順のフォールバックを残す。
+  const boardIds = Array.isArray(cfg.boardOrder) && cfg.boardOrder.length
+    ? cfg.boardOrder.filter(id => cfg.boards[id])
+    : Object.keys(cfg.boards).map(Number).sort((a, b) => a - b);
   boardSel.innerHTML = boardIds.map(id => `<option value="${id}">${cfg.boards[id].label}</option>`).join('');
   if(_limitState.board == null || !cfg.boards[_limitState.board]) _limitState.board = boardIds[0];
   boardSel.value = _limitState.board;

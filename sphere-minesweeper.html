@@ -5493,27 +5493,10 @@ if(window.visualViewport){
       // 自前で用意した信頼済みデータなので改竄検知(hash再検証)は行わない（?boot=factoryのFactory
       // 盤面パイプラインとは別物。あちらは外部持ち込み盤面向け）。dims/mineCountは盤面ファイルの
       // paramsを正とする（stage-params.jsonのgrid_col/grid_row/minesは表示用の参考値）。
-      if(stage.boardSource){
-        fetch(stage.boardSource)
-          .then(r => r.json())
-          .then(bd => {
-            ROWS = bd.params.rows; COLS = bd.params.cols;
-            window._stageMines = bd.params.mineCount;
-            window._seedPoolBoard = bd;
-            window._seedPoolMode = true;
-            restartGame();
-            _cutinStageStart();
-          })
-          .catch(e => {
-            console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
-            window._seedPoolMode = false;
-            restartGame();
-            _cutinStageStart();
-          });
-        return;
-      }
-
       // ===== LIMIT MODE 上書き（ステージ設定を全て適用し終えた後に、プレイヤー選択の制約で上書きする）=====
+      // ⚠️ 必ず下の boardSource（seedプール盤面。EXステージ等）分岐より前に置くこと。
+      // boardSource分岐はrestartGame()を呼んでreturnするため、後ろに置くとEXステージ選択時に
+      // LIMIT上書きが一切適用されないまま盤面が構築されてしまう。
       if(urlParams.get('mode') === 'limit'){
         const limTl   = parseInt(urlParams.get('tl'),   10);
         const limLp   = parseInt(urlParams.get('lp'),   10);
@@ -5575,6 +5558,26 @@ if(window.visualViewport){
           .then(r => r.json())
           .then(cfg => { window._limitConfig = cfg; })
           .catch(() => { console.warn('limit-config.jsonの読込に失敗しました'); });
+      }
+
+      if(stage.boardSource){
+        fetch(stage.boardSource)
+          .then(r => r.json())
+          .then(bd => {
+            ROWS = bd.params.rows; COLS = bd.params.cols;
+            window._stageMines = bd.params.mineCount;
+            window._seedPoolBoard = bd;
+            window._seedPoolMode = true;
+            restartGame();
+            _cutinStageStart();
+          })
+          .catch(e => {
+            console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
+            window._seedPoolMode = false;
+            restartGame();
+            _cutinStageStart();
+          });
+        return;
       }
 
       // 設定を反映してリスタート

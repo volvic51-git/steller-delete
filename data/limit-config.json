@@ -19,16 +19,18 @@
     { "exp": 68, "name": "無量大数" }
   ],
   "boards": {
-    "1":  { "label": "STAGE 01", "baseScore": 1000 },
-    "2":  { "label": "STAGE 02", "baseScore": 1200 },
-    "3":  { "label": "STAGE 03", "baseScore": 1500 },
-    "4":  { "label": "STAGE 04", "baseScore": 1800 },
-    "5":  { "label": "STAGE 05", "baseScore": 2200 },
-    "6":  { "label": "STAGE 06", "baseScore": 2600 },
-    "7":  { "label": "STAGE 07", "baseScore": 3200 },
-    "8":  { "label": "STAGE 08", "baseScore": 4000 },
-    "31": { "label": "STAGE 09", "baseScore": 6000 }
+    "31": { "label": "12x 7  840%", "baseScore": 840 },
+    "1":  { "label": "16x 8  1536%", "baseScore": 1536 },
+    "2":  { "label": "24x12  12960%", "baseScore": 12960 },
+    "3":  { "label": "32x14  40320%", "baseScore": 40320 },
+    "4":  { "label": "40x18  108000%", "baseScore": 108000 },
+    "5":  { "label": "48x22  232320%", "baseScore": 232320 },
+    "6":  { "label": "56x26  436800%", "baseScore": 436800 },
+    "7":  { "label": "64x30  768000%", "baseScore": 768000 },
+    "8":  { "label": "72x34  1224000%", "baseScore": 1224000 },
+    "11": { "label": "144x72  10000000%", "baseScore": 10000000 }
   },
+  "boardOrder": ["31", "1", "2", "3", "4", "5", "6", "7", "8", "11"],
   "time": {
     "3600": 1.0,
     "3000": 1.3,
