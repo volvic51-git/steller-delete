@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <script src="js/tab-guard.js"></script>
 <script src="js/audio-settings.js"></script>
+<script src="js/limit-score.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>球体マインスイーパー</title>
 <link rel="icon" href="assets/images/etc/favicon.ico">
@@ -1153,7 +1154,28 @@ function showRescueScreen(){
   // ランキング保存・順位表示
   const stageId = new URLSearchParams(window.location.search).get('stage');
   const rankEl  = document.getElementById('rescue-rank');
-  if(stageId && !window._cutinBlocksRanking){  // プレイ中カットインのあるステージのみランキング対象外
+  const isLimitMode = window._limitMode || window._resumeLimitMode;
+  if(isLimitMode){
+    // LIMIT MODE：タイムではなくスコアでLIMIT専用ランキングへ記録
+    const limCfg      = window._limitConfig;
+    const limBoardId  = window._limitBoardId || stageId;
+    const limSettings = window._limitSettings;
+    if(limCfg && limSettings){
+      const limScore = Math.floor(LimitScore.computeScore(limBoardId, limSettings, limCfg));
+      document.getElementById('rescue-time').textContent = LimitScore.formatScore(limScore, limCfg);
+      const limRank = addLimitRecord(limScore, limBoardId, limSettings, limCfg);
+      if(limRank === 1){
+        rankEl.innerHTML = '<span style="color:#ffd700;">👑 NEW RECORD!　BEST1 達成！</span>';
+      } else if(limRank !== null){
+        rankEl.innerHTML = `<span style="color:#00ffcc;">BEST${limRank} 更新！</span>`;
+      } else {
+        rankEl.textContent = '';
+      }
+    } else {
+      console.warn('LIMIT MODE: limit-config.json未読込のためスコア計算をスキップしました');
+      rankEl.textContent = '';
+    }
+  } else if(stageId && !window._cutinBlocksRanking){  // プレイ中カットインのあるステージのみランキング対象外
     const rank = addRankingRecord(stageId, clearTimeSec);
     if(rank === 1){
       rankEl.innerHTML = '<span style="color:#ffd700;">👑 NEW RECORD!　BEST1 達成！</span>';
@@ -1186,16 +1208,19 @@ function updateRescueButtons(){
   const isStory2Mode = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
   const isStoryLike  = isStoryMode || isStory2Mode;
   const isNormalMode = (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode;
+  const isLimitMode  = (new URLSearchParams(window.location.search).get('mode') === 'limit')  || !!window._resumeLimitMode;
   const btnNovel  = document.getElementById('rescue-btn-novel');
   const btnSelect = document.getElementById('rescue-btn-select');
   const btnTitle  = document.getElementById('rescue-btn-title');
   const btnRetry  = document.getElementById('rescue-btn-retry');
   const btnEpisode = document.getElementById('rescue-btn-episode');
-  // NORMAL は「STAGE」ボタンで NORMAL/NOFLAG リストへ戻す。物語系は EPISODE ボタンで各EPISODESリストへ。
+  // NORMALは「STAGE」ボタンでNORMAL/NOFLAGリストへ、LIMITはLIMIT MODE画面へ。物語系はEPISODEボタンで各EPISODESリストへ。
   if(btnSelect) btnSelect.onclick = ()=>{
-    window.location.href = isNormalMode
-      ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
-      : 'index.html?select=1';
+    window.location.href = isLimitMode
+      ? 'index.html?limit=1'
+      : isNormalMode
+        ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
+        : 'index.html?select=1';
   };
   if(btnEpisode) btnEpisode.onclick = ()=>{
     window.location.href = isStory2Mode ? 'index.html?story2=1' : 'index.html?story=1';
@@ -3490,10 +3515,11 @@ function executeConfirmedAction(){
     closeSettingsMenu();
     restartGame();
   } else if(action === 'select'){
-    // STORY/STORY2 はそれぞれのEPISODES画面へ、それ以外は NORMAL/NOFLAG リストへ。
+    // STORY/STORY2 はそれぞれのEPISODES画面へ、LIMITはLIMIT MODE画面へ、それ以外は NORMAL/NOFLAG リストへ。
     const isStory  = (new URLSearchParams(window.location.search).get('mode') === 'story')  || !!window._resumeStoryMode;
     const isStory2 = (new URLSearchParams(window.location.search).get('mode') === 'story2') || !!window._resumeStory2Mode;
-    window.location.href = isStory ? 'index.html?story=1' : isStory2 ? 'index.html?story2=1' : (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
+    const isLimit  = (new URLSearchParams(window.location.search).get('mode') === 'limit')   || !!window._resumeLimitMode;
+    window.location.href = isStory ? 'index.html?story=1' : isStory2 ? 'index.html?story2=1' : isLimit ? 'index.html?limit=1' : (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1');
   } else if(action === 'title'){
     window.location.href = 'index.html';
   }
@@ -3883,6 +3909,9 @@ function saveSuspend(){
       isStoryMode: new URLSearchParams(window.location.search).get('mode') === 'story',
       isStory2Mode: new URLSearchParams(window.location.search).get('mode') === 'story2',
       isNormalMode: (new URLSearchParams(window.location.search).get('mode') === 'normal') || !!window._resumeNormalMode,
+      limitMode: !!window._limitMode,
+      limitBoardId: window._limitBoardId ?? null,
+      limitSettings: window._limitSettings ?? null,
       novelAfterClear: window._novelAfterClear ?? null,
       // stageEX1/EX2（seedプール）・Factory盤面の起動モードを保存する。これが無いと、
       // ?boot=resumeはapplyStageParamを通らないためwindow._seedPoolMode/_factoryModeが
@@ -3983,6 +4012,17 @@ async function resumeSuspend(rec){
   window._resumeStoryMode = !!m.isStoryMode;            // 終了画面のUI分岐（NEXT+TITLE）に使う
   window._resumeStory2Mode = !!m.isStory2Mode;          // 同上（STORY MODE 2版）
   window._resumeNormalMode = !!m.isNormalMode;          // 終了画面のSTAGEボタンをNORMALリスト(?normal=1)へ戻すために使う
+  window._resumeLimitMode = !!m.limitMode;               // 終了画面のスコア計算・LIMITランキング書込みに使う
+  window._limitBoardId = m.limitBoardId ?? null;
+  window._limitSettings = m.limitSettings ?? null;
+  if(window._resumeLimitMode){
+    // ?boot=resume は applyStageParam を通らないため、ここで別途 limit-config.json を読み込む
+    // （これが無いとクリア画面のスコア計算が config undefined で落ちる）
+    fetch('data/limit-config.json', {cache:'no-store'})
+      .then(r => r.json())
+      .then(cfg => { window._limitConfig = cfg; })
+      .catch(() => console.warn('limit-config.jsonの読込に失敗しました（resume）'));
+  }
   // stageEX1/EX2（seedプール）・Factory盤面のモードを復元する（RESTART後の次回idleクリックが
   // 誤って通常のリアルタイム生成経路に落ちないようにするため。詳細はsaveSuspend側のコメント参照）。
   window._seedPoolMode = !!m.seedPoolMode;
@@ -4242,6 +4282,27 @@ function addRankingRecord(stageId, timeSec){
   records.sort((a,b) => a.time - b.time);
   records.splice(10);
   try{ localStorage.setItem(_rankingKey(stageId), JSON.stringify(records)); }catch(e){}
+  const rank = records.indexOf(rec) + 1;
+  return rank > 0 ? rank : null;
+}
+
+// LIMIT MODE専用の単一ランキング（既存addRankingRecordは昇順・stage別のため流用不可）。
+// 降順（高スコアほど上位）・設定スナップショットも保存（「どう縛ったか」を後で見られるように）。
+function addLimitRecord(score, boardId, settings, config){
+  const key = (config && config.rankingKey) || 'stellarDeleteRanking_limit';
+  const max = (config && config.rankingMax) || 10;
+  let records = [];
+  try{ records = JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){}
+  const rec = {
+    score, board: boardId, tl: settings.tl, lp: settings.lp,
+    hint: settings.hint, nf: settings.nf,
+    pal: settings.pal ?? 'auto', bg: settings.bg ?? 'auto', bgm: settings.bgm ?? 'auto',
+    ts: new Date().toISOString()
+  };
+  records.push(rec);
+  records.sort((a, b) => b.score - a.score); // 降順
+  records.splice(max);
+  try{ localStorage.setItem(key, JSON.stringify(records)); }catch(e){}
   const rank = records.indexOf(rec) + 1;
   return rank > 0 ? rank : null;
 }
@@ -4718,14 +4779,16 @@ function updateMsgButtons(){
   const btnSelect = document.getElementById('msg-btn-select');
   if(!btnSelect) return;
   btnSelect.style.display = isStoryLike ? 'none' : '';
-  // NORMAL/NO FLAGはそれぞれのリスト(?normal=1 / ?noflag=1)へ戻す（rescue-btn-selectと同じ規約）。
-  // 以前は常に index.html?select=1（STORYの固定カルーセル）へ飛ばしていたため、
-  // SIMPLE/NO FLAGでゲームオーバーになるとSTORY側の画面に迷い込むバグがあった。
+  // NORMAL/NO FLAGはそれぞれのリスト(?normal=1 / ?noflag=1)へ、LIMITはLIMIT MODE画面(?limit=1)へ戻す
+  // （rescue-btn-selectと同じ規約）。以前は常に index.html?select=1（STORYの固定カルーセル）へ
+  // 飛ばしていたため、SIMPLE/NO FLAG/LIMITでゲームオーバーになるとSTORY側の画面に迷い込むバグがあった。
   const isNormalMode = (mode === 'normal') || !!window._resumeNormalMode;
+  const isLimitMode  = (mode === 'limit')  || !!window._resumeLimitMode;
   btnSelect.onclick = ()=>{
-    window.location.href = isNormalMode
-      ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
-      : 'index.html?select=1';
+    window.location.href = isLimitMode ? 'index.html?limit=1'
+      : isNormalMode
+        ? (gameRule === 'noflag' ? 'index.html?noflag=1' : 'index.html?normal=1')
+        : 'index.html?select=1';
   };
 }
 
@@ -4941,6 +5004,7 @@ function restartGame(){
   window._resumeStoryMode = false; // 中断復元由来のSTORY判定フラグをリセット（resumeSuspendが必要なら再設定）
   window._resumeStory2Mode = false; // 同上（STORY MODE 2版）
   window._resumeNormalMode = false; // 中断復元由来のNORMAL判定フラグをリセット（resumeSuspendが必要なら再設定）
+  window._resumeLimitMode = false; // 同上（LIMIT MODE版。RETRYで次ゲームに持ち越さない）
   stopBGM();
   if(window._bgmSwitched && window._stageBgmFile){
     SND.bgm.src = 'assets/audio/' + window._stageBgmFile; // 進行度切替後のRETRYは元曲に戻す
@@ -5299,17 +5363,22 @@ if(window.visualViewport){
       // novelAfterClear 保存（クリア後「つづきを見る」ボタンの遷移先）
       window._novelAfterClear = stage.novelAfterClear || null;
 
-      // NORMAL MODE: 盤面等は stage-params を流用しつつ、キャラは 011〜020 からランダムに差し替え。
+      // NORMAL MODE / LIMIT MODE: 盤面等は stage-params を流用しつつ、キャラは 011〜020 からランダムに差し替え。
       // 物語進行ではないので novelAfterClear は無効化（クリア画面に NEXT を出さない）。
       // ランダム値はページ読込時にここで一度だけ確定し、以降は currentCharacter に保持される
       // （RETRYでも同一）。?boot=replay/resume ではこのブロックは走らず、記録済み charId を復元するので再現も一致。
       // stageEX（id:10）/ stageEX2（id:11）、およびそのノーフラッグ版ミラー（id:20/21）は
       // キャラ固定の例外（stage-params.json の charId/novelAfterClear をそのまま使う）。
-      // stage9（SIMPLE:31 / NO FLAG:32、12x7周回ステージ）も同様にEX系と並ぶ特別枠として固定。
-      // それ以外のSIMPLE MODEステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
+      // stage9（SIMPLE:31 / NO FLAG:32、12x7周回ステージ）もSIMPLE/NOFLAGでは同様に固定。
+      // それ以外のSIMPLE/LIMITステージは、101〜199に実在するIDからランダム選出（今後のキャラ追加を見込んだ範囲。
       // 011〜020は旧プール・上限10体で頭打ちだったため移行）。
+      // ※LIMIT MODEはstage9(31)もランダム対象にする（SIMPLEとは除外リストを分ける。EX(11)のみ固定のまま）。
       const _exFixedCharIds = [10, 11, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32];
-      if(urlParams.get('mode') === 'normal' && !_exFixedCharIds.includes(Number(stage.id))){
+      const _limitExFixedCharIds = [11];
+      const _mode = urlParams.get('mode');
+      const _isCharRandomMode = (_mode === 'normal' && !_exFixedCharIds.includes(Number(stage.id)))
+                              || (_mode === 'limit'  && !_limitExFixedCharIds.includes(Number(stage.id)));
+      if(_isCharRandomMode){
         const pool = CHARACTER_LIST.filter(c => {
           const n = parseInt(c.id, 10);
           return n >= 101 && n <= 199;
@@ -5434,29 +5503,159 @@ if(window.visualViewport){
       // 自前で用意した信頼済みデータなので改竄検知(hash再検証)は行わない（?boot=factoryのFactory
       // 盤面パイプラインとは別物。あちらは外部持ち込み盤面向け）。dims/mineCountは盤面ファイルの
       // paramsを正とする（stage-params.jsonのgrid_col/grid_row/minesは表示用の参考値）。
-      if(stage.boardSource){
-        fetch(stage.boardSource)
+      // ===== LIMIT MODE 上書き（ステージ設定を全て適用し終えた後に、プレイヤー選択の制約で上書きする）=====
+      // ⚠️ 必ず下の boardSource（seedプール盤面。EXステージ等）分岐より前に置くこと。
+      // boardSource分岐はrestartGame()を呼んでreturnするため、後ろに置くとEXステージ選択時に
+      // LIMIT上書きが一切適用されないまま盤面が構築されてしまう。
+      // 盤面構築・起動処理（LIMIT／通常の両経路から呼ぶ共通処理）。
+      const _startBoardAndGame = () => {
+        if(stage.boardSource){
+          fetch(stage.boardSource)
+            .then(r => r.json())
+            .then(bd => {
+              ROWS = bd.params.rows; COLS = bd.params.cols;
+              window._stageMines = bd.params.mineCount;
+              window._seedPoolBoard = bd;
+              window._seedPoolMode = true;
+              restartGame();
+              _cutinStageStart();
+            })
+            .catch(e => {
+              console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
+              window._seedPoolMode = false;
+              restartGame();
+              _cutinStageStart();
+            });
+          return;
+        }
+        restartGame();
+        _cutinStageStart();
+      };
+
+      if(urlParams.get('mode') === 'limit'){
+        const limTlRaw = urlParams.get('tl');
+        const limTl    = (limTlRaw === 'none') ? 'none' : parseInt(limTlRaw, 10);
+        const limLp    = parseInt(urlParams.get('lp'),   10);
+        const limHint  = parseInt(urlParams.get('hint'), 10);
+        const limNf    = urlParams.get('nf') === '1';
+        // BOARD COLOR/BACKGROUND/BGMはラベルの元になるキーのまま受け取る（'auto'=ステージ既定）。
+        // 実際の色/ファイルはdata/limit-config.jsonを見てラベルと一緒に解決する
+        // （URLにファイル名を直書きしない＝表示名の管理をJSON側に一本化するため）。
+        const limPalKey = urlParams.get('pal')   || 'auto';
+        const limBgKey  = urlParams.get('bgimg') || 'auto';
+        const limBgmKey = urlParams.get('bgm')   || 'auto';
+
+        // 制限時間：'none'なら制限時間モード自体をOFFにし、ゲージも非表示にする。それ以外は
+        // 通し（_loopTimeLimits=nullで周回をまたいでもtotalTimeが一定になる。remainingTimeは
+        // startTimer内でcurrentLoop===1の時だけリセットされる既存挙動を利用）。
+        timeLimitMode = (limTl !== 'none');
+        window._loopTimeLimits = null;
+        const limTlBtn = document.getElementById('time-limit-btn');
+        const limGaugeEl = document.getElementById('time-limit-gauge');
+        if(timeLimitMode){
+          window._customTimeLimit = limTl;
+          if(limTlBtn){
+            limTlBtn.textContent = '制限時間 ON';
+            limTlBtn.style.background  = 'rgba(80,20,0,0.9)';
+            limTlBtn.style.borderColor = 'rgba(255,100,0,0.8)';
+            limTlBtn.style.color       = '#ffaa00';
+          }
+          const limTlInput = document.getElementById('time-limit-input');
+          if(limTlInput) limTlInput.value = limTl;
+          if(limGaugeEl) limGaugeEl.style.display = '';
+        } else {
+          window._customTimeLimit = null;
+          if(limTlBtn){
+            limTlBtn.textContent = '制限時間 OFF';
+            limTlBtn.style.background  = 'rgba(40,0,20,0.8)';
+            limTlBtn.style.borderColor = 'rgba(255,100,0,0.4)';
+            limTlBtn.style.color       = '#ff6600';
+          }
+          if(limGaugeEl) limGaugeEl.style.display = 'none';
+        }
+
+        // 周回：lp>1なら周回モードON、そうでなければOFF（stage9(id31)はstage-paramsで元々ON
+        // だが、ここで明示的に上書きするのでプレイヤー選択（lp=1）が優先される）
+        if(limLp > 1){
+          loopMode = true;
+          window._loopMode = true;
+          loopCount = limLp;
+          currentLoop = 1;
+          const limLoopBtn = document.getElementById('loop-mode-btn');
+          if(limLoopBtn){
+            limLoopBtn.textContent = '周回モード ON';
+            limLoopBtn.style.background  = 'rgba(80,0,120,0.9)';
+            limLoopBtn.style.borderColor = 'rgba(180,0,255,0.8)';
+            limLoopBtn.style.color       = '#dd99ff';
+          }
+          const limLoopCountInput = document.getElementById('loop-count-input');
+          if(limLoopCountInput) limLoopCountInput.value = loopCount;
+        } else {
+          loopMode = false;
+          window._loopMode = false;
+          // stage自身がloopMode:trueを持つ場合（例: stage9/id31）、ここより前の
+          // stage-native側の初期化でwindow._boardPaletteがloopColors[0]に上書き
+          // されている。LIMITで周回OFFにする以上、元のstage.boardPaletteへ戻す
+          // （戻さないと周回OFFでもloopColors[0]固定の色になってしまう）。
+          window._boardPalette = normalizePalette(stage.boardPalette ?? stage.boardColor);
+        }
+
+        // ORACLE数
+        maxHints = limHint;
+        window._stageMaxHints = limHint;
+
+        // NoFlag
+        gameRule = limNf ? 'noflag' : 'attack';
+
+        // クリア画面のスコア計算・ランキング保存で使う（pal/bg/bgmはキーのまま保持。ラベル表示や
+        // 実ファイル解決は常にlimit-config.json経由に統一し、URLやsettingsにファイル名を持たせない）。
+        window._limitMode     = true;
+        window._limitBoardId  = urlParams.get('stage');
+        window._limitSettings = { tl: limTl, lp: limLp, hint: limHint, nf: limNf, pal: limPalKey, bg: limBgKey, bgm: limBgmKey };
+
+        // limit-config.jsonはBOARD COLOR/BACKGROUND/BGMのキー→実値解決にも必要なため、
+        // 読み込みを待ってから盤面構築(_startBoardAndGame)する（?boot=resumeはこの関数を
+        // 通らないため、resume側でも別途fetchする＝resumeSuspend参照）。
+        fetch('data/limit-config.json', {cache:'no-store'})
           .then(r => r.json())
-          .then(bd => {
-            ROWS = bd.params.rows; COLS = bd.params.cols;
-            window._stageMines = bd.params.mineCount;
-            window._seedPoolBoard = bd;
-            window._seedPoolMode = true;
-            restartGame();
-            _cutinStageStart();
+          .then(cfg => {
+            window._limitConfig = cfg;
+
+            if(limPalKey !== 'auto' && cfg.palettes && cfg.palettes[limPalKey] && cfg.palettes[limPalKey].colors){
+              window._boardPalette = cfg.palettes[limPalKey].colors;
+              const limDbgColorSel = document.getElementById('debug-color-select');
+              const limDbgColorSelEast = document.getElementById('debug-color-select-east');
+              if(limDbgColorSel) limDbgColorSel.value = window._boardPalette[0] || '';
+              if(limDbgColorSelEast) limDbgColorSelEast.value = window._boardPalette[1] || '';
+            }
+            if(limBgKey !== 'auto' && cfg.backgrounds && cfg.backgrounds[limBgKey] && cfg.backgrounds[limBgKey].file){
+              const limCanvasContainer = document.getElementById('canvas-container');
+              if(limCanvasContainer){
+                limCanvasContainer.style.backgroundImage  = `url('assets/images/${cfg.backgrounds[limBgKey].file}')`;
+                limCanvasContainer.style.backgroundSize     = 'cover';
+                limCanvasContainer.style.backgroundPosition = 'center';
+              }
+            }
+            if(limBgmKey !== 'auto' && cfg.bgms && cfg.bgms[limBgmKey] && cfg.bgms[limBgmKey].file){
+              const limBgmFile = cfg.bgms[limBgmKey].file;
+              const limWasPlaying = !SND.bgm.paused;
+              SND.bgm.src = 'assets/audio/' + limBgmFile;
+              if(limWasPlaying){ SND.bgm.currentTime = 0; SND.bgm.play().catch(() => {}); }
+              window._stageHasCustomBgm = true;
+              window._stageBgmFile = limBgmFile;
+            }
+
+            _startBoardAndGame();
           })
-          .catch(e => {
-            console.warn('seedプール盤面の読込に失敗、通常生成にフォールバック', e);
-            window._seedPoolMode = false;
-            restartGame();
-            _cutinStageStart();
+          .catch(() => {
+            console.warn('limit-config.jsonの読込に失敗しました。見た目上書き無しで起動します。');
+            _startBoardAndGame();
           });
         return;
       }
 
       // 設定を反映してリスタート
-      restartGame();
-      _cutinStageStart();
+      _startBoardAndGame();
     })
     .catch(() => {
       console.warn('stage-params.json not found, using defaults.');

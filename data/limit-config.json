@@ -1,0 +1,90 @@
+{
+  "unitThresholdExp": 8,
+  "units": [
+    { "exp": 8,  "name": "億" },
+    { "exp": 12, "name": "兆" },
+    { "exp": 16, "name": "京" },
+    { "exp": 20, "name": "垓" },
+    { "exp": 24, "name": "秭" },
+    { "exp": 28, "name": "穣" },
+    { "exp": 32, "name": "溝" },
+    { "exp": 36, "name": "澗" },
+    { "exp": 40, "name": "正" },
+    { "exp": 44, "name": "載" },
+    { "exp": 48, "name": "極" },
+    { "exp": 52, "name": "恒河沙" },
+    { "exp": 56, "name": "阿僧祇" },
+    { "exp": 60, "name": "那由他" },
+    { "exp": 64, "name": "不可思議" },
+    { "exp": 68, "name": "無量大数" }
+  ],
+  "boards": {
+    "31": { "label": "12x 7  8400%", "baseScore": 8400 },
+    "1":  { "label": "16x 8  15360%", "baseScore": 15360 },
+    "2":  { "label": "24x12  129600%", "baseScore": 129600 },
+    "3":  { "label": "32x14  403200%", "baseScore": 403200 },
+    "4":  { "label": "40x18  1080000%", "baseScore": 1080000 },
+    "5":  { "label": "48x22  2323200%", "baseScore": 2323200 },
+    "6":  { "label": "56x26  4368000%", "baseScore": 4368000 },
+    "7":  { "label": "64x30  7680000%", "baseScore": 7680000 },
+    "8":  { "label": "72x34  12240000%", "baseScore": 12240000 },
+    "11": { "label": "144x72  215032320%", "baseScore": 215032320 }
+  },
+  "boardOrder": ["31", "1", "2", "3", "4", "5", "6", "7", "8", "11"],
+  "time": {
+    "none": 1.0,
+    "3600": 1000000,
+    "2400": 2500000.0,
+    "1200": 5000000.0,
+    "600":  10000000.0,
+    "240":  25000000.0,
+    "120":  50000000.0,
+    "60":  100000000.0,
+    "30":  200000000.0,
+    "10":  600000000.0
+  },
+  "loop": {
+    "table": {
+      "1": 1.0, "2": 4.0, "3": 27.0, "4": 256.0,
+      "5": 3125.0, "6": 46656.0, "7": 823543.0, "8": 16777216.0,
+      "9": 387420489.0, "10": 10000000000.0
+    },
+    "perExtraLoopGrowth": 1.28,
+    "minLoops": 1,
+    "maxLoops": 368
+  },
+  "hint": {
+    "10": 1.0, "9": 4.0, "8": 27.0, "7": 256.0, "6": 3125.0, "5": 46656.0,
+    "4": 82354.0, "3": 16777216.0, "2": 387420489.0, "1": 10000000000.0, "0": 285311670611.0
+  },
+  "noflag": { "off": 1.0 },
+  "palettes": {
+    "auto":   { "label": "AUTO（ステージ既定）" },
+    "blue":   { "label": "ブルー", "colors": ["#0044aa"] },
+    "green":  { "label": "グリーン", "colors": ["#006622"] },
+    "purple": { "label": "パープル", "colors": ["#440088"] },
+    "red":    { "label": "レッド", "colors": ["#880022"] },
+    "yellow": { "label": "イエロー", "colors": ["#cccc00"] },
+    "mono":   { "label": "モノクロ", "colors": ["#666666"] },
+    "yp":     { "label": "黄×紫", "colors": ["#cccc00", "#440088"] },
+    "cp":     { "label": "水×桃", "colors": ["#7FE7D8", "#FF67B3"] }
+  },
+  "backgrounds": {
+    "bg01": { "label": "迷子達の宇宙", "file": "img_bg01.jpg" },
+    "bg02": { "label": "消滅宇宙", "file": "img_bg02.jpg" },
+    "bg03": { "label": "イセラの宇宙", "file": "img_bg03.jpg" },
+    "bg04": { "label": "宇宙・ボーダー", "file": "img_bg04.jpg" },
+    "bg05": { "label": "加速する宇宙", "file": "img_bg05.jpg" },
+    "bg06": { "label": "宇宙と宇宙", "file": "img_bg06.jpg" }
+  },
+  "bgms": {
+    "play":     { "label": "STELLAR", "file": "SND_02_play.mp3" },
+    "flat":     { "label": "DELETE", "file": "SND_05_flat.mp3" },
+    "simpleex": { "label": "ISELA", "file": "SND_07_simpleEX.mp3" },
+    "play2":    { "label": "LIMIT", "file": "SND_11_play2.mp3" },
+    "BIGPOINT1":    { "label": "BGM 02", "file": "SND_13_BIGPOINT1.mp3" },
+    "BIGPOINT2":    { "label": "BGM 02", "file": "SND_14_BIGPOINT2.mp3" }
+  },
+  "rankingKey": "stellarDeleteRanking_limit",
+  "rankingMax": 10
+}

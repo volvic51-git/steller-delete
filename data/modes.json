@@ -24,19 +24,19 @@
     "enabled": true
   },
   {
+    "id": "limit",
+    "label": "LIMIT MODE",
+    "desc": "自分で制約を課してハイスコアを狙おう。\n目指せ無量大数点！！",
+    "image": "assets/images/etc/mod02.png",
+    "color": "blue",
+    "enabled": true
+  },
+  {
     "id": "noflag",
     "label": "NO FLAG MODE",
     "desc": "完全マニア向け。旗は禁止された。 \nド級のマインスイーパーを楽しめ。",
     "image": "assets/images/etc/mod04.png",
     "color": "blue",
     "enabled": true
-  },
-  {
-    "id": "limit",
-    "label": "LIMIT MODE",
-    "desc": "開発中",
-    "image": "assets/images/etc/mod02.png",
-    "color": "blue",
-    "enabled": false
   }
 ]
