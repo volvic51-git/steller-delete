@@ -1,19 +1,62 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-19（stage9追加・警告バナー演出まで完了時点）
+作成日: 2026-06-30 / 最終更新: 2026-07-21（LIMIT MODE実装・masterマージまで完了時点）
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-19）
+## ⚠️ 最初に読む：現在のブランチ状態（2026-07-21）
 
-**カレントブランチは`master`。2026-07-15〜19の作業（下記①〜⑦）はすべて
+**カレントブランチは`master`。2026-07-15〜21の作業（下記①〜⑧）はすべて
 `master`にno-ffマージ済み・ローカルの作業ブランチも削除済み。ただし
 `V1.7`ブランチだけはユーザーの意向で意図的に未マージのまま残っている**
 （STORY MODE2/LIMIT MODEをPLAY MODE SELECTから非表示＋デバッグメニューの
 🐞DEBUGボタン非表示化。「このまま残す、マージしない」と明言済み）。
+**⚠️ 注意**：LIMIT MODEが今回完成しmasterに載ったため、`V1.7`を今後マージすると
+LIMIT MODEカードも非表示に戻ってしまう。マージ判断時はこの点を要再確認。
 
-### 2026-07-15〜19 完了した作業（新しい順）
+**push状況**：ユーザーがpush済み・origin/masterと同期。ただしリモートの
+`origin/feature/limit-mode`ブランチはこのツール環境からは認証エラーで削除不可
+（`/dev/tty`が無くgit credentialの対話プロンプトが動かない）。ユーザー側で
+`git push origin --delete feature/limit-mode`の実行が必要（未実施の可能性あり）。
+
+### 2026-07-15〜21 完了した作業（新しい順）
+
+8. **LIMIT MODE（制約設定ハイスコア挑戦モード）実装・マージ完了**（2026-07-20〜21、
+   `feature/limit-mode`→master no-ff・コンフリクトなし）
+   - 設計レビュー通過後に実装。プレイヤーがBOARD/TIME LIMIT/LOOP COUNT/HINT COUNT
+     (ORACLE)/NO FLAGを自分で選び、厳しい設定ほどスコアが跳ね上がる挑戦モード。
+     設計時点の詳細は`etc/V2_LIMIT_MODE_WORKORDER.md`（実装中にUI仕様は多数変更済み、
+     現状に一致しない箇所あり）。
+   - 新規ファイル：`data/limit-config.json`（baseScore・各倍率・単位・BOARD COLOR/
+     BACKGROUND/BGMの選択肢まで**全数値をJSON管理**。コード直書き禁止を徹底し、
+     `js/limit-score.js`（スコア計算の純関数群、数値定数を一切持たない）と対で運用）。
+   - スコア式：`score = floor(baseScore(board) × timeMult × loopMult × hintMult × noflagMult)`。
+     **NoFlag ONは「NoFlag以外の合計倍率」自体を掛ける仕様（＝他の合計倍率を2乗）**。
+     周回倍率は`loop.table`に無い値（9周以上）を`perExtraLoopGrowth`で外挿。
+   - TIME LIMITに`NONE`（制限時間なし・ゲージも非表示）を追加。LOOP COUNTはボタン
+     +10/+100/RESET方式を廃止し1〜10のプルダウンに統一。
+   - **BOARD COLOR/BACKGROUND/BGMをプレイヤーが選択可**（`limit-config.json`の
+     `palettes`/`backgrounds`/`bgms`、キー+labelで管理・表示は常にlabel経由）。
+     選択はキーのままURLでゲーム側に渡し、ゲーム側で`limit-config.json`を読み込んで
+     から解決する設計（ファイル名を早期解決するとラベルとの対応が追えなくなるため）。
+     これに伴い`applyStageParam`のLIMIT分岐を「config取得→キー解決→盤面構築」の順で
+     待つ形に再構成し、共通の起動処理を`_startBoardAndGame()`に切り出した。
+   - ランキングは`stellarDeleteRanking_limit`（LIMIT専用・単一・降順・top10）。一覧は
+     得点（数値/単位を2行）・盤面/制限時間/周回数/ORACLE数/NF（1行）・倍率(%)＋日時、
+     の構成（背景・BGMは一覧に出さない）。
+   - **実装中に見つけた既存バグ4件を修正**：①stageEX(id11)等`stage.boardSource`
+     経由の盤面はLIMIT上書きブロックより先にreturnしてしまい設定が一切反映されない
+     ②stage9(id31)のように元々`loopMode:true`な盤面でLIMITの周回数を1にしても
+     盤面色が`loopColors[0]`固定のまま戻らない③④プレイ中設定メニュー・ゲームオーバー
+     画面それぞれの「STAGE」ボタンにLIMIT判定が無く別画面（SIMPLE MODE/novel固定
+     カルーセル）に迷い込む。
+   - キャラは101〜199ランダム（EXボードのみ固定）。ただしSIMPLE MODEとは除外リストを
+     分離（`_limitExFixedCharIds`）し、stage31(12x7)はLIMITのみランダム化対象に。
+   - baseScore等の最終数値はユーザー自身が`data/limit-config.json`を直接編集して
+     調整済み（那由他〜無量大数域に到達する設定も確認済み）。
+   - 詳細は memory [[project-limit-mode]]（要更新。設計時点の記述が残っているため
+     次回セッションで実装後の状態に合わせて更新すること）。
 
 7. **警告バナー演出＋警告パネルメーカーツール**（2026-07-19、`feature/warning-banner-fx`・
    `tool/warning-panel-maker`→master）
@@ -691,17 +734,25 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-19 更新）
+## 次セッションの入口（2026-07-21 更新）
 
 0. **まず `git status` と `git branch --show-current`**：カレントは`master`のはず。
-   `master`はorigin/masterとpush済みで同期済み（要再確認、直近のマージは未push状態で
-   終わっている可能性あり）。**新規ブランチはユーザーの指示が無い限り作らないこと**
-   （2026-07-19に運用変更、[[feedback-git]]）。未マージ状態のブランチは2つ：
+   `master`はorigin/masterとpush済みで同期済み（ユーザー確認済み、2026-07-21）。
+   **新規ブランチはユーザーの指示が無い限り作らないこと**（2026-07-19に運用変更、
+   [[feedback-git]]）。未マージ状態のブランチは2つ：
    - `V1.7`（STORY MODE2/LIMIT MODE非表示・デバッグボタン非表示。**意図的に未マージ**、
-     マージするかはユーザー判断待ち）
+     マージするかはユーザー判断待ち。**⚠️ LIMIT MODEが完成済みの今マージすると
+     完成した機能ごと非表示に戻ってしまう点に要注意**）
    - `feature/spec-foundation`（古い設計docsのみ、今回の作業とは無関係）
+   - `feature/limit-mode`はmasterにマージ・ローカル削除済み。**リモート
+     `origin/feature/limit-mode`の削除はこのツール環境から認証エラーで実行不可**
+     （`/dev/tty`が無い）。ユーザーが`git push origin --delete feature/limit-mode`を
+     実行済みか要確認。
 
 1. **次の開発候補（優先度はユーザー判断）**：
+   - **[[project-limit-mode]]メモリの更新**：設計レビュー時点の内容のまま止まっている。
+     実装後の最終仕様（NoFlag2乗化・TIME=NONE・LOOP1-10プルダウン・BOARD COLOR/
+     BACKGROUND/BGM選択・ランキング表示形式等）に合わせて次回セッションで更新すること。
    - **警告演出システムの本結線**：見た目のプロトタイプ（`triggerWarningBanner()`、
      2026-07-19実装）はできたが、`etc/V2_CUTIN_PLAN.md §14`で設計した
      Dialogueの`type:"warning"`トリガーとの結線（ステージ進行に応じた自動発火・
