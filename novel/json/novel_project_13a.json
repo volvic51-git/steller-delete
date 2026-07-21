@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "novelNo": 13,
+  "characters": [
+    {
+      "id": "alice2",
+      "name": "有栖",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice13.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice14.png"
+        }
+      ]
+    },
+    {
+      "id": "nefar",
+      "name": "ニーファ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "normal5",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "img_bg11.jpg"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.5rem",
+      "color": ""
+    },
+    {
+      "type": "bgm",
+      "value": "SND_12_bgm02.mp3"
+    },
+    {
+      "type": "show",
+      "character": "nefar",
+      "portrait": "normal1"
+    },
+    {
+      "type": "show",
+      "character": "alice2",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "良い　良い"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "良い？　何が？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "乙女機能インストール中・・・ピピピ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "プププ\n"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "ポポポ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "インストール完了"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "インストール？\n乙女機能？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "つなぐために必要な機能"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal2",
+      "text": "あと６個"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "次は犠牲になった話を聞きたい"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "よくわかんないけど"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "傷ついた話の続き？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "続き　続き"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "周りから無視されるようになって、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "グループから外されたり、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "有ること無いこと言われたりした"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "理不尽　理不尽"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "今ならそう思う"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "当時は？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "大丈夫なふりしてた"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "全然大丈夫じゃなかった"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "庇ってあげた子も？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "そう"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "なぜ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "その子も怖かったんだと思う"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "だから弱音吐いちゃダメだと思った"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal3",
+      "text": "その子の方が辛そうだったから"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "来た！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal2",
+      "text": "来た来た来た来た来たー！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "犠牲が来たーーー！"
+    },
+    {
+      "type": "hide",
+      "character": "alice2"
+    },
+    {
+      "type": "hide",
+      "character": "nefar"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

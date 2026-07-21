@@ -1,0 +1,311 @@
+{
+  "version": 1,
+  "novelNo": 14,
+  "characters": [
+    {
+      "id": "alice2",
+      "name": "有栖",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice13.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice14.png"
+        }
+      ]
+    },
+    {
+      "id": "nefar",
+      "name": "ニーファ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "normal5",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "img_bg11.jpg"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.5rem",
+      "color": ""
+    },
+    {
+      "type": "bgm",
+      "value": "SND_12_bgm02.mp3"
+    },
+    {
+      "type": "show",
+      "character": "nefar",
+      "portrait": "normal1"
+    },
+    {
+      "type": "show",
+      "character": "alice2",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "良い　良い"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "ハイハイ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "乙女機能インストール中・・・ピピピ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "プププ\n"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "ポポポ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "インストール完了"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "おめでとう"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "あと５個"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "次は立ち直った話を聞きたい"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "一人じゃ無理だったかな"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "誰かいたの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "うん"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "エリカっていう高校生の女の子"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "有栖より大人？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "ずっとね"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "年齢も、生き方も"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "死に方も？\n"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "多分、、、ね"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "『優しい人って、傷つかない人じゃないよ』"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "って言ってくれた"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "エリカも傷ついてた？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "そうかもね"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "でも、エリカはね、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "傷ついても、怖くはないんだって"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "有栖がいたから？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "私じゃないよ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "でも、私はエリカがいたから"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "傷つくことは怖くない"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "って思えるようになった"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "どうして？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "傷つかないために心を閉じるんじゃなくて、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal3",
+      "text": "傷ついても開ける心を持つんだって"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "来た！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal2",
+      "text": "来た来た来た来た来たー！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "再生が来たーーー！"
+    },
+    {
+      "type": "hide",
+      "character": "alice2"
+    },
+    {
+      "type": "hide",
+      "character": "nefar"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

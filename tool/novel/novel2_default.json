@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "novelNo": 11,
+  "characters": [
+    {
+      "id": "alice2",
+      "name": "有栖",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice13.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice14.png"
+        }
+      ]
+    },
+    {
+      "id": "nefar",
+      "name": "ニーファ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "img_bg11.jpg"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.5rem",
+      "color": ""
+    },
+    {
+      "type": "bgm",
+      "value": "SND_12_bgm02.mp3"
+    },
+    {
+      "type": "show",
+      "character": "nefar",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "危ない・・・危ない・・・"
+    },
+    {
+      "type": "show",
+      "character": "alice2",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "え、何？\nえ、誰？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "え？"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

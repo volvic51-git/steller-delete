@@ -1,0 +1,265 @@
+{
+  "version": 1,
+  "novelNo": 11,
+  "characters": [
+    {
+      "id": "alice2",
+      "name": "有栖",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice13.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice14.png"
+        }
+      ]
+    },
+    {
+      "id": "nefar",
+      "name": "ニーファ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "normal1",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "img_bg04.jpg"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.5rem",
+      "color": ""
+    },
+    {
+      "type": "bgm",
+      "value": "SND_12_bgm02.mp3"
+    },
+    {
+      "type": "show",
+      "character": "alice2",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "ここどこ？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "え？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "待って待って待って。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "登校中だったよね？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "え？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "私、死んだ？"
+    },
+    {
+      "type": "narration",
+      "text": "周囲を見回す。\nどこまでも続く暗い宇宙。"
+    },
+    {
+      "type": "narration",
+      "text": "遠くに無数の光。\n上も下も分からない。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "いやいやいや。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "死んだらスマホ持ってないでしょ。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "あった。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "圏外。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "ですよねー！\n知ってた！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "宇宙だもん！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "なんで宇宙なんだよ！！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal3",
+      "text": "・・・ん？"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice2"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back22.jpg"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "星？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "デカくない？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "待って待って。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "ちょっと待って。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "惑星じゃん。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "惑星来ることある！？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "宇宙だから？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal3",
+      "text": "そんなわけない。"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}
