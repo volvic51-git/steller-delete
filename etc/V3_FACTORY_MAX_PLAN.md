@@ -1,8 +1,9 @@
 # Factory MAX 検証ツール — 設計書（確定版）
 
-作成日: 2026-07-18 ／ ステータス: **設計確定（§5の全確認事項にユーザー回答済み）・実装未着手**
+作成日: 2026-07-18 ／ 最終更新: 2026-07-21（**実装済み**・§8受け入れテスト①〜④全て数値完全一致）
 依頼書: 「Factory MAX 検証ツール 実装依頼」（既存Factory盤面に地雷を追加し guess=0 維持限界を測る研究ツール）
-実装手順書: **`etc/V3_FACTORY_MAX_WORKORDER.md`**（Sonnet 5向け。実装セッションはそちらを読む）
+実装手順書: **`etc/V3_FACTORY_MAX_WORKORDER.md`**（Sonnet 5向け。§8に実測ログあり）
+成果物: `tool/board/factory-max-core.js`（アルゴリズム本体）／`tool/board/factory-max.js`（CLI、climb/sweep/resilience全モード実装済み）
 
 ## 確定事項（2026-07-18 ユーザー回答）
 
