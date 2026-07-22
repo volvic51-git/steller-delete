@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "novelNo": 20,
+  "characters": [
+    {
+      "id": "alice2",
+      "name": "有栖",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice13.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice14.png"
+        }
+      ]
+    },
+    {
+      "id": "nefar",
+      "name": "ニーファ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "normal5",
+          "file": "image_nefa05.png"
+        }
+      ]
+    },
+    {
+      "id": "alice3",
+      "name": "アリス",
+      "position": "right",
+      "defaultPortrait": "normal",
+      "portraits": [
+        {
+          "key": "normal",
+          "file": "newchar_normal.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back24.jpg"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.5rem",
+      "color": ""
+    },
+    {
+      "type": "bgm",
+      "value": "SND_14_BIGPOINT2.mp3"
+    },
+    {
+      "type": "narration",
+      "text": "巨大な壁が崩れる"
+    },
+    {
+      "type": "narration",
+      "text": "砕けた光が宇宙へ散っていく"
+    },
+    {
+      "type": "narration",
+      "text": "視界は白く霞む"
+    },
+    {
+      "type": "narration",
+      "text": "立っている感覚もない"
+    },
+    {
+      "type": "narration",
+      "text": "ただ静かな光だけが広がっていた"
+    },
+    {
+      "type": "narration",
+      "text": "その光の向こうに、\n一人の少女がいた"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal",
+      "text": "有栖？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "私を知ってるの？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "アリス",
+      "portrait": "normal",
+      "text": "ずっと知ってるよ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "不思議、私も"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back25.jpg"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "narration",
+      "text": "有栖とアリスを分けていた線―"
+    },
+    {
+      "type": "narration",
+      "text": "現実と空想―"
+    },
+    {
+      "type": "narration",
+      "text": "過去と未来―"
+    },
+    {
+      "type": "narration",
+      "text": "傷と希望―"
+    },
+    {
+      "type": "narration",
+      "text": "境界がl溶け合う―"
+    },
+    {
+      "type": "narration",
+      "text": "そして―"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back26.jpg"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}

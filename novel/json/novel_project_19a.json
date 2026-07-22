@@ -1,0 +1,331 @@
+{
+  "version": 1,
+  "novelNo": 19,
+  "characters": [
+    {
+      "id": "alice2",
+      "name": "有栖",
+      "position": "left",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_alice13.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_alice14.png"
+        }
+      ]
+    },
+    {
+      "id": "nefar",
+      "name": "ニーファ",
+      "position": "right",
+      "defaultPortrait": "normal1",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "normal3",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "normal4",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "normal5",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "type": "background",
+      "value": "back21.jpg"
+    },
+    {
+      "type": "font",
+      "family": "Kaisei Decol",
+      "sizePC": "2.0rem",
+      "sizeSP": "1.5rem",
+      "color": ""
+    },
+    {
+      "type": "bgm",
+      "value": "SND_12_bgm02.mp3"
+    },
+    {
+      "type": "show",
+      "character": "nefar",
+      "portrait": "normal1"
+    },
+    {
+      "type": "show",
+      "character": "alice2",
+      "portrait": "normal1"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "良い　良い　良い　良い\n良い　良い　良い　良い"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "乙女機能インストール中・・・ピピピ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "プププ\n"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal4",
+      "text": "ポポポ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "ガシャガシャ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "ドキンドキン"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "インストール完了"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "全ての乙女機能のインストールが完了"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "さて、どうなる？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "その前に一つ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "何？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "エリカって、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal2",
+      "text": "有栖でしょ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "・・・・・。"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "バレたか"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "でも、居たんでしょ？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "居たよ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "傷ついた私"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "前を向きたかった私"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "諦めたくなかった私"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "強くなったと思っただけ、"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "少しずつ消えていった"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "役目を終えたんだね"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal3",
+      "text": "そうなのかな"
+    },
+    {
+      "type": "fadeout"
+    },
+    {
+      "type": "hide_all"
+    },
+    {
+      "type": "hide",
+      "character": "alice2"
+    },
+    {
+      "type": "hide",
+      "character": "nefar"
+    },
+    {
+      "type": "dialog_hide"
+    },
+    {
+      "type": "background",
+      "value": "back22.jpg"
+    },
+    {
+      "type": "se",
+      "value": "gogogo.wav"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "fadein"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "戻ってきたわね"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "戻れなくなるかも"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "今更でしょ"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal1",
+      "text": "怖い？"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "なんでかな"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal2",
+      "text": "あんまり怖くない"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal3",
+      "text": "エリカが居るみたい"
+    },
+    {
+      "type": "dialog",
+      "speaker": "ニーファ",
+      "portrait": "normal3",
+      "text": "進もう！"
+    },
+    {
+      "type": "dialog",
+      "speaker": "有栖",
+      "portrait": "normal1",
+      "text": "おう！"
+    },
+    {
+      "type": "hide",
+      "character": "alice2"
+    },
+    {
+      "type": "hide",
+      "character": "nefar"
+    },
+    {
+      "type": "wait",
+      "duration": "2000"
+    },
+    {
+      "type": "bgm_fade",
+      "duration": "2000"
+    }
+  ]
+}
