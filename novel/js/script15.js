@@ -25,7 +25,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'img_bg11.jpg' },
+  { command: 'background', value: 'plays/img_bg11.jpg' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.5rem' },
   { command: 'bgm', value: 'SND_12_bgm02.mp3' },
   { command: 'show', character: 'nefar', portrait: 'normal1' },

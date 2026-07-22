@@ -58,7 +58,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "img_bg04.jpg"
+      "value": "plays/img_bg04.jpg"
     },
     {
       "type": "font",

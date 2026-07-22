@@ -70,12 +70,12 @@
     "cp":     { "label": "水×桃", "colors": ["#7FE7D8", "#FF67B3"] }
   },
   "backgrounds": {
-    "bg01": { "label": "迷子達の宇宙", "file": "img_bg01.jpg" },
-    "bg02": { "label": "消滅宇宙", "file": "img_bg02.jpg" },
-    "bg03": { "label": "イセラの宇宙", "file": "img_bg03.jpg" },
-    "bg04": { "label": "宇宙・ボーダー", "file": "img_bg04.jpg" },
-    "bg05": { "label": "加速する宇宙", "file": "img_bg05.jpg" },
-    "bg06": { "label": "宇宙と宇宙", "file": "img_bg06.jpg" }
+    "bg01": { "label": "迷子達の宇宙", "file": "plays/img_bg01.jpg" },
+    "bg02": { "label": "消滅宇宙", "file": "plays/img_bg02.jpg" },
+    "bg03": { "label": "イセラの宇宙", "file": "plays/img_bg03.jpg" },
+    "bg04": { "label": "宇宙・ボーダー", "file": "plays/img_bg04.jpg" },
+    "bg05": { "label": "加速する宇宙", "file": "plays/img_bg05.jpg" },
+    "bg06": { "label": "宇宙と宇宙", "file": "plays/img_bg06.jpg" }
   },
   "bgms": {
     "play":     { "label": "STELLAR", "file": "SND_02_play.mp3" },
