@@ -4,10 +4,10 @@ const CHARACTERS = {
     position: 'left',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_alice11.png',
-      normal2: 'image_alice12.png',
-      normal3: 'image_alice13.png',
-      normal4: 'image_alice14.png',
+      normal1: 'novels/image_alice11.png',
+      normal2: 'novels/image_alice12.png',
+      normal3: 'novels/image_alice13.png',
+      normal4: 'novels/image_alice14.png',
     },
   },
   nefar: {
@@ -15,11 +15,11 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_nefa01.png',
-      normal2: 'image_nefa02.png',
-      normal3: 'image_nefa03.png',
-      normal4: 'image_nefa04.png',
-      normal5: 'image_nefa05.png',
+      normal1: 'novels/image_nefa01.png',
+      normal2: 'novels/image_nefa02.png',
+      normal3: 'novels/image_nefa03.png',
+      normal4: 'novels/image_nefa04.png',
+      normal5: 'novels/image_nefa05.png',
     },
   },
   alice3: {
@@ -33,7 +33,7 @@ const CHARACTERS = {
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back24.jpg', position: 'bottom' },
+  { command: 'background', value: 'novels/back24.jpg', position: 'bottom' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.5rem' },
   { command: 'bgm', value: 'SND_14_BIGPOINT2.mp3' },
   { speaker: '', portrait: '', text: '巨大な壁が崩れる' },
@@ -51,7 +51,7 @@ const SCRIPT = [
   { command: 'dialog_hide' },
   { command: 'wait', duration: 2000 },
   { command: 'whiteout' },
-  { command: 'background', value: 'back25.jpg', position: 'bottom' },
+  { command: 'background', value: 'novels/back25.jpg', position: 'bottom' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
   { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
@@ -64,7 +64,7 @@ const SCRIPT = [
   { command: 'dialog_hide' },
   { command: 'wait', duration: 2000 },
   { command: 'whiteout' },
-  { command: 'background', value: 'back26.jpg', position: 'top' },
+  { command: 'background', value: 'novels/back26.jpg', position: 'top' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },
   { command: 'wait', duration: 4000 },

@@ -4,9 +4,9 @@ const CHARACTERS = {
     position: 'left',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_alice01.png',
-      normal2: 'image_alice02.png',
-      normal3: 'image_alice03.png',
+      normal1: 'novels/image_alice01.png',
+      normal2: 'novels/image_alice02.png',
+      normal3: 'novels/image_alice03.png',
     },
   },
   flat: {
@@ -14,9 +14,9 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_flat01.png',
-      normal2: 'image_flat02.png',
-      normal3: 'image_flat03.png',
+      normal1: 'novels/image_flat01.png',
+      normal2: 'novels/image_flat02.png',
+      normal3: 'novels/image_flat03.png',
     },
   },
   abis: {
@@ -24,13 +24,13 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_abis01.png',
+      normal1: 'novels/image_abis01.png',
     },
   }
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back01.jpg' },
+  { command: 'background', value: 'novels/back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { command: 'show', character: 'alice', portrait: 'normal1' },
@@ -61,7 +61,7 @@ const SCRIPT = [
   { command: 'hide', character: 'alice' },
   { command: 'hide', character: 'abis' },
   { command: 'dialog_hide' },
-  { command: 'background', value: 'back08.jpg', position: 'bottom', positionMobile: '30% 0%' },
+  { command: 'background', value: 'novels/back08.jpg', position: 'bottom', positionMobile: '30% 0%' },
   { command: 'se', value: 'gogogo.wav' },
   { command: 'wait', duration: 2000 },
   { command: 'fadein' },

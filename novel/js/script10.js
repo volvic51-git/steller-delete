@@ -4,10 +4,10 @@ const CHARACTERS = {
     position: 'left',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_alice01.png',
-      normal2: 'image_alice02.png',
-      normal3: 'image_alice03.png',
-      normal4: 'image_alice04.png',
+      normal1: 'novels/image_alice01.png',
+      normal2: 'novels/image_alice02.png',
+      normal3: 'novels/image_alice03.png',
+      normal4: 'novels/image_alice04.png',
     },
   },
   flat: {
@@ -15,9 +15,9 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_flat01.png',
-      normal2: 'image_flat02.png',
-      normal3: 'image_flat03.png',
+      normal1: 'novels/image_flat01.png',
+      normal2: 'novels/image_flat02.png',
+      normal3: 'novels/image_flat03.png',
     },
   },
   yomi: {
@@ -25,13 +25,13 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal',
     portraits: {
-      normal1: 'image_yomi01.png',
+      normal1: 'novels/image_yomi01.png',
     },
   }
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back17.jpg' },
+  { command: 'background', value: 'novels/back17.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { speaker: '', portrait: '', text: '崩壊したフラットはブラックホールとなり、' },
@@ -68,7 +68,7 @@ const SCRIPT = [
   { speaker: 'アリス', portrait: 'normal2', text: '全然。' },
   { command: 'fadeout' },
   { command: 'wait', duration: 1000 },
-  { command: 'background', value: 'back12.jpg', position: 'bottom' },
+  { command: 'background', value: 'novels/back12.jpg', position: 'bottom' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { speaker: 'フラット', portrait: 'normal1', text: 'じゃあ、そろそろ行こう。' },

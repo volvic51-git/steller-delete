@@ -10,19 +10,19 @@
       "portraits": [
         {
           "key": "normal1",
-          "file": "image_alice01.png"
+          "file": "novels/image_alice01.png"
         },
         {
           "key": "normal2",
-          "file": "image_alice02.png"
+          "file": "novels/image_alice02.png"
         },
         {
           "key": "normal3",
-          "file": "image_alice03.png"
+          "file": "novels/image_alice03.png"
         },
         {
           "key": "normal4",
-          "file": "image_alice04.png"
+          "file": "novels/image_alice04.png"
         }
       ]
     },
@@ -34,15 +34,15 @@
       "portraits": [
         {
           "key": "normal1",
-          "file": "image_flat01.png"
+          "file": "novels/image_flat01.png"
         },
         {
           "key": "normal2",
-          "file": "image_flat02.png"
+          "file": "novels/image_flat02.png"
         },
         {
           "key": "normal3",
-          "file": "image_flat03.png"
+          "file": "novels/image_flat03.png"
         }
       ]
     },
@@ -54,7 +54,7 @@
       "portraits": [
         {
           "key": "normal1",
-          "file": "image_yomi01.png"
+          "file": "novels/image_yomi01.png"
         }
       ]
     }
@@ -62,7 +62,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "back17.jpg"
+      "value": "novels/back17.jpg"
     },
     {
       "type": "bgm",
@@ -260,7 +260,7 @@
     },
     {
       "type": "background",
-      "value": "back12.jpg",
+      "value": "novels/back12.jpg",
       "position": "bottom",
       "positionMobile": "",
       "posMobileX": "0",

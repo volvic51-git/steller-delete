@@ -4,9 +4,9 @@ const CHARACTERS = {
     position: 'left',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_alice01.png',
-      normal2: 'image_alice02.png',
-      normal3: 'image_alice03.png',
+      normal1: 'novels/image_alice01.png',
+      normal2: 'novels/image_alice02.png',
+      normal3: 'novels/image_alice03.png',
     },
   },
   flat: {
@@ -14,11 +14,11 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_flat01.png',
-      normal2: 'image_flat02.png',
-      normal3: 'image_flat03.png',
-      dest01: 'image_flat04.png',
-      dest02: 'image_flat05.png',
+      normal1: 'novels/image_flat01.png',
+      normal2: 'novels/image_flat02.png',
+      normal3: 'novels/image_flat03.png',
+      dest01: 'novels/image_flat04.png',
+      dest02: 'novels/image_flat05.png',
     },
   },
   yomi: {
@@ -26,13 +26,13 @@ const CHARACTERS = {
     position: 'right',
     defaultPortrait: 'normal1',
     portraits: {
-      normal1: 'image_yomi01.png',
+      normal1: 'novels/image_yomi01.png',
     },
   }
 };
 
 const SCRIPT = [
-  { command: 'background', value: 'back01.jpg' },
+  { command: 'background', value: 'novels/back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
   { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
   { command: 'show', character: 'alice', portrait: 'normal1' },
@@ -83,7 +83,7 @@ const SCRIPT = [
   { command: 'hide', character: 'flat' },
   { command: 'dialog_hide' },
   { command: 'hide_all' },
-  { command: 'background', value: 'back15.jpg' },
+  { command: 'background', value: 'novels/back15.jpg' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { command: 'wait', duration: 1000 },
@@ -92,7 +92,7 @@ const SCRIPT = [
   { speaker: '', portrait: '', text: '光が砕ける。\n星屑が飲み込まれる。' },
   { command: 'fadeout' },
   { command: 'wait', duration: 1000 },
-  { command: 'background', value: 'back10.jpg', position: 'bottom', positionMobile: '30% 0%' },
+  { command: 'background', value: 'novels/back10.jpg', position: 'bottom', positionMobile: '30% 0%' },
   { command: 'wait', duration: 1000 },
   { command: 'fadein' },
   { speaker: 'アリス', portrait: 'normal2', text: 'フラット・・・。' },
