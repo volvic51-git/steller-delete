@@ -1,18 +1,101 @@
 {
-  "se": {},
   "characters": {
-    "002": { "name": "キャラ002", "side": "left",
-             "portraits": { "normal": "cutin_002_normal.png" } },
-    "oracle": { "name": "ORACLE", "side": "right",
-                "portraits": { "normal": "cutin_oracle_normal.png" } }
+    "ALICE2": {
+      "name": "有栖",
+      "side": "left",
+      "portraits": {
+        "normal1": "image_alice11.png",
+        "normal2": "image_alice12.png"
+      }
+    },
+    "NIFA": {
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": {
+        "normal1": "image_nefa01.png",
+        "normal2": "image_nefa02.png",
+        "ムキ": "image_nefa03.png",
+        "ピピ": "image_nefa04.png",
+        "つるはし": "image_nefa05.png"
+      }
+    }
   },
   "events": [
-    { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
+    {
+      "id": "event2_copy",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R02.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event3",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event3",
+      "label": "旗禁止"
+    },
+    {
+      "id": "event4",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event5",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event5",
+      "label": "制限時間：30秒"
+    },
+    {
+      "id": "event2",
+      "trigger": {
+        "type": "stage_start"
+      },
       "lines": [
-        { "text": "【特殊ルール】\n旗禁止\n制限時間：90秒" } ] },
-    { "id": "stage_clear", "trigger": { "type": "stage_clear" }, "once": true,
-      "lines": [
-        { "speaker": "002", "text": "ありがとう……もう大丈夫。" },
-        { "speaker": "oracle", "text": "お見事です。" } ] }
+        {
+          "speaker": "ALICE2",
+          "text": "旗禁止ってどういうこと？",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "旗が禁止ってことだよ",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "それは知ってる",
+          "portrait": "normal2"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "つまりコレは使える",
+          "portrait": "つるはし"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "つるはしじゃん",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "採掘　採掘\n採掘　採掘",
+          "portrait": "ムキ"
+        }
+      ]
+    }
   ]
 }
