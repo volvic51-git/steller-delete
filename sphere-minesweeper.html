@@ -3059,12 +3059,13 @@ function triggerLoopReplay(){
 function triggerRescueSequence(){
   gameState='win';
   clearInterval(timerInterval);
-  if(loopMode){
-    // 周回モード（STORY stage9等）：ループ間もBGMを継続させる設計のため、
+  if(loopMode && window._loopKeepBgmOnClear){
+    // 周回モードのうちstage9（id9/31/32）のみ：ループ間もBGMを継続させる設計のため、
     // クリアジングルに切り替えずそのまま継続再生する。
     // ⚠️ 以前は window._stageHasCustomBgm（＝ステージにbgm指定があるか）で判定していたが、
     // stageEX1/EX2もカスタムBGMを持つため誤ってクリアジングルが鳴らなくなっていた。
-    // 「ジングルを鳴らさない」を意図しているのは周回モードだけなので loopMode で判定する。
+    // その後 loopMode 単独で判定していたが、STORY2 stage25等の他loopModeステージにも
+    // 誤って波及していたため、stage-params.json の loopKeepBgmOnClear で明示指定する方式に変更。
   } else {
     pauseBGM();
     if(SND.clear) SND.clear.play().catch(()=>{});
@@ -5461,6 +5462,9 @@ if(window.visualViewport){
       if(stage.loopMode === true){
         loopMode = true;
         window._loopMode = true;
+        // 周回モードでもクリア時にBGMを止めずジングルへ切り替えない特例（stage9=id9/31/32のみ想定）。
+        // 他のloopModeステージ（stage25等）は通常通りジングル+BGM停止させたいのでデフォルトfalse。
+        window._loopKeepBgmOnClear = stage.loopKeepBgmOnClear === true;
         if(stage.loopCount != null){
           const n = parseInt(stage.loopCount, 10);
           if(!isNaN(n) && n >= 2) loopCount = n;
