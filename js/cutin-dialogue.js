@@ -5,6 +5,7 @@
 const Dialogue = (() => {
   let _data = null;
   let _fired = new Set();
+  let _ruleHandler = null;   // ゲーム側が登録する type:"rule" 用コールバック（{action,ruleId,label}）
   // プレイ中（初手〜クリア確定の間）に発火し得るトリガー。これを1つでも含む
   // セットのステージはランキング対象外（manualは発火時期を静的判定できないため安全側）
   const IN_PLAY_TRIGGERS = new Set(['time', 'open_rate', 'mines_removed', 'manual']);
@@ -59,6 +60,12 @@ const Dialogue = (() => {
     if(ev.type === 'shake'){
       return CutIn.animate({ type:'shake', side: ev.side, speaker: ev.speaker, portrait: ev.portrait, se: ev.se, duration: ev.duration });
     }
+    if(ev.type === 'rule'){
+      // ルール表示は常設ゲームHUD（RuleHudなど）の領分でcutin.jsには持たせない。
+      // ここではゲーム側が登録したハンドラへ委譲するだけ。会話キューはブロックしない。
+      if(_ruleHandler) _ruleHandler(ev);
+      return Promise.resolve();
+    }
     return CutIn.play(ev.lines || []);
   }
 
@@ -71,6 +78,7 @@ const Dialogue = (() => {
   function reset(){ _fired.clear(); CutIn.cancel(); }          // RETRY時（dataは保持）
   function getFired(){ return Array.from(_fired); }             // saveSuspend用
   function restoreFired(ids){ (ids || []).forEach(i => _fired.add(i)); }
+  function setRuleHandler(fn){ _ruleHandler = fn; }             // ゲーム側からRuleHud操作を登録
 
-  return { load, notify, play, reset, getFired, restoreFired };
+  return { load, notify, play, reset, getFired, restoreFired, setRuleHandler };
 })();
