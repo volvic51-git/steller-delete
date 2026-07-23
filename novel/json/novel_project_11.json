@@ -10,19 +10,19 @@
       "portraits": [
         {
           "key": "normal1",
-          "file": "image_alice11.png"
+          "file": "novels/image_alice11.png"
         },
         {
           "key": "normal2",
-          "file": "image_alice12.png"
+          "file": "novels/image_alice12.png"
         },
         {
           "key": "normal3",
-          "file": "image_alice13.png"
+          "file": "novels/image_alice13.png"
         },
         {
           "key": "normal4",
-          "file": "image_alice14.png"
+          "file": "novels/image_alice14.png"
         }
       ]
     },
@@ -34,23 +34,23 @@
       "portraits": [
         {
           "key": "normal1",
-          "file": "image_nefa01.png"
+          "file": "novels/image_nefa01.png"
         },
         {
           "key": "normal1",
-          "file": "image_nefa02.png"
+          "file": "novels/image_nefa02.png"
         },
         {
           "key": "normal1",
-          "file": "image_nefa03.png"
+          "file": "novels/image_nefa03.png"
         },
         {
           "key": "normal1",
-          "file": "image_nefa04.png"
+          "file": "novels/image_nefa04.png"
         },
         {
           "key": "normal1",
-          "file": "image_nefa05.png"
+          "file": "novels/image_nefa05.png"
         }
       ]
     }
@@ -58,7 +58,7 @@
   "steps": [
     {
       "type": "background",
-      "value": "img_bg04.jpg"
+      "value": "plays/img_bg04.jpg"
     },
     {
       "type": "font",
@@ -189,7 +189,7 @@
     },
     {
       "type": "background",
-      "value": "back22.jpg"
+      "value": "novels/back22.jpg"
     },
     {
       "type": "se",

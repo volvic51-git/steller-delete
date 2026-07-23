@@ -18,7 +18,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel02.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 2,
@@ -39,7 +39,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel03.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 3,
@@ -60,7 +60,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel04.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 4,
@@ -81,7 +81,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel05.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 5,
@@ -102,7 +102,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel06.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 6,
@@ -123,7 +123,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel07.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 7,
@@ -144,7 +144,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel08.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 8,
@@ -165,7 +165,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel09.html",
     "bgm": "",
-    "background": "img_bg01.jpg"
+    "background": "plays/img_bg01.jpg"
   },
   {
     "id": 9,
@@ -186,7 +186,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel10.html",
     "bgm": "SND_05_flat.mp3",
-    "background": "img_bg02.jpg"
+    "background": "plays/img_bg02.jpg"
   },
   {
     "id": 10,
@@ -208,7 +208,7 @@
     "exMode": false,
     "novelAfterClear": null,
     "bgm": "SND_07_simpleEX.mp3",
-    "background": "img_bg03.jpg"
+    "background": "plays/img_bg03.jpg"
   },
   {
     "id": 11,
@@ -230,7 +230,7 @@
     "exMode": false,
     "novelAfterClear": null,
     "bgm": "SND_07_simpleEX.mp3",
-    "background": "img_bg03.jpg"
+    "background": "plays/img_bg03.jpg"
   },
   {
     "id": 12,
@@ -251,7 +251,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel02.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -273,7 +273,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel03.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -295,7 +295,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel04.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -317,7 +317,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel05.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -339,7 +339,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel06.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -361,7 +361,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel07.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -383,7 +383,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel08.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -405,7 +405,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel09.html",
     "bgm": "",
-    "background": "img_bg01.jpg",
+    "background": "plays/img_bg01.jpg",
     "gameRule": "noflag"
   },
   {
@@ -428,7 +428,7 @@
     "exMode": false,
     "novelAfterClear": null,
     "bgm": "SND_07_simpleEX.mp3",
-    "background": "img_bg03.jpg",
+    "background": "plays/img_bg03.jpg",
     "gameRule": "noflag"
   },
   {
@@ -451,7 +451,7 @@
     "exMode": false,
     "novelAfterClear": null,
     "bgm": "SND_07_simpleEX.mp3",
-    "background": "img_bg03.jpg",
+    "background": "plays/img_bg03.jpg",
     "gameRule": "noflag"
   },
   {
@@ -475,7 +475,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel12.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "cutin": "stage22"
   },
   {
@@ -497,7 +497,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel13.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "gameRule": "noflag",
     "cutin": "stage23"
   },
@@ -520,7 +520,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel14.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "cutin": "stage24"
   },
   {
@@ -543,7 +543,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel15.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "cutin": "stage25"
   },
   {
@@ -565,7 +565,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel16.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "suspendDisabled": true,
     "cutin": "stage26"
   },
@@ -589,7 +589,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel17.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "cutin": "stage27"
   },
   {
@@ -612,7 +612,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel18.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "cutin": "stage28"
   },
   {
@@ -634,7 +634,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel19.html",
     "bgm": "",
-    "background": "img_bg04.jpg",
+    "background": "plays/img_bg04.jpg",
     "cutin": "stage29"
   },
   {
@@ -658,7 +658,7 @@
     "exMode": false,
     "novelAfterClear": "novel/novel20.html",
     "bgm": "",
-    "background": "img_bg05.jpg"
+    "background": "plays/img_bg05.jpg"
   },
   {
     "id": 31,
@@ -679,7 +679,7 @@
     "exMode": false,
     "novelAfterClear": null,
     "bgm": "SND_05_flat.mp3",
-    "background": "img_bg02.jpg"
+    "background": "plays/img_bg02.jpg"
   },
   {
     "id": 32,
@@ -700,7 +700,7 @@
     "exMode": false,
     "novelAfterClear": null,
     "bgm": "SND_05_flat.mp3",
-    "background": "img_bg02.jpg",
+    "background": "plays/img_bg02.jpg",
     "gameRule": "noflag"
   }
 ]
