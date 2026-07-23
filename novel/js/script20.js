@@ -62,11 +62,10 @@ const SCRIPT = [
   { speaker: '', portrait: '', text: '境界が溶け合う―' },
   { speaker: '', portrait: '', text: 'そして―' },
   { command: 'dialog_hide' },
-  { command: 'wait', duration: 2000 },
-  { command: 'whiteout' },
+  { command: 'blackout' },
   { command: 'background', value: 'novels/back26.jpg', position: 'top' },
-  { command: 'wait', duration: 2000 },
   { command: 'fadein' },
+  { command: 'bg_scroll', direction: 'up', speed: 200, loop: false },
   { command: 'wait', duration: 4000 },
   { command: 'bgm_fade', duration: 2000 },
 ];

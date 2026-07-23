@@ -49,7 +49,7 @@ const SCRIPT = [
   { speaker: '有栖', portrait: 'normal1', text: '誰にも証明できないでしょ？' },
   { speaker: 'ニーファ', portrait: 'normal1', text: 'できない証明はないよ' },
   { speaker: '有栖', portrait: 'normal1', text: 'そうなの？' },
-  { speaker: 'ニーファ', portrait: 'normal1', text: '５６億光年たっても、わからない証明もあるけど' },
+  { speaker: 'ニーファ', portrait: 'normal1', text: '５６億年たっても、わからない証明もあるけど' },
   { speaker: '有栖', portrait: 'normal1', text: 'できてないじゃん' },
   { speaker: '有栖', portrait: 'normal2', text: '・・・' },
   { speaker: '有栖', portrait: 'normal1', text: 'あの日、エリカに出会えたことが運命なら' },
