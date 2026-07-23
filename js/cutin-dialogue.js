@@ -47,12 +47,18 @@ const Dialogue = (() => {
 
   function _fire(ev){
     if(ev.once !== false) _fired.add(ev.id);        // 発火時に即登録（同tick二重発火防止）
-    if(ev.type === 'warning'){                       // §14スタブ：データ形式のみ先行凍結
-      console.warn('[Dialogue] warning演出は未実装のためスキップ:', ev.id);
-      return Promise.resolve();
-    }
     // クリア／負けイベント終了は他を破棄して優先（stage_overは他のトリガーが起き得ない負けイベント専用だが念のため統一）
     if(ev.trigger && (ev.trigger.type === 'stage_clear' || ev.trigger.type === 'stage_over')) CutIn.clearPending();
+    // 演出タイプで振り分け（type省略/'dialogue' は従来の会話カットイン）
+    if(ev.type === 'warning'){
+      return CutIn.warn({ image: ev.image, variant: ev.variant, se: ev.se });
+    }
+    if(ev.type === 'collision'){
+      return CutIn.animate({ type:'collision', left: ev.left, right: ev.right, se: ev.se, duration: ev.duration });
+    }
+    if(ev.type === 'shake'){
+      return CutIn.animate({ type:'shake', side: ev.side, speaker: ev.speaker, portrait: ev.portrait, se: ev.se, duration: ev.duration });
+    }
     return CutIn.play(ev.lines || []);
   }
 

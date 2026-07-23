@@ -367,6 +367,128 @@ var TRIGGER_LABELS = {
 };
 var IN_PLAY_TYPES = {time:1, open_rate:1, mines_removed:1, manual:1};
 
+// 演出タイプ（type省略/'dialogue'は従来の会話カットイン）
+var EVENT_TYPES = {
+  dialogue:  '会話（立ち絵＋台詞）',
+  warning:   '警告パネル（バナー）',
+  collision: '衝突（右キャラ→左キャラ・二人退場）',
+  shake:     'シェイク（1体を震わせる）'
+};
+var WARN_VARIANTS = { 'default':'青・左→右', 'orangeRTL':'オレンジ・右→左' };
+
+/* --- 共通の小ヘルパー（キャラ/表情のselect・サムネイル・SE欄） --- */
+function charOptions(sel){
+  return characters.map(function(c){
+    return '<option value="'+escH(c.id)+'"'+(sel===c.id?' selected':'')+'>'+escH(c.name||c.id)+'</option>';
+  }).join('');
+}
+function portraitOptions(charId, sel){
+  return portraitKeysOf(charId).map(function(k){
+    return '<option value="'+escH(k)+'"'+(sel===k?' selected':'')+'>'+escH(k)+'</option>';
+  }).join('');
+}
+function thumbHtml(charId, key){
+  var f = portraitFile(charId, key);
+  var src = f ? IMAGE_PATH + f : '';
+  return '<div class="thumb'+(src?'':' empty')+'">' +
+    (src ? '<img src="'+escH(src)+'" onerror="this.parentNode.classList.add(\'empty\');this.remove();">' : '') + '</div>';
+}
+function seFieldHtml(ei, ev){
+  return '<div><label>SE（assets/audio/ から・空欄で無音）</label>' +
+    '<input type="text" data-ei="'+ei+'" data-field="ev-se" value="'+escH(ev.se||'')+'" placeholder="例: EFE_warning.mp3"></div>';
+}
+
+/* --- タイプ別の本文 --- */
+function dialogueBodyHtml(ei, ev){
+  if(!ev.lines || !ev.lines.length){
+    var dc = characters[0];
+    ev.lines = [{speaker: dc?dc.id:'', side:'', portrait: dc&&dc.portraits[0]?dc.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false}];
+  }
+  var linesHtml = ev.lines.map(function(line, li){
+    var pKeys = portraitKeysOf(line.speaker);
+    if(pKeys.length && pKeys.indexOf(line.portrait) === -1) line.portrait = pKeys[0];
+    var ch = charById(line.speaker);
+    var sideOpts = ['', 'left', 'right'].map(function(v){
+      var lbl = v==='' ? 'キャラ既定（'+((ch&&ch.side)||'left')+'）' : v;
+      return '<option value="'+v+'"'+((line.side||'')===v?' selected':'')+'>'+lbl+'</option>';
+    }).join('');
+    return (
+      '<div class="line-row">' +
+        thumbHtml(line.speaker, line.portrait) +
+        '<div class="line-fields">' +
+          '<div class="row3">' +
+            '<div><label>話者</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="speaker">'+charOptions(line.speaker)+'</select></div>' +
+            '<div><label>表情</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="portrait">'+portraitOptions(line.speaker, line.portrait)+'</select></div>' +
+            '<div><label>登場側（この行だけ上書き）</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="side">'+sideOpts+'</select></div>' +
+          '</div>' +
+          '<div><label>セリフ</label><textarea data-ei="'+ei+'" data-li="'+li+'" data-field="text">'+escH(line.text||'')+'</textarea></div>' +
+          '<div class="row3">' +
+            '<div><label>表示時間ms（空欄=文字数から自動）</label><input type="number" min="0" step="100" data-ei="'+ei+'" data-li="'+li+'" data-field="duration" value="'+escH(line.duration!=null?line.duration:'')+'"></div>' +
+            '<div><label>SE（空欄=既定SEを使用）</label><input type="text" data-ei="'+ei+'" data-li="'+li+'" data-field="se" value="'+escH(line.se||'')+'"'+(line.seNull?' disabled':'')+'></div>' +
+            '<div style="display:flex;align-items:flex-end;padding-bottom:6px"><label class="check-row"><input type="checkbox" data-ei="'+ei+'" data-li="'+li+'" data-field="seNull"'+(line.seNull?' checked':'')+'> この行は無音固定</label></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="line-acts">' +
+          '<button class="btn-sm" data-ei="'+ei+'" data-li="'+li+'" data-action="line-up">↑</button>' +
+          '<button class="btn-sm" data-ei="'+ei+'" data-li="'+li+'" data-action="line-dn">↓</button>' +
+          '<button class="btn-sm-del" data-ei="'+ei+'" data-li="'+li+'" data-action="line-del">×</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+  return '<div class="sec-label"><span>台詞（'+ev.lines.length+'行）</span></div>' +
+    linesHtml +
+    '<button class="add-btn" data-ei="'+ei+'" data-action="add-line">+ 台詞追加</button>';
+}
+
+function warningBodyHtml(ei, ev){
+  var vOpts = Object.keys(WARN_VARIANTS).map(function(k){
+    return '<option value="'+k+'"'+((ev.variant||'default')===k?' selected':'')+'>'+WARN_VARIANTS[k]+'</option>';
+  }).join('');
+  return '<div class="sec-label">警告パネル設定</div>' +
+    '<div class="row3">' +
+      '<div><label>バリエーション</label><select data-ei="'+ei+'" data-field="warn-variant">'+vOpts+'</select></div>' +
+      '<div><label>パネル画像（assets/images/cutin/）</label><input type="text" data-ei="'+ei+'" data-field="warn-image" value="'+escH(ev.image||'')+'" placeholder="空欄=警告.png"></div>' +
+      seFieldHtml(ei, ev) +
+    '</div>' +
+    '<div class="trig-note">バナーが画面を横切ります。中央での静止はクリック/タッチで解除できます。</div>';
+}
+
+function collisionBodyHtml(ei, ev){
+  var L = ev.left || {}, R = ev.right || {};
+  return '<div class="sec-label">衝突（右キャラが左キャラへ突進し、二人まとめて画面左へ退場・台詞なし）</div>' +
+    '<div class="row2">' +
+      '<div style="display:flex;gap:8px;align-items:flex-end">' + thumbHtml(R.speaker, R.portrait) +
+        '<div style="flex:1"><label>右キャラ（突進する側）</label><select data-ei="'+ei+'" data-field="col-right-speaker">'+charOptions(R.speaker)+'</select></div>' +
+        '<div style="flex:1"><label>表情</label><select data-ei="'+ei+'" data-field="col-right-portrait">'+portraitOptions(R.speaker, R.portrait)+'</select></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:flex-end">' + thumbHtml(L.speaker, L.portrait) +
+        '<div style="flex:1"><label>左キャラ（受ける側）</label><select data-ei="'+ei+'" data-field="col-left-speaker">'+charOptions(L.speaker)+'</select></div>' +
+        '<div style="flex:1"><label>表情</label><select data-ei="'+ei+'" data-field="col-left-portrait">'+portraitOptions(L.speaker, L.portrait)+'</select></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="row2">' + seFieldHtml(ei, ev) + '<div></div></div>';
+}
+
+function shakeBodyHtml(ei, ev){
+  var sideOpts = ['left','right'].map(function(v){
+    return '<option value="'+v+'"'+((ev.side||'left')===v?' selected':'')+'>'+(v==='left'?'左':'右')+'</option>';
+  }).join('');
+  return '<div class="sec-label">シェイク（指定した1体を小刻みに震わせる・台詞なし）</div>' +
+    '<div class="row3">' +
+      '<div style="display:flex;gap:8px;align-items:flex-end">' + thumbHtml(ev.speaker, ev.portrait) +
+        '<div style="flex:1"><label>キャラ</label><select data-ei="'+ei+'" data-field="shk-speaker">'+charOptions(ev.speaker)+'</select></div>' +
+      '</div>' +
+      '<div><label>表情</label><select data-ei="'+ei+'" data-field="shk-portrait">'+portraitOptions(ev.speaker, ev.portrait)+'</select></div>' +
+      '<div><label>表示側</label><select data-ei="'+ei+'" data-field="shk-side">'+sideOpts+'</select></div>' +
+    '</div>' +
+    '<div class="row3">' +
+      '<div><label>震える時間ms（空欄=1000）</label><input type="number" min="0" step="100" data-ei="'+ei+'" data-field="ev-duration" value="'+escH(ev.duration!=null?ev.duration:'')+'"></div>' +
+      seFieldHtml(ei, ev) +
+      '<div></div>' +
+    '</div>';
+}
+
 function renderEvents(){
   var el = document.getElementById('event-list');
   if(!events.length){ el.innerHTML = '<div class="empty-msg">イベントがありません。「+ イベント追加」から作成してください。</div>'; return; }
@@ -374,8 +496,12 @@ function renderEvents(){
   events.forEach(function(ev, ei){
     var d = document.createElement('div');
     d.className = 'card';
+    var type = ev.type || 'dialogue';
     var trigOpts = Object.keys(TRIGGER_LABELS).map(function(k){
       return '<option value="'+k+'"'+((ev.trigger.type||'stage_start')===k?' selected':'')+'>'+TRIGGER_LABELS[k]+'</option>';
+    }).join('');
+    var typeOpts = Object.keys(EVENT_TYPES).map(function(k){
+      return '<option value="'+k+'"'+(type===k?' selected':'')+'>'+EVENT_TYPES[k]+'</option>';
     }).join('');
     var extraField = '';
     if(ev.trigger.type==='time'){
@@ -387,48 +513,11 @@ function renderEvents(){
     }
     var inPlayBadge = IN_PLAY_TYPES[ev.trigger.type] ? '<span class="warn-badge">ランキング対象外になります</span>' : '';
 
-    var linesHtml = ev.lines.map(function(line, li){
-      var speakerOpts = characters.map(function(c){
-        return '<option value="'+escH(c.id)+'"'+(line.speaker===c.id?' selected':'')+'>'+escH(c.name||c.id)+'</option>';
-      }).join('');
-      var pKeys = portraitKeysOf(line.speaker);
-      if(pKeys.length && pKeys.indexOf(line.portrait) === -1) line.portrait = pKeys[0];
-      var portraitOpts = pKeys.map(function(k){
-        return '<option value="'+escH(k)+'"'+(line.portrait===k?' selected':'')+'>'+escH(k)+'</option>';
-      }).join('');
-      var thumbFile = portraitFile(line.speaker, line.portrait);
-      var thumbSrc = thumbFile ? IMAGE_PATH + thumbFile : '';
-      var ch = charById(line.speaker);
-      var sideOpts = ['', 'left', 'right'].map(function(v){
-        var lbl = v==='' ? 'キャラ既定（'+((ch&&ch.side)||'left')+'）' : v;
-        return '<option value="'+v+'"'+((line.side||'')===v?' selected':'')+'>'+lbl+'</option>';
-      }).join('');
-      return (
-        '<div class="line-row">' +
-          '<div class="thumb'+(thumbSrc?'':' empty')+'">' +
-            (thumbSrc ? '<img src="'+escH(thumbSrc)+'" onerror="this.parentNode.classList.add(\'empty\');this.remove();">' : '') +
-          '</div>' +
-          '<div class="line-fields">' +
-            '<div class="row3">' +
-              '<div><label>話者</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="speaker">'+speakerOpts+'</select></div>' +
-              '<div><label>表情</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="portrait">'+portraitOpts+'</select></div>' +
-              '<div><label>登場側（この行だけ上書き）</label><select data-ei="'+ei+'" data-li="'+li+'" data-field="side">'+sideOpts+'</select></div>' +
-            '</div>' +
-            '<div><label>セリフ</label><textarea data-ei="'+ei+'" data-li="'+li+'" data-field="text">'+escH(line.text||'')+'</textarea></div>' +
-            '<div class="row3">' +
-              '<div><label>表示時間ms（空欄=文字数から自動）</label><input type="number" min="0" step="100" data-ei="'+ei+'" data-li="'+li+'" data-field="duration" value="'+escH(line.duration!=null?line.duration:'')+'"></div>' +
-              '<div><label>SE（空欄=既定SEを使用）</label><input type="text" data-ei="'+ei+'" data-li="'+li+'" data-field="se" value="'+escH(line.se||'')+'"'+(line.seNull?' disabled':'')+'></div>' +
-              '<div style="display:flex;align-items:flex-end;padding-bottom:6px"><label class="check-row"><input type="checkbox" data-ei="'+ei+'" data-li="'+li+'" data-field="seNull"'+(line.seNull?' checked':'')+'> この行は無音固定</label></div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="line-acts">' +
-            '<button class="btn-sm" data-ei="'+ei+'" data-li="'+li+'" data-action="line-up">↑</button>' +
-            '<button class="btn-sm" data-ei="'+ei+'" data-li="'+li+'" data-action="line-dn">↓</button>' +
-            '<button class="btn-sm-del" data-ei="'+ei+'" data-li="'+li+'" data-action="line-del">×</button>' +
-          '</div>' +
-        '</div>'
-      );
-    }).join('');
+    var body =
+      type==='warning'   ? warningBodyHtml(ei, ev) :
+      type==='collision' ? collisionBodyHtml(ei, ev) :
+      type==='shake'     ? shakeBodyHtml(ei, ev) :
+                           dialogueBodyHtml(ei, ev);
 
     d.innerHTML =
       '<div class="card-hdr">' +
@@ -441,24 +530,31 @@ function renderEvents(){
       '</div>' +
       '<div class="row3">' +
         '<div><label>イベントID（一意）</label><input type="text" data-ei="'+ei+'" data-field="id" value="'+escH(ev.id)+'"></div>' +
+        '<div><label>演出タイプ</label><select data-ei="'+ei+'" data-field="ev-type">'+typeOpts+'</select></div>' +
         '<div><label>トリガー</label><select data-ei="'+ei+'" data-field="trigger-type">'+trigOpts+'</select></div>' +
-        extraField +
       '</div>' +
+      (extraField ? '<div class="row3">'+extraField+'<div></div><div></div></div>' : '') +
       '<label class="check-row" style="margin-bottom:10px"><input type="checkbox" data-ei="'+ei+'" data-field="once"'+(ev.once!==false?' checked':'')+'> 1回だけ発火する（once。チェックを外すと毎回発火）</label>' +
-      '<div class="sec-label"><span>台詞（'+ev.lines.length+'行）</span></div>' +
-      linesHtml +
-      '<button class="add-btn" data-ei="'+ei+'" data-action="add-line">+ 台詞追加</button>';
+      body;
     el.appendChild(d);
   });
 }
 
 document.getElementById('btn-add-event').addEventListener('click', function(){
   var defChar = characters[0];
+  var did = defChar ? defChar.id : '';
+  var dkey = defChar && defChar.portraits[0] ? defChar.portraits[0].key : 'normal';
   events.push({
     id: 'event' + (events.length+1),
     once: true,
+    type: 'dialogue',
     trigger: {type:'stage_start', sec:null, gte:null},
-    lines: [{speaker: defChar?defChar.id:'', side:'', portrait: defChar&&defChar.portraits[0]?defChar.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false}]
+    lines: [{speaker: did, side:'', portrait: dkey, text:'', duration:null, se:'', seNull:false}],
+    // 他タイプに切り替えたとき用の初期値（切替で消えないよう最初から持たせる）
+    variant: 'default', image: '', se: '',
+    left:  {speaker: did, portrait: dkey},
+    right: {speaker: did, portrait: dkey},
+    side: 'left', speaker: did, portrait: dkey, duration: null
   });
   renderEvents();
 });
@@ -481,7 +577,7 @@ document.getElementById('event-list').addEventListener('click', function(e){
     ev.lines.push({speaker: defChar?defChar.id:'', side:'', portrait: defChar&&defChar.portraits[0]?defChar.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false});
     renderEvents();
   } else if(action==='preview-event'){
-    playPreview(ev.lines);
+    previewEvent(ev);
   } else if(action==='line-del'){
     var li = parseInt(t.dataset.li);
     ev.lines.splice(li,1);
@@ -514,6 +610,9 @@ document.getElementById('event-list').addEventListener('input', function(e){
     else if(field==='trig-sec') ev.trigger.sec = t.value===''?null:parseFloat(t.value);
     else if(field==='trig-gte') ev.trigger.gte = t.value===''?null:parseFloat(t.value);
     else if(field==='once') ev.once = t.checked;
+    else if(field==='warn-image') ev.image = t.value;
+    else if(field==='ev-se') ev.se = t.value;
+    else if(field==='ev-duration') ev.duration = t.value===''?null:parseInt(t.value,10);
   }
 });
 
@@ -539,7 +638,35 @@ document.getElementById('event-list').addEventListener('change', function(e){
       renderEvents();
     } else if(field==='id'){
       ev.id = t.value; renderEvents();
-    }
+    } else if(field==='ev-type'){
+      ev.type = t.value;
+      // 切替先タイプで参照するフィールドが無ければ補う（旧JSON読込分の保険）
+      if(!ev.left)  ev.left  = {speaker:'', portrait:'normal'};
+      if(!ev.right) ev.right = {speaker:'', portrait:'normal'};
+      if(ev.variant == null) ev.variant = 'default';
+      if(ev.side == null) ev.side = 'left';
+      if(ev.type==='dialogue' && (!ev.lines || !ev.lines.length)){
+        var dc = characters[0];
+        ev.lines = [{speaker: dc?dc.id:'', side:'', portrait: dc&&dc.portraits[0]?dc.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false}];
+      }
+      renderEvents();
+    } else if(field==='warn-variant'){ ev.variant = t.value; }
+    else if(field==='shk-side'){ ev.side = t.value; }
+    else if(field==='shk-speaker'){
+      ev.speaker = t.value;
+      var sk = portraitKeysOf(t.value); ev.portrait = sk.length ? sk[0] : '';
+      renderEvents();
+    } else if(field==='shk-portrait'){ ev.portrait = t.value; renderEvents(); }
+    else if(field==='col-right-speaker'){
+      ev.right = ev.right || {}; ev.right.speaker = t.value;
+      var rk = portraitKeysOf(t.value); ev.right.portrait = rk.length ? rk[0] : '';
+      renderEvents();
+    } else if(field==='col-right-portrait'){ ev.right = ev.right || {}; ev.right.portrait = t.value; renderEvents(); }
+    else if(field==='col-left-speaker'){
+      ev.left = ev.left || {}; ev.left.speaker = t.value;
+      var lk = portraitKeysOf(t.value); ev.left.portrait = lk.length ? lk[0] : '';
+      renderEvents();
+    } else if(field==='col-left-portrait'){ ev.left = ev.left || {}; ev.left.portrait = t.value; renderEvents(); }
   }
 });
 
@@ -590,6 +717,27 @@ function playPreview(lines){
   CutIn.play(playLines);
 }
 
+// タイプ別のプレビュー振り分け（本物のCutInで再生）
+function previewEvent(ev){
+  if(typeof CutIn === 'undefined'){
+    document.getElementById('cutin-load-warning').style.display = 'block';
+    return;
+  }
+  var type = ev.type || 'dialogue';
+  if(type === 'warning'){
+    ensurePreviewInit();
+    CutIn.warn({ image: ev.image, variant: ev.variant, se: ev.se });
+  } else if(type === 'collision'){
+    ensurePreviewInit();
+    CutIn.animate({ type:'collision', left: ev.left, right: ev.right, se: ev.se, duration: ev.duration });
+  } else if(type === 'shake'){
+    ensurePreviewInit();
+    CutIn.animate({ type:'shake', side: ev.side, speaker: ev.speaker, portrait: ev.portrait, se: ev.se, duration: ev.duration });
+  } else {
+    playPreview(ev.lines);
+  }
+}
+
 document.getElementById('preview-exit').addEventListener('click', function(){
   if(typeof CutIn !== 'undefined') CutIn.cancel();
 });
@@ -611,19 +759,39 @@ function buildExportObject(){
     charMap[c.id] = {name:c.name||c.id, side:(c.side==='right'?'right':'left'), portraits:pm};
   });
   var evOut = events.map(function(ev){
+    var type = ev.type || 'dialogue';
     var trig = {type: ev.trigger.type};
     if(ev.trigger.type==='time' && ev.trigger.sec!=null) trig.sec = ev.trigger.sec;
     if((ev.trigger.type==='open_rate'||ev.trigger.type==='mines_removed') && ev.trigger.gte!=null) trig.gte = ev.trigger.gte;
-    var out = {id: ev.id, trigger: trig};
+    var out = {id: ev.id};
+    if(type !== 'dialogue') out.type = type;
+    out.trigger = trig;
     if(ev.once===false) out.once = false;
-    out.lines = ev.lines.map(function(l){
-      var lo = {speaker:l.speaker, text:l.text||''};
-      if(l.side) lo.side = l.side;
-      if(l.portrait) lo.portrait = l.portrait;
-      if(l.duration!=null) lo.duration = l.duration;
-      if(l.seNull) lo.se = null; else if(l.se) lo.se = l.se;
-      return lo;
-    });
+    if(type === 'warning'){
+      if(ev.variant && ev.variant !== 'default') out.variant = ev.variant;
+      if(ev.image) out.image = ev.image;
+      if(ev.se) out.se = ev.se;
+    } else if(type === 'collision'){
+      out.left  = {speaker:(ev.left ||{}).speaker||'', portrait:(ev.left ||{}).portrait||'normal'};
+      out.right = {speaker:(ev.right||{}).speaker||'', portrait:(ev.right||{}).portrait||'normal'};
+      if(ev.se) out.se = ev.se;
+      if(ev.duration!=null) out.duration = ev.duration;
+    } else if(type === 'shake'){
+      out.side = ev.side || 'left';
+      out.speaker = ev.speaker || '';
+      out.portrait = ev.portrait || 'normal';
+      if(ev.se) out.se = ev.se;
+      if(ev.duration!=null) out.duration = ev.duration;
+    } else {
+      out.lines = (ev.lines||[]).map(function(l){
+        var lo = {speaker:l.speaker, text:l.text||''};
+        if(l.side) lo.side = l.side;
+        if(l.portrait) lo.portrait = l.portrait;
+        if(l.duration!=null) lo.duration = l.duration;
+        if(l.seNull) lo.se = null; else if(l.se) lo.se = l.se;
+        return lo;
+      });
+    }
     return out;
   });
   var root = {characters: charMap, events: evOut};
@@ -642,7 +810,16 @@ function validateForExport(){
     evIds[ev.id] = 1;
     if(ev.trigger.type==='time' && ev.trigger.sec==null) errs.push('イベント「'+ev.id+'」: time秒数が未設定');
     if((ev.trigger.type==='open_rate'||ev.trigger.type==='mines_removed') && ev.trigger.gte==null) errs.push('イベント「'+ev.id+'」: 閾値が未設定');
-    ev.lines.forEach(function(l, li){ if(!l.speaker) errs.push('イベント「'+ev.id+'」の台詞'+(li+1)+': 話者未設定'); });
+    var type = ev.type || 'dialogue';
+    if(type === 'dialogue'){
+      (ev.lines||[]).forEach(function(l, li){ if(!l.speaker) errs.push('イベント「'+ev.id+'」の台詞'+(li+1)+': 話者未設定'); });
+    } else if(type === 'collision'){
+      if(!(ev.left && ev.left.speaker))  errs.push('イベント「'+ev.id+'」: 左キャラ未設定');
+      if(!(ev.right && ev.right.speaker)) errs.push('イベント「'+ev.id+'」: 右キャラ未設定');
+    } else if(type === 'shake'){
+      if(!ev.speaker) errs.push('イベント「'+ev.id+'」: キャラ未設定');
+    }
+    // warning は必須項目なし（画像は空欄なら 警告.png にフォールバック）
   });
   return errs;
 }
@@ -713,13 +890,27 @@ document.getElementById('load-input').addEventListener('change', function(){
           };
         });
         events = (data.events||[]).map(function(ev){
-          return {
-            id: ev.id, once: ev.once!==false,
+          var type = ev.type || 'dialogue';
+          var base = {
+            id: ev.id, once: ev.once!==false, type: type,
             trigger: {type:(ev.trigger&&ev.trigger.type)||'stage_start', sec:(ev.trigger&&ev.trigger.sec)!=null?ev.trigger.sec:null, gte:(ev.trigger&&ev.trigger.gte)!=null?ev.trigger.gte:null},
-            lines: (ev.lines||[]).map(function(l){
-              return {speaker:l.speaker||'', side:l.side||'', portrait:l.portrait||'normal', text:l.text||'', duration:l.duration!=null?l.duration:null, se:(l.se===null?'':(l.se||'')), seNull:(l.se===null)};
-            })
+            lines: [], variant:'default', image:'', se:(ev.se||''),
+            left:{speaker:'',portrait:'normal'}, right:{speaker:'',portrait:'normal'},
+            side:'left', speaker:'', portrait:'normal', duration:(ev.duration!=null?ev.duration:null)
           };
+          if(type === 'warning'){
+            base.variant = ev.variant || 'default'; base.image = ev.image || '';
+          } else if(type === 'collision'){
+            base.left  = {speaker:(ev.left ||{}).speaker||'', portrait:(ev.left ||{}).portrait||'normal'};
+            base.right = {speaker:(ev.right||{}).speaker||'', portrait:(ev.right||{}).portrait||'normal'};
+          } else if(type === 'shake'){
+            base.side = ev.side || 'left'; base.speaker = ev.speaker || ''; base.portrait = ev.portrait || 'normal';
+          } else {
+            base.lines = (ev.lines||[]).map(function(l){
+              return {speaker:l.speaker||'', side:l.side||'', portrait:l.portrait||'normal', text:l.text||'', duration:l.duration!=null?l.duration:null, se:(l.se===null?'':(l.se||'')), seNull:(l.se===null)};
+            });
+          }
+          return base;
         });
         setName = '';
         rootSe = (data.se && data.se.open) || '';

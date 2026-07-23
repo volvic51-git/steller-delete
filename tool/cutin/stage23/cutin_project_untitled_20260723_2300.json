@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "setName": "",
+  "rootSe": "",
+  "characters": [
+    {
+      "id": "ALICE2",
+      "name": "有栖",
+      "side": "left",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.PNG"
+        }
+      ]
+    },
+    {
+      "id": "NIFA",
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "ムキ",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "ピピ",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "つるはし",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "event2",
+      "once": false,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R02.png",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null
+    },
+    {
+      "id": "event2",
+      "once": true,
+      "type": "dialogue",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "旗禁止ってどういうこと？",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "NIFA",
+          "side": "",
+          "portrait": "normal1",
+          "text": "旗が禁止ってことだよ",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal2",
+          "text": "それは知ってる",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "NIFA",
+          "side": "",
+          "portrait": "つるはし",
+          "text": "つまりコレは使える",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "つるはしじゃん",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "NIFA",
+          "side": "",
+          "portrait": "ムキ",
+          "text": "採掘　採掘\n採掘　採掘",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null
+    }
+  ]
+}

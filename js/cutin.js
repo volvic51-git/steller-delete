@@ -13,12 +13,26 @@ const CutIn = (() => {
   let _lineResolve = null;    // 現在行の完了resolve
   let _currentLine = null;
   let _tapGuardUntil = 0;     // 誤タップ防止（行表示直後300ms）
+  let _warnQueue = [];        // 警告バナー専用キュー（会話とは独立・非モーダル）
+  let _warnPlaying = false;
+  let _warnAbort = null;      // 再生中バナーの後片付け（cancel時に呼ぶ）
+
+  // 警告バナーのバリアント：方向と通り道ラインの色。太さは両者共通（CSS側で固定）。
+  const WARN_VARIANTS = {
+    default:   { direction:'ltr', trackColor:'rgba(40,140,255,0.5)' },  // 青・左→右
+    orangeRTL: { direction:'rtl', trackColor:'rgba(255,120,0,0.55)' }   // オレンジ・右→左
+  };
 
   const CSS = `
   #cutin-layer{position:fixed;inset:0;z-index:150;display:none;
     background:radial-gradient(ellipse at center, transparent 40%, rgba(0,5,20,0.35) 100%);
     padding-bottom:env(safe-area-inset-bottom);}
-  #cutin-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  /* 既定は中央（特殊ルール告知など speaker 無しの行）。話者ありの行は
+     side-left / side-right クラスで左右に寄せる（画面端に付かないよう左右パディングを確保）。 */
+  #cutin-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:0 clamp(12px,5vw,90px);box-sizing:border-box;}
+  #cutin-layer.side-left  #cutin-stage{justify-content:flex-start;}
+  #cutin-layer.side-right #cutin-stage{justify-content:flex-end;}
   #cutin-window{position:relative;width:min(640px,86vw);z-index:2;
     padding:14px 20px 18px;box-sizing:border-box;
     opacity:0;transform:translateY(14px);transition:opacity .28s ease, transform .28s ease;}
@@ -51,7 +65,45 @@ const CutIn = (() => {
     #cutin-text{min-height:7.6em;}
     .cutin-char{opacity:0;max-height:42vh;}
     .cutin-char.in{opacity:.55;}
-  }`;
+  }
+  /* ===== 立ち絵アニメ（type:collision / shake。台詞なし＝ウィンドウ非表示） ===== */
+  #cutin-layer.anim #cutin-window{opacity:0 !important;}
+  @keyframes cutinShakeAnim{
+    0%,100%{transform:translateX(0);}
+    8%{transform:translateX(-8px) rotate(-1.5deg);}
+    18%{transform:translateX(8px) rotate(1.5deg);}
+    30%{transform:translateX(-7px);}
+    42%{transform:translateX(7px);}
+    54%{transform:translateX(-5px);}
+    66%{transform:translateX(5px);}
+    78%{transform:translateX(-3px);}
+    90%{transform:translateX(2px);}
+  }
+  /* 衝突：右キャラが左へ突進→左キャラに衝突→二人まとめて画面左へ退場 */
+  @keyframes cutinCollideLeft{
+    0%,50%{transform:translateX(0);opacity:1;}
+    58%{transform:translateX(-14px);}               /* 衝突の反動 */
+    100%{transform:translateX(-75vw);opacity:0;}
+  }
+  @keyframes cutinCollideRight{
+    0%{transform:translateX(0);opacity:1;}
+    50%{transform:translateX(-72vw);opacity:1;}     /* 左キャラ位置まで突進＝衝突 */
+    58%{transform:translateX(-70vw);}               /* 反動 */
+    100%{transform:translateX(-150vw);opacity:0;}   /* まとめて左へ抜ける */
+  }
+  /* ===== 警告バナー（type:warning。非モーダル・タップで中央静止を解除） =====
+     旧sphere-minesweeper.html側のプロトタイプを移設。青(default,左→右)/オレンジ(orangeRTL,右→左)。
+     通り道ラインの太さは両バリアント共通（バナー幅×0.8）。色だけ--wb-track-colorで切替。 */
+  #cutin-warn-layer{position:fixed;inset:0;z-index:160;display:none;
+    align-items:center;justify-content:center;overflow:hidden;
+    pointer-events:none;--wb-w:min(640px,92vw);}
+  #cutin-warn-layer.show{display:flex;}
+  #cutin-warn-track{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    opacity:0;background:var(--wb-track-color, rgba(40,140,255,0.5));
+    height:calc(var(--wb-w) * 0.8);will-change:opacity;transition:opacity .28s linear;}
+  #cutin-warn-layer.warn-show #cutin-warn-track{opacity:1;}
+  #cutin-warn-img{position:relative;width:var(--wb-w);height:auto;
+    will-change:transform,opacity;opacity:0;}`;
 
   function init(cfg){
     _cfg = Object.assign({
@@ -84,6 +136,12 @@ const CutIn = (() => {
     layer.addEventListener('click', _onTap);
     layer.addEventListener('touchend', e => { e.preventDefault(); _onTap(e); }, {passive:false});
     new ResizeObserver(_updateWindowShape).observe(document.getElementById('cutin-window'));
+
+    // 警告バナー用レイヤー（会話レイヤーとは別・非モーダル）
+    const warn = document.createElement('div');
+    warn.id = 'cutin-warn-layer';
+    warn.innerHTML = '<div id="cutin-warn-track"></div><img id="cutin-warn-img" alt="">';
+    document.body.appendChild(warn);
   }
 
   // 尾の形状（tool/zigzag-pointer-maker.html で確定した固定デザインを移植）。
@@ -132,7 +190,8 @@ const CutIn = (() => {
     }
     while(_queue.length){
       const job = _queue.shift();
-      for(const line of job.lines){ await _playLine(line); }
+      if(job.anim){ await _playAnim(job.anim); }
+      else { for(const line of job.lines){ await _playLine(line); } }
       job.resolve();
     }
     await _closeLayer();
@@ -149,6 +208,10 @@ const CutIn = (() => {
       const side = line.side || ch.side || 'left';
       _setPortrait(side, line.speaker, ch, line.portrait || 'normal');
       document.getElementById('cutin-window-bg').classList.toggle('mirror', side === 'right');
+      // 吹き出しを話者側へ寄せる。speaker無しの行（特殊ルール告知など）は中央のまま。
+      const layerEl = document.getElementById('cutin-layer');
+      layerEl.classList.remove('side-left', 'side-right');
+      if(line.speaker) layerEl.classList.add(side === 'right' ? 'side-right' : 'side-left');
       const nameEl = document.getElementById('cutin-name');
       const nameText = ch.name || line.speaker || '';
       nameEl.textContent = nameText;
@@ -164,17 +227,173 @@ const CutIn = (() => {
     });
   }
 
+  // 立ち絵のsrcだけを適用（退場ロジックは呼び出し側が制御）。表示できたらtrue。
+  function _applyPortraitSrc(el, charId, ch, key){
+    let file = null;
+    if(ch && ch.portraits && ch.portraits[key]) file = ch.portraits[key];
+    else if(charId) file = 'cutin_' + charId + '_' + key + '.png';   // 規約フォールバック
+    if(!file) return false;
+    const src = _cfg.imagePath + file;
+    if(el.getAttribute('src') !== src) el.src = src;
+    return true;
+  }
+
   function _setPortrait(side, charId, ch, key){
     const el    = document.getElementById(side === 'right' ? 'cutin-char-right' : 'cutin-char-left');
     const other = document.getElementById(side === 'right' ? 'cutin-char-left'  : 'cutin-char-right');
     other.classList.remove('in');           // 話者以外は退場
-    let file = null;
-    if(ch.portraits && ch.portraits[key]) file = ch.portraits[key];
-    else if(charId) file = 'cutin_' + charId + '_' + key + '.png';   // 規約フォールバック
-    if(!file){ el.classList.remove('in'); return; }
-    const src = _cfg.imagePath + file;
-    if(el.getAttribute('src') !== src) el.src = src;
-    el.classList.add('in');
+    if(_applyPortraitSrc(el, charId, ch, key)) el.classList.add('in');
+    else el.classList.remove('in');
+  }
+
+  // 台詞なしの立ち絵アニメ（collision / shake）。会話レイヤーを使い、ウィンドウだけ隠す。
+  // 会話キューと同じ_queueに積まれるので、会話とアニメは同一の開いたレイヤー内で順に流れる。
+  function animate(opts){
+    return new Promise(resolve => {
+      _queue.push({ anim: opts || {}, resolve });
+      if(!_running) _run();
+    });
+  }
+
+  function _playAnim(anim){
+    return new Promise(resolve => {
+      const layer   = document.getElementById('cutin-layer');
+      const leftEl  = document.getElementById('cutin-char-left');
+      const rightEl = document.getElementById('cutin-char-right');
+      layer.classList.add('anim');                 // ウィンドウ非表示
+      [leftEl, rightEl].forEach(el => { el.style.animation = ''; el.style.opacity = ''; el.style.transition = ''; el.classList.remove('in'); });
+
+      // 立ち絵を即座に不透明表示する（.inのopacityトランジションに頼らない）。
+      // 短い演出中にフェードインが競合するのを避け、非コンポジット環境でも確実に映す。
+      const showChar = (el) => { el.classList.add('in'); el.style.transition = 'none'; el.style.opacity = '1'; };
+
+      let done = false, safety = null;
+      const finish = () => {
+        if(done) return; done = true;
+        clearTimeout(safety);
+        [leftEl, rightEl].forEach(el => { el.style.animation = ''; el.style.opacity = ''; el.style.transition = ''; el.classList.remove('in'); });
+        layer.classList.remove('anim');
+        resolve();
+      };
+      // animationend は非表示タブ等（コンポジット停止）で発火しないことがあるため、
+      // dur+余白の保険タイマーで必ず完了させる（＝ゲームがポーズしっぱなしになるのを防ぐ）。
+      const arm = (dur) => {
+        const onEnd = () => finish();
+        (anim.type === 'collision' ? rightEl : (anim.side === 'right' ? rightEl : leftEl))
+          .addEventListener('animationend', onEnd, { once: true });
+        safety = setTimeout(finish, dur + 200);
+      };
+
+      if(anim.se) _playSe(anim.se);
+
+      if(anim.type === 'shake'){
+        const side = anim.side === 'right' ? 'right' : 'left';
+        const el   = side === 'right' ? rightEl : leftEl;
+        const ch   = (_cfg.characters && _cfg.characters[anim.speaker]) || {};
+        _applyPortraitSrc(el, anim.speaker, ch, anim.portrait || 'normal');
+        showChar(el);
+        const dur = anim.duration != null ? anim.duration : 1000;
+        void el.offsetWidth;
+        el.style.animation = 'cutinShakeAnim ' + dur + 'ms ease-in-out 1';
+        arm(dur);
+
+      } else if(anim.type === 'collision'){
+        const L = anim.left || {}, R = anim.right || {};
+        const chL = (_cfg.characters && _cfg.characters[L.speaker]) || {};
+        const chR = (_cfg.characters && _cfg.characters[R.speaker]) || {};
+        _applyPortraitSrc(leftEl,  L.speaker, chL, L.portrait || 'normal');
+        _applyPortraitSrc(rightEl, R.speaker, chR, R.portrait || 'normal');
+        showChar(leftEl); showChar(rightEl);
+        const dur = anim.duration != null ? anim.duration : 1000;
+        void leftEl.offsetWidth;
+        leftEl.style.animation  = 'cutinCollideLeft '  + dur + 'ms ease-in 1 forwards';
+        rightEl.style.animation = 'cutinCollideRight ' + dur + 'ms ease-in 1 forwards';
+        arm(dur);
+
+      } else {
+        finish();
+      }
+    });
+  }
+
+  /* ===== 警告バナー（非モーダル・タップで中央静止を解除・SE対応） ===== */
+  function warn(opts){
+    return new Promise(resolve => {
+      const wasIdle = !_warnPlaying && _warnQueue.length === 0;
+      _warnQueue.push({ opts: opts || {}, resolve });
+      if(wasIdle && _cfg.hooks && _cfg.hooks.onWarnStart) _cfg.hooks.onWarnStart();
+      if(!_warnPlaying) _runWarn();
+    });
+  }
+
+  function _runWarn(){
+    if(_warnQueue.length === 0){
+      _warnPlaying = false;
+      if(_cfg.hooks && _cfg.hooks.onWarnEnd) _cfg.hooks.onWarnEnd();
+      return;
+    }
+    _warnPlaying = true;
+    const { opts, resolve } = _warnQueue.shift();
+    const V     = WARN_VARIANTS[opts.variant] || WARN_VARIANTS.default;
+    const layer = document.getElementById('cutin-warn-layer');
+    const img   = document.getElementById('cutin-warn-img');
+    const enterFrom = V.direction === 'rtl' ? '120vw'  : '-120vw';
+    const exitTo    = V.direction === 'rtl' ? '-120vw' : '120vw';
+    const file = opts.image || '警告.png';
+    layer.style.setProperty('--wb-track-color', V.trackColor);
+    img.src = /[\/:]/.test(file) ? file : (_cfg.imagePath + file);
+
+    // 同期FLIP：先にレイヤーを表示（display:flex）して要素を描画対象にしてから
+    // 初期位置(transition:none)→リフロー→中央(transition:0.3s)を同一tickで設定する。
+    // ※display:none のまま transform を仕込むと突入トランジションの開始フレームが無く、
+    //   中央へスライドインせずいきなり静止位置に飛ぶ（＝アニメが効かない）。
+    layer.classList.add('show');
+    img.style.transition = 'none';
+    img.style.transform  = 'translateX(' + enterFrom + ')';
+    img.style.opacity    = '0';
+    void img.offsetWidth;                         // 初期位置を確定（要素は既に描画対象）
+
+    if(opts.se) _playSe(opts.se);
+
+    // 突入（0.3s）：中央へスライドイン＋通り道ラインをフェードイン
+    img.style.transition = 'transform .3s cubic-bezier(.22,.7,.3,1), opacity .3s ease';
+    img.style.transform  = 'translateX(0)';
+    img.style.opacity    = '1';
+    layer.classList.add('warn-show');
+
+    let done = false, holdTimer = null, enterTimer = null;
+    const HOLD_MS = opts.holdMs != null ? opts.holdMs : 1500;
+
+    const exit = () => {
+      if(done) return; done = true;
+      clearTimeout(holdTimer); clearTimeout(enterTimer);
+      document.removeEventListener('pointerdown', onTap, true);
+      _warnAbort = null;
+      // 離脱（0.3s）：反対側へ抜けて消える
+      img.style.transition = 'transform .3s cubic-bezier(.5,0,.7,.4), opacity .3s ease';
+      img.style.transform  = 'translateX(' + exitTo + ')';
+      img.style.opacity    = '0';
+      layer.classList.remove('warn-show');
+      setTimeout(() => {
+        layer.classList.remove('show');
+        resolve();
+        _runWarn();               // キューに次があれば続けて再生
+      }, 320);
+    };
+    const onTap = () => exit();   // クリック/タッチで中央静止を即解除
+    _warnAbort = () => {          // cancel()用：即座に片付ける
+      if(done) return; done = true;
+      clearTimeout(holdTimer); clearTimeout(enterTimer);
+      document.removeEventListener('pointerdown', onTap, true);
+      layer.classList.remove('show', 'warn-show');
+      resolve();
+    };
+
+    // 突入完了後に中央静止（HOLD_MS）を開始。タップで前倒しできるよう listener を張る。
+    enterTimer = setTimeout(() => {
+      document.addEventListener('pointerdown', onTap, true);
+      holdTimer = setTimeout(exit, HOLD_MS);
+    }, 300);
   }
 
   function _startTyping(text, onDone){
@@ -247,12 +466,23 @@ const CutIn = (() => {
     _typing = false; _lineResolve = null;
     clearPending();
     const layer = document.getElementById('cutin-layer');
-    if(layer){ layer.classList.remove('show'); layer.style.display = 'none'; }
-    document.getElementById('cutin-char-left') && document.getElementById('cutin-char-left').classList.remove('in');
-    document.getElementById('cutin-char-right') && document.getElementById('cutin-char-right').classList.remove('in');
+    if(layer){ layer.classList.remove('show', 'anim'); layer.style.display = 'none'; }
+    const cl = document.getElementById('cutin-char-left');
+    const cr = document.getElementById('cutin-char-right');
+    // _playAnim が付けた inline の opacity/transition/animation も消す（残ると立ち絵が出っぱなしになる）
+    [cl, cr].forEach(el => { if(el){ el.classList.remove('in'); el.style.animation = ''; el.style.opacity = ''; el.style.transition = ''; } });
     const wasOpen = _layerOpen;
     _layerOpen = false; _running = false;
     if(wasOpen && _cfg && _cfg.hooks && _cfg.hooks.onEnd) _cfg.hooks.onEnd();
+
+    // 警告バナーも強制終了
+    if(_warnAbort) _warnAbort();
+    const wasWarn = _warnPlaying || _warnQueue.length > 0;
+    _warnQueue.forEach(j => j.resolve());
+    _warnQueue = []; _warnPlaying = false; _warnAbort = null;
+    const wl = document.getElementById('cutin-warn-layer');
+    if(wl) wl.classList.remove('show', 'warn-show');
+    if(wasWarn && _cfg && _cfg.hooks && _cfg.hooks.onWarnEnd) _cfg.hooks.onWarnEnd();
   }
 
   function _playSe(file){
@@ -264,6 +494,6 @@ const CutIn = (() => {
     } catch(e){}
   }
 
-  return { init, configure, show, play, cancel, clearPending,
-           isActive: () => _running || _queue.length > 0 };
+  return { init, configure, show, play, warn, animate, cancel, clearPending,
+           isActive: () => _running || _queue.length > 0 || _warnPlaying || _warnQueue.length > 0 };
 })();
