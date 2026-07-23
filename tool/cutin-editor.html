@@ -539,6 +539,8 @@ function renderEvents(){
       '<div class="card-hdr">' +
         '<span class="card-title">' + escH(ev.id || '(無題イベント)') + inPlayBadge + '</span>' +
         '<div class="card-acts">' +
+          '<button class="btn-sm" data-ei="'+ei+'" data-action="event-up"'+(ei===0?' disabled':'')+'>↑</button>' +
+          '<button class="btn-sm" data-ei="'+ei+'" data-action="event-dn"'+(ei===events.length-1?' disabled':'')+'>↓</button>' +
           '<button class="btn-preview" data-ei="'+ei+'" data-action="preview-event">▶ 再生して確認</button>' +
           '<button class="btn" data-ei="'+ei+'" data-action="dup-event">複製</button>' +
           '<button class="btn btn-danger" data-ei="'+ei+'" data-action="del-event">削除</button>' +
@@ -584,6 +586,10 @@ document.getElementById('event-list').addEventListener('click', function(e){
   var ev = events[ei];
   if(action==='del-event'){
     if(confirm('このイベントを削除しますか？')){ events.splice(ei,1); renderEvents(); }
+  } else if(action==='event-up'){
+    if(ei>0){ var etmp=events[ei]; events[ei]=events[ei-1]; events[ei-1]=etmp; renderEvents(); }
+  } else if(action==='event-dn'){
+    if(ei<events.length-1){ var etmp2=events[ei]; events[ei]=events[ei+1]; events[ei+1]=etmp2; renderEvents(); }
   } else if(action==='dup-event'){
     var copy = JSON.parse(JSON.stringify(ev));
     copy.id = ev.id + '_copy';
