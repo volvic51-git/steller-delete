@@ -60,11 +60,11 @@ const CutIn = (() => {
     opacity:0;transition:opacity .2s;animation:cutinBounce .8s ease-in-out infinite alternate;}
   #cutin-next.visible{opacity:1;}
   @keyframes cutinBounce{from{transform:translateY(0);}to{transform:translateY(4px);}}
-  /* 狭幅: ウィンドウ高さPC比2倍（テキスト4行分）・立ち絵は背面半透明（実機判断で調整可） */
+  /* 狭幅: ウィンドウ高さPC比2倍（テキスト4行分）確保する分、立ち絵はnovel側と同じ考え方で
+     縮小してウィンドウと被らないようにする（不透明度はPCと同じ1のまま。半透明にはしない）。 */
   @media (max-width:600px){
     #cutin-text{min-height:7.6em;}
-    .cutin-char{opacity:0;max-height:42vh;}
-    .cutin-char.in{opacity:.55;}
+    .cutin-char{max-height:22vh;}
   }
   /* ===== 立ち絵アニメ（type:collision / shake。台詞なし＝ウィンドウ非表示） ===== */
   #cutin-layer.anim #cutin-window{opacity:0 !important;}
