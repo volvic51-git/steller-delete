@@ -2292,17 +2292,33 @@ const RuleHud = (() => {
 })();
 
 // ===================== CUTIN: 初期化（hooksでゲーム側のポーズ/入力制御と接続） =====================
-window._cutinHooks = {
-  onStart(){ _cutinPausing = true; gamePaused = true; pauseGameTime(); },
-  onEnd(){
-    _cutinPausing = false;
+// ⚠️ gamePaused（入力ブロック）は会話/アニメ演出(onStart/onEnd)と警告バナー(onWarnStart/onWarnEnd)の
+// 「両方」から操作される。以前は互いに無関係にtrue/falseを直接代入していたため、
+// 「台詞の演出が閉じる（_closeLayerの約340ms待ち後にonEndが発火）タイミングが、
+// 次に控えていた警告バナーの表示開始と重なる」場合に、警告表示中にもかかわらず
+// gamePausedがfalseに戻ってしまう隙間ができていた（連続するカットインイベントで
+// 警告と警告の間に台詞/シェイクが挟まる構成だと発生しやすい）。
+// 参照カウントで多重防御し、どちらか一方でも演出中ならgamePausedをtrueに保つ。
+let _cutinPauseRefs = 0;
+function _cutinAcquirePause(){ _cutinPauseRefs++; gamePaused = true; }
+function _cutinReleasePause(){
+  _cutinPauseRefs = Math.max(0, _cutinPauseRefs - 1);
+  if(_cutinPauseRefs === 0){
     // 設定メニューが開いていない時だけ解除（gamePausedは設定メニューと共用のため）
     if(document.getElementById('settings-menu').style.display !== 'block') gamePaused = false;
+  }
+}
+window._cutinHooks = {
+  onStart(){ _cutinPausing = true; _cutinAcquirePause(); pauseGameTime(); },
+  onEnd(){
+    _cutinPausing = false;
+    _cutinReleasePause();
     resumeGameTime();
   },
-  // 警告バナー（非モーダル：ゲームは止めないが掘削・旗立て・各種アイコン操作だけ無効化）
-  onWarnStart(){ window._warningBannerActive = true; },
-  onWarnEnd(){   window._warningBannerActive = false; },
+  // 警告バナー（非モーダル：タイマーは止めない＝pauseGameTime/resumeGameTimeは呼ばない。
+  // 掘削・旗立て・各種アイコン操作だけ無効化するためgamePausedの参照カウントには加わる）。
+  onWarnStart(){ window._warningBannerActive = true; _cutinAcquirePause(); },
+  onWarnEnd(){   window._warningBannerActive = false; _cutinReleasePause(); },
 };
 CutIn.init({ hooks: window._cutinHooks });
 Dialogue.setRuleHandler(function(ev){
