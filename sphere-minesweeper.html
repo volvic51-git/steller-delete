@@ -3345,18 +3345,24 @@ canvas.addEventListener('mousemove', e=>{
 
 canvas.addEventListener('mouseup', e=>{
   if(e.button===0){
-    if(!dragMoved){
+    const wasDragged=dragMoved;
+    isDragging=false; dragMoved=false;
+    // ⚠️ mousedownはgamePausedを見て弾くが、実際にdigCellへ繋がるのはこちら(mouseup)側。
+    // handleMouseAction内部のgamePausedチェックだけに頼らず、ここでも明示的に弾く
+    // （カットイン中の連打で初手が漏れる不具合の多重防御）。
+    if(gamePaused) return;
+    if(!wasDragged){
       // Left click = dig
       const rect=canvas.getBoundingClientRect();
       handleMouseAction(e.clientX-rect.left, e.clientY-rect.top, 'dig');
     }
-    isDragging=false; dragMoved=false;
   }
 });
 
 canvas.addEventListener('mouseup', e=>{
   // Right click = flag (fires separately)
   if(e.button===2){
+    if(gamePaused) return;
     const rect=canvas.getBoundingClientRect();
     handleMouseAction(e.clientX-rect.left, e.clientY-rect.top, 'flag');
   }
@@ -3395,7 +3401,9 @@ canvas.addEventListener('touchend', e=>{
   e.preventDefault();
   if(e.changedTouches.length===1&&isDragging){
     isDragging=false;
-    if(!touchMoved){
+    // 多重防御（mouseup側と同様）。touchstartのgamePausedガードによりisDragging=trueは
+    // 通常ここまで来ないが、ドラッグ中にカットインが割り込むケースへの保険。
+    if(!gamePaused && !touchMoved){
       const t=e.changedTouches[0], rect=canvas.getBoundingClientRect();
       // Touch uses current mode buttons
       const action=currentMode==='flag'?'flag':'dig';
