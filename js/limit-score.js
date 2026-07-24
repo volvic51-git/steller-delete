@@ -56,25 +56,39 @@ window.LimitScore = (() => {
     return '×' + mult.toFixed(1);
   }
 
-  // 億未満はカンマ区切り整数（unit=''）、以上は日本語単位（万〜無量大数）に分けて返す。
-  // 表示単位の小数第3位未満は切り捨て（四捨五入しない）。number/unitを別々に表示したい
-  // 場面（ランキング一覧の2行表示など）向けに、formatScoreはこれを組み合わせるだけにする。
+  // 億未満はカンマ区切り整数（unit1=''・count2=null）。
+  // 億以上は「上位の単位＋その4桁ぶんの数」＋「1段下の単位＋その4桁ぶんの数」の2組に分けて返す
+  // （config.unitsはexpが4刻み＝万進法と同じ桁区切りで並んでいる前提）。
+  // 1段下の単位が無い場合（=億そのものの桁の場合）はunit2=''になり、count2はそのまま
+  // 素の数字として表示される（日本語の慣習で億未満に単位を付けないのと同じ形）。
+  // number/unitを別々に表示したい場面（ランキング一覧の2行表示など）向けに、
+  // formatScoreはこれを組み合わせるだけにする。
   function formatScoreParts(score, config){
     const th = Math.pow(10, config.unitThresholdExp);
     if(score < th){
-      return { number: Math.floor(score).toLocaleString('en-US'), unit: '' };
+      return { count1: Math.floor(score).toLocaleString('en-US'), unit1: '', count2: null, unit2: '' };
     }
     const units = config.units.slice().sort((a, b) => a.exp - b.exp);
-    let unit = units[0];
-    for(const u of units){ if(Math.pow(10, u.exp) <= score) unit = u; else break; }
-    const scale = Math.pow(10, unit.exp);
-    const v = Math.floor((score / scale) * 1000) / 1000; // 第3位以下切り捨て
-    return { number: v.toFixed(3), unit: unit.name };
+    let unit1 = units[0];
+    for(const u of units){ if(Math.pow(10, u.exp) <= score) unit1 = u; else break; }
+    const scale1 = Math.pow(10, unit1.exp);
+    const count1 = Math.floor(score / scale1);
+    const remainder = score - count1 * scale1;
+    const scale2 = Math.pow(10, unit1.exp - 4);
+    const count2 = Math.floor(remainder / scale2);
+    const unit2Obj = units.find(u => u.exp === unit1.exp - 4);
+    // count1/count2は単位付きの4桁枠（0〜9999）なのでカンマ区切りにしない
+    // （カンマ区切りにするのは単位なしの生の整数＝億未満のcount1だけ）。
+    return {
+      count1: String(count1), unit1: unit1.name,
+      count2: String(count2), unit2: unit2Obj ? unit2Obj.name : ''
+    };
   }
 
   function formatScore(score, config){
-    const { number, unit } = formatScoreParts(score, config);
-    return (unit ? `${number} ${unit}` : number) + '点';
+    const { count1, unit1, count2, unit2 } = formatScoreParts(score, config);
+    if(count2 === null) return count1 + '点'; // 億未満：単位なしの整数のまま
+    return `${count1}${unit1}${count2}${unit2}点`;
   }
 
   return {

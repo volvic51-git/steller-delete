@@ -2720,9 +2720,9 @@ function openLimitRankingModal(){
         // 得点は「数値」「単位」を別々の行にする（単位名は途中で改行できない語なので、
         // まとめて1本のテキストにすると幅次第で文字単位に折り返って読みにくくなるため）。
         const scoreParts = LimitScore.formatScoreParts(r.score, cfg);
-        const scoreHtml = scoreParts.unit
-          ? `${scoreParts.number}<br>${scoreParts.unit}点`
-          : `${scoreParts.number}点`;
+        const scoreHtml = scoreParts.count2 !== null
+          ? `${scoreParts.count1}${scoreParts.unit1}<br>${scoreParts.count2}${scoreParts.unit2}点`
+          : `${scoreParts.count1}点`;
         // 盤面/制限時間/再生数/ORACLE数/NFを1行に（背景・BGMは表示しない）。
         const settingsStr = `${boardLabel} / ${tlStr} / ${r.lp}周 / ORACLE${r.hint} / ${r.nf ? 'NF' : '-'}`;
         // 倍率は保存していないため、保存済みの設定(tl/lp/hint/nf)から再計算して表示する。
