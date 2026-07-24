@@ -26,14 +26,21 @@ const Dialogue = (() => {
     });
   }
 
-  // ゲームからの状態通知。発火したイベントの完了Promise配列を返す（stage_clearの待ち合わせ用）
+  // ゲームからの状態通知。発火したイベントの完了Promise配列を返す（stage_clearの待ち合わせ用）。
+  // 同一トリガーで複数イベントが一致した場合は、1つが完全に完了してから次を発火する
+  // （同時に台詞・警告・ルールが重なって始まらないように直列チェーンで繋ぐ）。
+  // onceの発火済み登録だけは即時（同tick二重発火防止）に行い、実際の演出呼び出し（_fire）を
+  // チェーンで遅延させる。
   function notify(type, payload){
     const promises = [];
     if(!_data) return promises;
+    let chain = Promise.resolve();
     for(const ev of (_data.events || [])){
       if(_fired.has(ev.id)) continue;
       if(!_match(ev.trigger, type, payload || {})) continue;
-      promises.push(_fire(ev));
+      if(ev.once !== false) _fired.add(ev.id);
+      chain = chain.then(() => _fire(ev));
+      promises.push(chain);
     }
     return promises;
   }
@@ -46,8 +53,8 @@ const Dialogue = (() => {
     return true;   // stage_start / stage_clear は型一致のみ（manualはnotify経由では発火しない）
   }
 
+  // 実際の演出呼び出し（once登録はnotify/play側で済ませてから呼ぶこと）
   function _fire(ev){
-    if(ev.once !== false) _fired.add(ev.id);        // 発火時に即登録（同tick二重発火防止）
     // クリア／負けイベント終了は他を破棄して優先（stage_overは他のトリガーが起き得ない負けイベント専用だが念のため統一）
     if(ev.trigger && (ev.trigger.type === 'stage_clear' || ev.trigger.type === 'stage_over')) CutIn.clearPending();
     // 演出タイプで振り分け（type省略/'dialogue' は従来の会話カットイン）
@@ -62,9 +69,9 @@ const Dialogue = (() => {
     }
     if(ev.type === 'rule'){
       // ルール表示は常設ゲームHUD（RuleHudなど）の領分でcutin.jsには持たせない。
-      // ここではゲーム側が登録したハンドラへ委譲するだけ。会話キューはブロックしない。
-      if(_ruleHandler) _ruleHandler(ev);
-      return Promise.resolve();
+      // ゲーム側が登録したハンドラへ委譲し、その完了（スライドイン/アウトの演出完了）を
+      // 待ってから次のイベントへ進む（ハンドラがPromiseを返さない場合も安全にフォールバック）。
+      return _ruleHandler ? Promise.resolve(_ruleHandler(ev)) : Promise.resolve();
     }
     return CutIn.play(ev.lines || []);
   }
@@ -72,7 +79,9 @@ const Dialogue = (() => {
   function play(id){                                 // 手動発火（将来のイベント駆動API）
     if(!_data) return Promise.resolve();
     const ev = (_data.events || []).find(e => e.id === id);
-    return ev ? _fire(ev) : Promise.resolve();
+    if(!ev) return Promise.resolve();
+    if(ev.once !== false) _fired.add(ev.id);          // 発火時に即登録（同tick二重発火防止）
+    return _fire(ev);
   }
 
   function reset(){ _fired.clear(); CutIn.cancel(); }          // RETRY時（dataは保持）

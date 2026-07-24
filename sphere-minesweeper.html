@@ -232,8 +232,10 @@
   #rule-hud{display:flex;flex-direction:column;gap:6px;margin-top:10px;align-items:flex-start;pointer-events:none;}
   .rule-item{
     font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:1px;
-    color:#aa66cc;background:rgba(20,0,40,0.55);border:1px solid rgba(150,50,255,0.4);
+    color:#66eeff;background:rgba(0,20,40,0.55);border:1px solid rgba(0,220,255,0.5);
     border-radius:4px;padding:3px 10px;white-space:nowrap;
+    text-shadow:0 0 6px rgba(0,220,255,0.85), 0 0 12px rgba(0,220,255,0.4);
+    box-shadow:0 0 8px rgba(0,220,255,0.35);
     transform:translateX(-120%);opacity:0;
     transition:transform .35s cubic-bezier(.22,.9,.3,1), opacity .35s ease;
   }
@@ -2217,43 +2219,57 @@ const RuleHud = (() => {
   let _rules = [];   // [{ruleId, label, el}, ...]  先頭=最上段=バー直下
   function _container(){ return document.getElementById('rule-hud'); }
 
+  // add/removeともスライド演出の完了で解決するPromiseを返す（カットインイベントの直列進行に使う。
+  // 「ルールが完全に表示され終わってから次の演出へ進む」ためにDialogue側で待ち合わせる）。
   function add(ruleId, label, opts){
     const animate = !opts || opts.animate !== false;
-    if(_rules.some(r => r.ruleId === ruleId)) return; // 同ruleIdの二重addは無視（既存を保持）
+    if(_rules.some(r => r.ruleId === ruleId)) return Promise.resolve(); // 同ruleIdの二重addは無視（既存を保持）
     const el = document.createElement('div');
     el.className = 'rule-item';
     el.textContent = label;
     const cont = _container();
-    if(!cont) return;
+    if(!cont) return Promise.resolve();
     cont.prepend(el); // 最上段＝バー直下に挿入
     _rules.unshift({ ruleId, label, el });
-    if(animate){
-      requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add('in'); }); });
-    } else {
+    if(!animate){
       el.classList.add('in');
+      return Promise.resolve();
     }
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => { if(done) return; done = true; resolve(); };
+      requestAnimationFrame(() => { requestAnimationFrame(() => {
+        el.classList.add('in');
+        el.addEventListener('transitionend', finish, { once:true });
+      }); });
+      // transitionendは非表示タブ等でコンポジットが止まると発火しないことがあるため保険タイマー必須
+      setTimeout(finish, 450);
+    });
   }
 
   function remove(ruleId, opts){
     const animate = !opts || opts.animate !== false;
     const idx = _rules.findIndex(r => r.ruleId === ruleId);
-    if(idx === -1) return; // 存在しないruleIdのremoveは無視
+    if(idx === -1) return Promise.resolve(); // 存在しないruleIdのremoveは無視
     const rec = _rules[idx];
     _rules.splice(idx, 1);
     if(!animate){
       if(rec.el && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
-      return;
+      return Promise.resolve();
     }
     rec.el.classList.remove('in');
     rec.el.classList.add('out');
-    let done = false;
-    const cleanup = () => {
-      if(done) return; done = true;
-      if(rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
-    };
-    // transitionendは非表示タブ等でコンポジットが止まると発火しないことがあるため保険タイマー必須
-    rec.el.addEventListener('transitionend', cleanup, { once:true });
-    setTimeout(cleanup, 400);
+    return new Promise(resolve => {
+      let done = false;
+      const cleanup = () => {
+        if(done) return; done = true;
+        if(rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+        resolve();
+      };
+      // transitionendは非表示タブ等でコンポジットが止まると発火しないことがあるため保険タイマー必須
+      rec.el.addEventListener('transitionend', cleanup, { once:true });
+      setTimeout(cleanup, 400);
+    });
   }
 
   function reset(){
@@ -2294,8 +2310,8 @@ window._cutinHooks = {
 };
 CutIn.init({ hooks: window._cutinHooks });
 Dialogue.setRuleHandler(function(ev){
-  if(ev.action === 'remove') RuleHud.remove(ev.ruleId);
-  else                       RuleHud.add(ev.ruleId, ev.label);
+  // 演出完了で解決するPromiseを返す（Dialogue側が次のイベントへ進む前に待ち合わせる）
+  return ev.action === 'remove' ? RuleHud.remove(ev.ruleId) : RuleHud.add(ev.ruleId, ev.label);
 });
 // 盤面世代カウンタ。地雷除去の遅延コールバック（400ms後）が発行時の盤面に対して
 // 差分更新を行うため、initBoardで盤面が作り直された場合は世代不一致でno-opにする
