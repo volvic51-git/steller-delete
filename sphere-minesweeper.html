@@ -4992,7 +4992,12 @@ function toggleAudio(){
 // ===================== RESTART =====================
 function restartGame(){
   Dialogue.reset(); // RETRY: once発火状態をリセット・進行中カットイン破棄
-  RuleHud.reset();  // RETRY: ルールHUDも空に（以降はイベント再発火でアニメ付き再蓄積される）
+  // ⚠️ RuleHudはここでresetしない。stage_startを発火する_cutinStageStart()は
+  // 初回ページロード時（_startBoardAndGame内）にしか呼ばれず、RESTARTボタン経由の
+  // restartGame()では再発火しない。そのため以前はここでRuleHudだけ空にすると
+  // 二度と復元されず「RESTARTするとルール表示だけ消える」バグになっていた。
+  // ルールはステージの恒常的な設定なので、RESTARTでは表示をそのまま維持するのが正しい
+  // （中断/再開はresumeSuspend側のRuleHud.restoreで別途正しく復元される）。
   window._lastPinSec = null;
   // サーチボタン状態をsearchEnabledに同期
   _searchAvailable = false;
