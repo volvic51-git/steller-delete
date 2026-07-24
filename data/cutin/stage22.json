@@ -1,12 +1,251 @@
 {
-  "se": {},
-  "characters": {},
+  "characters": {
+    "ALICE2": {
+      "name": "有栖",
+      "side": "left",
+      "portraits": {
+        "normal1": "image_alice11.png",
+        "normal2": "image_alice12.png"
+      }
+    },
+    "NIFA": {
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": {
+        "normal1": "image_nefa01.png",
+        "normal2": "image_nefa02.png",
+        "ムキ": "image_nefa03.png",
+        "ピピ": "image_nefa04.png",
+        "つるはし": "image_nefa05.png",
+        "崩壊": "image_nefa06.png"
+      }
+    }
+  },
   "events": [
-    { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
+    {
+      "id": "event1",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R00.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event2",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event2",
+      "label": "超大型盤面"
+    },
+    {
+      "id": "event3",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R02.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event4",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event4",
+      "label": "旗禁止"
+    },
+    {
+      "id": "event5",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R03.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event6",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event6",
+      "label": "Oracle停止"
+    },
+    {
+      "id": "event7",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R04.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event8",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event8",
+      "label": "星面再生：∞"
+    },
+    {
+      "id": "event9",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R06.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event10",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event10",
+      "label": "中断禁止"
+    },
+    {
+      "id": "event11",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R07.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event12",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event12",
+      "label": "AntiNoGuess"
+    },
+    {
+      "id": "event13",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R05.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event14",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event14",
+      "label": "審眼無効"
+    },
+    {
+      "id": "event15",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event16",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event16",
+      "label": "制限時間：30秒"
+    },
+    {
+      "id": "event17",
+      "trigger": {
+        "type": "stage_start"
+      },
       "lines": [
-        { "text": "【特殊ルール】\n掘削禁止\n旗禁止\nOracle(HINT) 無し\n再生(∞)\n最初の安全セル不明\nアンチノーゲス盤面\n制限時間：60秒" } ] },
-    { "id": "stage_over", "trigger": { "type": "stage_over" }, "once": true,
+        {
+          "speaker": "ALICE2",
+          "text": "え、なにこれ？",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "どうなってるの？？",
+          "portrait": "normal2"
+        }
+      ]
+    },
+    {
+      "id": "event18",
+      "trigger": {
+        "type": "time",
+        "sec": 12
+      },
       "lines": [
-        { "text": "無理げー" } ] }
+        {
+          "speaker": "ALICE2",
+          "text": "ちょっと、、、\n何もできないんだけど！",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "ア、アハハ、夢なら覚めてよ",
+          "portrait": "normal2"
+        }
+      ]
+    },
+    {
+      "id": "event19",
+      "trigger": {
+        "type": "time",
+        "sec": 24
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "text": "なんか変な音してるし！",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "絶対ダメなやつじゃん！",
+          "portrait": "normal2"
+        }
+      ]
+    },
+    {
+      "id": "event20",
+      "type": "collision",
+      "trigger": {
+        "type": "time",
+        "sec": 28
+      },
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal2"
+      },
+      "right": {
+        "speaker": "NIFA",
+        "portrait": "ムキ"
+      },
+      "se": "EFE_16_gogogo.wav"
+    }
   ]
 }

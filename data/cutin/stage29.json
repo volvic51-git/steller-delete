@@ -22,15 +22,6 @@
   },
   "events": [
     {
-      "id": "event1",
-      "type": "warning",
-      "trigger": {
-        "type": "stage_start"
-      },
-      "image": "R05.png",
-      "se": "EFE_15_keihou.mp3"
-    },
-    {
       "id": "event3",
       "type": "warning",
       "trigger": {
@@ -47,7 +38,7 @@
       },
       "action": "add",
       "ruleId": "event4",
-      "label": "制限時間：900秒"
+      "label": "制限時間：15秒"
     },
     {
       "id": "event5",
@@ -57,37 +48,32 @@
       "lines": [
         {
           "speaker": "ALICE2",
-          "text": "審眼無効？",
+          "text": "15秒！！？？",
           "portrait": "normal1"
         },
         {
           "speaker": "NIFA",
-          "text": "最初の一歩はいつだって安全",
+          "text": "長いようで短い",
           "portrait": "normal1"
         },
         {
           "speaker": "ALICE2",
-          "text": "そういえばそうね",
+          "text": "短すぎだろっ！",
           "portrait": "normal2"
         },
         {
           "speaker": "NIFA",
-          "text": "「ココ」は大丈夫みたい",
+          "text": "ビッグポイントの倍はある",
           "portrait": "normal2"
         },
         {
           "speaker": "ALICE2",
-          "text": "まさかとは思うけど",
+          "text": "そっか",
           "portrait": "normal1"
         },
         {
-          "speaker": "NIFA",
-          "text": "ビッグポイントは最初から危険",
-          "portrait": "ムキ"
-        },
-        {
           "speaker": "ALICE2",
-          "text": "だよね",
+          "text": "って、なるかー！",
           "portrait": "normal2"
         }
       ]

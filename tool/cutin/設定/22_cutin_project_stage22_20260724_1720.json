@@ -1,0 +1,852 @@
+{
+  "version": 1,
+  "setName": "stage22",
+  "rootSe": "",
+  "characters": [
+    {
+      "id": "ALICE2",
+      "name": "有栖",
+      "side": "left",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        }
+      ]
+    },
+    {
+      "id": "NIFA",
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "ムキ",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "ピピ",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "つるはし",
+          "file": "image_nefa05.png"
+        },
+        {
+          "key": "崩壊",
+          "file": "image_nefa06.png"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "event1",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [],
+      "variant": "default",
+      "image": "R00.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "",
+        "portrait": "normal"
+      },
+      "right": {
+        "speaker": "",
+        "portrait": "normal"
+      },
+      "side": "left",
+      "speaker": "",
+      "portrait": "normal",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event2",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event2",
+      "label": "超大型盤面"
+    },
+    {
+      "id": "event3",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R02.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "R02.png",
+      "label": "旗禁止"
+    },
+    {
+      "id": "event4",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event4",
+      "label": "旗禁止"
+    },
+    {
+      "id": "event5",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R03.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event6",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event6",
+      "label": "Oracle停止"
+    },
+    {
+      "id": "event7",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R04.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event8",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event8",
+      "label": "星面再生：∞"
+    },
+    {
+      "id": "event9",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R06.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event10",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event10",
+      "label": "中断禁止"
+    },
+    {
+      "id": "event11",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R07.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event12",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event12",
+      "label": "AntiNoGuess"
+    },
+    {
+      "id": "event13",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R05.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event14",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event14",
+      "label": "審眼無効"
+    },
+    {
+      "id": "event15",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event16",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event16",
+      "label": "制限時間：30秒"
+    },
+    {
+      "id": "event17",
+      "once": true,
+      "type": "dialogue",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "え、なにこれ？",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal2",
+          "text": "どうなってるの？？",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event18",
+      "once": true,
+      "type": "dialogue",
+      "trigger": {
+        "type": "time",
+        "sec": 12,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "ちょっと、、、\n何もできないんだけど！",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal2",
+          "text": "ア、アハハ、夢なら覚めてよ",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event19",
+      "once": true,
+      "type": "dialogue",
+      "trigger": {
+        "type": "time",
+        "sec": 24,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "なんか変な音してるし！",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal2",
+          "text": "絶対ダメなやつじゃん！",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event20",
+      "once": true,
+      "type": "collision",
+      "trigger": {
+        "type": "time",
+        "sec": 28,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal2"
+      },
+      "right": {
+        "speaker": "NIFA",
+        "portrait": "ムキ"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    }
+  ]
+}

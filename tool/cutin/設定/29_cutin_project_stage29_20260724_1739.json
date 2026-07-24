@@ -1,0 +1,213 @@
+{
+  "version": 1,
+  "setName": "stage29",
+  "rootSe": "",
+  "characters": [
+    {
+      "id": "ALICE2",
+      "name": "有栖",
+      "side": "left",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_alice11.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_alice12.png"
+        }
+      ]
+    },
+    {
+      "id": "NIFA",
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": [
+        {
+          "key": "normal1",
+          "file": "image_nefa01.png"
+        },
+        {
+          "key": "normal2",
+          "file": "image_nefa02.png"
+        },
+        {
+          "key": "ムキ",
+          "file": "image_nefa03.png"
+        },
+        {
+          "key": "ピピ",
+          "file": "image_nefa04.png"
+        },
+        {
+          "key": "つるはし",
+          "file": "image_nefa05.png"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "event3",
+      "once": true,
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    },
+    {
+      "id": "event4",
+      "once": true,
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "event4",
+      "label": "制限時間：15秒"
+    },
+    {
+      "id": "event5",
+      "once": true,
+      "type": "dialogue",
+      "trigger": {
+        "type": "stage_start",
+        "sec": null,
+        "gte": null
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "15秒！！？？",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "NIFA",
+          "side": "",
+          "portrait": "normal1",
+          "text": "長いようで短い",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal2",
+          "text": "短すぎだろっ！",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "NIFA",
+          "side": "",
+          "portrait": "normal2",
+          "text": "ビッグポイントの倍はある",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal1",
+          "text": "そっか",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        },
+        {
+          "speaker": "ALICE2",
+          "side": "",
+          "portrait": "normal2",
+          "text": "って、なるかー！",
+          "duration": null,
+          "se": "",
+          "seNull": false
+        }
+      ],
+      "variant": "default",
+      "image": "",
+      "se": "",
+      "left": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "right": {
+        "speaker": "ALICE2",
+        "portrait": "normal1"
+      },
+      "side": "left",
+      "speaker": "ALICE2",
+      "portrait": "normal1",
+      "duration": null,
+      "action": "add",
+      "ruleId": "",
+      "label": ""
+    }
+  ]
+}

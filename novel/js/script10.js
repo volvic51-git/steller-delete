@@ -33,7 +33,7 @@ const CHARACTERS = {
 const SCRIPT = [
   { command: 'background', value: 'novels/back17.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
-  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
+  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.5rem' },
   { speaker: '', portrait: '', text: '崩壊したフラットはブラックホールとなり、' },
   { speaker: '', portrait: '', text: 'そのブラックホールも静かに収縮し、' },
   { speaker: '', portrait: '', text: '青く光る星屑を残して、' },

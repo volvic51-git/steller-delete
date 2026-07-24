@@ -71,7 +71,7 @@ const SCRIPT = [
   { speaker: '有栖', portrait: 'normal2', text: 'あんまり怖くない' },
   { speaker: '有栖', portrait: 'normal3', text: 'エリカが居るみたい' },
   { speaker: 'ニーファ', portrait: 'normal3', text: '進もう！' },
-  { speaker: '有栖', portrait: 'normal1', text: 'おう！' },
+  { speaker: '有栖', portrait: 'normal1', text: 'うん！' },
   { command: 'hide', character: 'alice2' },
   { command: 'hide', character: 'nefar' },
   { command: 'wait', duration: 2000 },

@@ -32,7 +32,7 @@ const CHARACTERS = {
 const SCRIPT = [
   { command: 'background', value: 'novels/back01.jpg' },
   { command: 'bgm', value: 'bgm01.mp3' },
-  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.0rem' },
+  { command: 'font', family: 'Kaisei Decol', sizePC: '2.0rem', sizeSP: '1.5rem' },
   { command: 'show', character: 'alice', portrait: 'normal1' },
   { speaker: 'アリス', portrait: 'normal1', text: '救助完了。' },
   { command: 'show', character: 'iroha', portrait: 'normal1' },

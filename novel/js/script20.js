@@ -53,6 +53,7 @@ const SCRIPT = [
   { command: 'whiteout' },
   { command: 'background', value: 'novels/back25.jpg', position: 'bottom' },
   { command: 'wait', duration: 2000 },
+  { command: 'se', value: 'EFE_14_toumei.mp3' },
   { command: 'fadein' },
   { command: 'bg_scroll', direction: 'down', speed: 200, loop: false },
   { speaker: '', portrait: '', text: '有栖とアリスを分けていた線―' },

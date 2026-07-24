@@ -223,7 +223,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K02.png"
+      "image": "K02.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event21",
@@ -241,7 +242,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K03.png"
+      "image": "K03.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event23",
@@ -259,7 +261,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K04.png"
+      "image": "K04.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event25",
@@ -277,7 +280,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K05.png"
+      "image": "K05.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event27",
@@ -295,7 +299,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K07.png"
+      "image": "K07.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event29",
@@ -313,7 +318,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K06.png"
+      "image": "K06.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event31",
@@ -331,7 +337,8 @@
         "type": "stage_start"
       },
       "variant": "orangeRTL",
-      "image": "K08.png"
+      "image": "K08.png",
+      "se": "EFE_17_don.mp3"
     },
     {
       "id": "event33",
