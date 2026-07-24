@@ -4535,16 +4535,32 @@ function _cutinStageStart(){
     if(window._stageLoseEvent) _startLoseEventCountdown(); // カットイン無しでも負けイベントは開始する
     return;
   }
+  // ⚠️ Dialogue.load()はfetchで非同期。この間、盤面は既にidle＝クリック可能な状態なのに対し、
+  // CutInのonStartフック（gamePaused=trueにする）は実際にplay()/warn()が呼ばれて初めて発火する。
+  // その隙間でクリックすると、Factory/seedプール盤面ではJudgeの初手がカットイン開始前に
+  // 発動してしまうバグがあった（handleMouseActionはgamePausedしか見ないため）。
+  // ここで先回りしてロックし、stage_startの一連のカットイン処理が完全に終わるまで
+  // （ruleのみ等でCutInオーバーレイが一度も開かない場合も含めて）確実に解除する。
+  gamePaused = true;
+  const _unlockCutinStageStart = () => {
+    // 設定メニューが開いていない時だけ解除（gamePausedは設定メニューと共用のため）
+    if(document.getElementById('settings-menu').style.display !== 'block') gamePaused = false;
+  };
   Dialogue.load(window._cutinSet)
     .then(() => {
       const ps = Dialogue.notify('stage_start');
+      if(ps.length) Promise.all(ps).then(_unlockCutinStageStart);
+      else _unlockCutinStageStart();
       if(window._stageLoseEvent){
         // イントロのカットインが終わってから自動でタイマー開始（盤面は一切開かない）
         if(ps.length) Promise.all(ps).then(_startLoseEventCountdown);
         else _startLoseEventCountdown();
       }
     })
-    .catch(e => console.warn('[cutin] 会話データ読込失敗（カットイン無効で続行）', e));
+    .catch(e => {
+      console.warn('[cutin] 会話データ読込失敗（カットイン無効で続行）', e);
+      _unlockCutinStageStart();
+    });
 }
 
 // 負けイベント用ステージ：クリックを待たず自動でプレイ中状態に入りタイマーだけ開始する
