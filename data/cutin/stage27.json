@@ -1,9 +1,97 @@
 {
-  "se": {},
-  "characters": {},
+  "characters": {
+    "ALICE2": {
+      "name": "有栖",
+      "side": "left",
+      "portraits": {
+        "normal1": "image_alice11.png",
+        "normal2": "image_alice12.png"
+      }
+    },
+    "NIFA": {
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": {
+        "normal1": "image_nefa01.png",
+        "normal2": "image_nefa02.png",
+        "ムキ": "image_nefa03.png",
+        "ピピ": "image_nefa04.png",
+        "つるはし": "image_nefa05.png"
+      }
+    }
+  },
   "events": [
-    { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
+    {
+      "id": "event1",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R07.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event3",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event4",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event4",
+      "label": "制限時間：660秒"
+    },
+    {
+      "id": "event5",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "once": false,
       "lines": [
-        { "text": "【特殊ルール】\n認証済み盤面\n最初の安全セルを自動開放\n制限時間：660秒" } ] }
+        {
+          "speaker": "ALICE2",
+          "text": "AntiNoGuess？",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "つまりめちゃくちゃってこと",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "ヤバいじゃん",
+          "portrait": "normal2"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "「ココ」は大丈夫みたい",
+          "portrait": "normal2"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "・・・。",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "ビッグポイントは論理がイカれてる",
+          "portrait": "ムキ"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "じゃあ大丈夫な気がしてきたわ",
+          "portrait": "normal2"
+        }
+      ]
+    }
   ]
 }

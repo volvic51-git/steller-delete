@@ -1,12 +1,106 @@
 {
-  "se": {},
   "characters": {
-    "oracle": { "name": "ORACLE", "side": "right",
-                "portraits": { "normal": "cutin_oracle_normal.png" } }
+    "ALICE2": {
+      "name": "有栖",
+      "side": "left",
+      "portraits": {
+        "normal1": "image_alice11.png",
+        "normal2": "image_alice12.png"
+      }
+    },
+    "NIFA": {
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": {
+        "normal1": "image_nefa01.png",
+        "normal2": "image_nefa02.png",
+        "ムキ": "image_nefa03.png",
+        "ピピ": "image_nefa04.png",
+        "つるはし": "image_nefa05.png"
+      }
+    }
   },
   "events": [
-    { "id": "stage_open", "trigger": { "type": "stage_start" }, "once": true,
+    {
+      "id": "event1",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R06.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event2",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event2",
+      "label": "中断禁止"
+    },
+    {
+      "id": "event3",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event4",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event4",
+      "label": "制限時間：400秒"
+    },
+    {
+      "id": "event5",
+      "trigger": {
+        "type": "stage_start"
+      },
       "lines": [
-        { "text": "【特殊ルール】\n中断不可\n制限時間：400秒" } ] }
+        {
+          "speaker": "ALICE2",
+          "text": "中断禁止？",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "中断ができなくなっちゃう",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "中断なんてできるんだ",
+          "portrait": "normal2"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "上の設定アイコンからできる気がする",
+          "portrait": "normal2"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "意味わかんない",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "今はできないけどね",
+          "portrait": "ムキ"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "宇宙って不思議",
+          "portrait": "normal2"
+        }
+      ]
+    }
   ]
 }

@@ -469,7 +469,7 @@
     "grid_row": 72,
     "total": 10368,
     "timeLimitMode": true,
-    "timeLimit": 60,
+    "timeLimit": 30,
     "loopMode": false,
     "loopCount": 3,
     "loseEvent": true,
@@ -659,7 +659,8 @@
     "exMode": false,
     "novelAfterClear": "novel/novel20.html",
     "bgm": "SND_13_BIGPOINT1.mp3",
-    "background": "plays/img_bg06.jpg"
+    "background": "plays/img_bg06.jpg",
+    "cutin": "stage30"
   },
   {
     "id": 31,

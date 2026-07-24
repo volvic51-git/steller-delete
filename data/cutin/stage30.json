@@ -1,0 +1,370 @@
+{
+  "characters": {
+    "ALICE2": {
+      "name": "有栖",
+      "side": "left",
+      "portraits": {
+        "normal1": "image_alice11.png",
+        "normal2": "image_alice12.png"
+      }
+    },
+    "NIFA": {
+      "name": "ニーファ",
+      "side": "right",
+      "portraits": {
+        "normal1": "image_nefa01.png",
+        "normal2": "image_nefa02.png",
+        "ムキ": "image_nefa03.png",
+        "ピピ": "image_nefa04.png",
+        "つるはし": "image_nefa05.png",
+        "崩壊": "image_nefa06.png"
+      }
+    }
+  },
+  "events": [
+    {
+      "id": "event1",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R00.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event2",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event2",
+      "label": "超大型盤面"
+    },
+    {
+      "id": "event3",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R02.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event4",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event4",
+      "label": "旗禁止"
+    },
+    {
+      "id": "event5",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R03.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event6",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event6",
+      "label": "Oracle停止"
+    },
+    {
+      "id": "event7",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R04.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event8",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event8",
+      "label": "星面再生：∞"
+    },
+    {
+      "id": "event9",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R06.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event10",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event10",
+      "label": "中断禁止"
+    },
+    {
+      "id": "event11",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R07.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event12",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event12",
+      "label": "AntiNoGuess"
+    },
+    {
+      "id": "event13",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R05.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event14",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event14",
+      "label": "審眼無効"
+    },
+    {
+      "id": "event15",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "image": "R08.png",
+      "se": "EFE_15_keihou.mp3"
+    },
+    {
+      "id": "event16",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "add",
+      "ruleId": "event16",
+      "label": "制限時間：30秒"
+    },
+    {
+      "id": "event17",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "text": "あー、もう、ピーピーうるさいっ！",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "ニーファ！どうする！？",
+          "portrait": "normal1"
+        }
+      ]
+    },
+    {
+      "id": "event18",
+      "type": "shake",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "side": "right",
+      "speaker": "NIFA",
+      "portrait": "ムキ",
+      "se": "EFE_16_gogogo.wav"
+    },
+    {
+      "id": "event19",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "lines": [
+        {
+          "speaker": "NIFA",
+          "text": "乙女機能フル実行ーーー！",
+          "portrait": "normal1"
+        }
+      ]
+    },
+    {
+      "id": "event20",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K02.png"
+    },
+    {
+      "id": "event21",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event4"
+    },
+    {
+      "id": "event22",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K03.png"
+    },
+    {
+      "id": "event23",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event6"
+    },
+    {
+      "id": "event24",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K04.png"
+    },
+    {
+      "id": "event25",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event8"
+    },
+    {
+      "id": "event26",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K05.png"
+    },
+    {
+      "id": "event27",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event10"
+    },
+    {
+      "id": "event28",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K07.png"
+    },
+    {
+      "id": "event29",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event12"
+    },
+    {
+      "id": "event30",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K06.png"
+    },
+    {
+      "id": "event31",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event14"
+    },
+    {
+      "id": "event32",
+      "type": "warning",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "variant": "orangeRTL",
+      "image": "K08.png"
+    },
+    {
+      "id": "event33",
+      "type": "rule",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "action": "remove",
+      "ruleId": "event16"
+    },
+    {
+      "id": "event34",
+      "trigger": {
+        "type": "stage_start"
+      },
+      "lines": [
+        {
+          "speaker": "ALICE2",
+          "text": "すごい！あと１個！",
+          "portrait": "normal1"
+        },
+        {
+          "speaker": "NIFA",
+          "text": "有栖・・・あとは・・・オネガイ",
+          "portrait": "崩壊",
+          "se": "EFE_16_gogogo.wav"
+        },
+        {
+          "speaker": "ALICE2",
+          "text": "ニーファ・・・わかった！",
+          "portrait": "normal2"
+        }
+      ]
+    }
+  ]
+}

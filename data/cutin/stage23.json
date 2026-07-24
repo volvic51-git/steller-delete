@@ -57,7 +57,7 @@
       },
       "action": "add",
       "ruleId": "event5",
-      "label": "制限時間：30秒"
+      "label": "制限時間：60秒"
     },
     {
       "id": "event2",
