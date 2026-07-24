@@ -228,6 +228,19 @@
   #expose-bar-inner{position:absolute;top:0;left:0;height:100%;width:0%;background:#1E5EFF;transition:width 0.4s ease;box-shadow:0 0 8px rgba(30,94,255,0.6);}
   #expose-pct{font-size:20px;color:#33cc66;font-family:'Share Tech Mono',monospace;}
   #expose-mines{font-size:20px;color:#cc88ff;font-family:'Share Tech Mono',monospace;margin-left:10px;}
+  /* ルール表示HUD（カットインイベント type:"rule" で追加/除外される常設一覧。テキストのみ・縦積み） */
+  #rule-hud{display:flex;flex-direction:column;gap:6px;margin-top:10px;align-items:flex-start;pointer-events:none;}
+  .rule-item{
+    font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:1px;
+    color:#66eeff;background:rgba(0,20,40,0.55);border:1px solid rgba(0,220,255,0.5);
+    border-radius:4px;padding:3px 10px;white-space:nowrap;
+    text-shadow:0 0 6px rgba(0,220,255,0.85), 0 0 12px rgba(0,220,255,0.4);
+    box-shadow:0 0 8px rgba(0,220,255,0.35);
+    transform:translateX(-120%);opacity:0;
+    transition:transform .35s cubic-bezier(.22,.9,.3,1), opacity .35s ease;
+  }
+  .rule-item.in{transform:translateX(0);opacity:1;}
+  .rule-item.out{transform:translateX(-120%);opacity:0;}
   #clear-btn{background:rgba(60,20,0,0.8);border:1px solid rgba(255,160,0,0.5);color:#ffaa00;padding:3px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;border-radius:2px;transition:all 0.2s;}
   #clear-btn:hover{box-shadow:0 0 8px rgba(255,160,0,0.5);}
   #audio-btn{background:rgba(0,20,40,0.8);border:1px solid rgba(0,200,150,0.4);color:#00ddaa;padding:3px 8px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:22px;border-radius:2px;transition:all 0.2s;}
@@ -666,6 +679,7 @@
     <div id="expose-pct">0%</div>
     <div id="expose-mines" style="display:none;"><img src="assets/images/plays/mine.png" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;margin-right:4px;"> 0 / 0</div>
   </div>
+  <div id="rule-hud"></div>
 </div>
 
 <!-- 救出画面 -->
@@ -2194,6 +2208,93 @@ const GUARANTEE_SKIP_DENSITY = 0.22;
 let misclickGuard = false; // 誤操作防止モード（周囲が全て未開封/消滅のセルへの操作を無効化）
 let gamePaused = false; // 設定メニューによる一時停止（球体操作のみ無効化、タイマー/BGMは継続）
 
+// ===================== RULE HUD（カットイン type:"rule" で追加/除外される常設一覧） =====================
+// 常設ゲームHUD。cutin.js/cutin-dialogue.jsはゲーム非依存を保つため、ここに実装しDialogue.setRuleHandlerで接続する。
+// 最新ルールを最上段（バー直下）に追加＝コンテナ先頭にprepend。除外は該当行だけ左へスライドアウトし、
+// 残りはflex方向のレイアウト再フローで自動的に繰り上がる。
+// suspend/RETRY復元の要（etc/V2_RULE_HUD_WORKORDER.md §3）：
+//   - resumeSuspend: restore(m.activeRules) をアニメ無しで即描画（イベント再生では復元できないため）
+//   - restartGame: reset() でHUDを空に（以降はイベント再発火でアニメ付き再蓄積）
+const RuleHud = (() => {
+  let _rules = [];   // [{ruleId, label, el}, ...]  先頭=最上段=バー直下
+  function _container(){ return document.getElementById('rule-hud'); }
+
+  // add/removeともスライド演出の完了で解決するPromiseを返す（カットインイベントの直列進行に使う。
+  // 「ルールが完全に表示され終わってから次の演出へ進む」ためにDialogue側で待ち合わせる）。
+  function add(ruleId, label, opts){
+    const animate = !opts || opts.animate !== false;
+    if(_rules.some(r => r.ruleId === ruleId)) return Promise.resolve(); // 同ruleIdの二重addは無視（既存を保持）
+    const el = document.createElement('div');
+    el.className = 'rule-item';
+    el.textContent = label;
+    const cont = _container();
+    if(!cont) return Promise.resolve();
+    cont.prepend(el); // 最上段＝バー直下に挿入
+    _rules.unshift({ ruleId, label, el });
+    if(!animate){
+      el.classList.add('in');
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      let done = false;
+      const finish = () => { if(done) return; done = true; resolve(); };
+      requestAnimationFrame(() => { requestAnimationFrame(() => {
+        el.classList.add('in');
+        el.addEventListener('transitionend', finish, { once:true });
+      }); });
+      // transitionendは非表示タブ等でコンポジットが止まると発火しないことがあるため保険タイマー必須
+      setTimeout(finish, 450);
+    });
+  }
+
+  function remove(ruleId, opts){
+    const animate = !opts || opts.animate !== false;
+    const idx = _rules.findIndex(r => r.ruleId === ruleId);
+    if(idx === -1) return Promise.resolve(); // 存在しないruleIdのremoveは無視
+    const rec = _rules[idx];
+    _rules.splice(idx, 1);
+    if(!animate){
+      if(rec.el && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+      return Promise.resolve();
+    }
+    rec.el.classList.remove('in');
+    rec.el.classList.add('out');
+    return new Promise(resolve => {
+      let done = false;
+      const cleanup = () => {
+        if(done) return; done = true;
+        if(rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+        resolve();
+      };
+      // transitionendは非表示タブ等でコンポジットが止まると発火しないことがあるため保険タイマー必須
+      rec.el.addEventListener('transitionend', cleanup, { once:true });
+      setTimeout(cleanup, 400);
+    });
+  }
+
+  function reset(){
+    const cont = _container();
+    if(cont) cont.innerHTML = '';
+    _rules = [];
+  }
+
+  function serialize(){
+    return _rules.map(r => ({ ruleId: r.ruleId, label: r.label }));
+  }
+
+  // 表示順配列を無アニメで復元。add()は先頭prependのため、配列を末尾→先頭の順に積むと元の順序に一致する。
+  function restore(arr){
+    reset();
+    const list = arr || [];
+    for(let i = list.length - 1; i >= 0; i--){
+      const r = list[i];
+      if(r && r.ruleId) add(r.ruleId, r.label, { animate:false });
+    }
+  }
+
+  return { add, remove, reset, serialize, restore };
+})();
+
 // ===================== CUTIN: 初期化（hooksでゲーム側のポーズ/入力制御と接続） =====================
 window._cutinHooks = {
   onStart(){ _cutinPausing = true; gamePaused = true; pauseGameTime(); },
@@ -2208,6 +2309,10 @@ window._cutinHooks = {
   onWarnEnd(){   window._warningBannerActive = false; },
 };
 CutIn.init({ hooks: window._cutinHooks });
+Dialogue.setRuleHandler(function(ev){
+  // 演出完了で解決するPromiseを返す（Dialogue側が次のイベントへ進む前に待ち合わせる）
+  return ev.action === 'remove' ? RuleHud.remove(ev.ruleId) : RuleHud.add(ev.ruleId, ev.label);
+});
 // 盤面世代カウンタ。地雷除去の遅延コールバック（400ms後）が発行時の盤面に対して
 // 差分更新を行うため、initBoardで盤面が作り直された場合は世代不一致でno-opにする
 // （旧盤面の座標で新盤面のneighborMinesをデクリメントするとカウントが壊れるため）。
@@ -3830,7 +3935,8 @@ function saveSuspend(){
       factoryMode: !!window._factoryMode,
       factoryBoard: window._factoryMode ? window._factoryBoard : null,
       cutinSet: window._cutinSet ?? null,
-      cutinFired: Dialogue.getFired()
+      cutinFired: Dialogue.getFired(),
+      activeRules: RuleHud.serialize()
     },
     savedAt: new Date().toISOString()
   };
@@ -3944,6 +4050,9 @@ async function resumeSuspend(rec){
       .then(() => Dialogue.restoreFired(m.cutinFired))
       .catch(e => console.warn('[cutin] resume時ロード失敗', e));
   }
+  // ルールHUD復元：イベント再生では復元できない（resume中はcutinNotifyが発火抑止される）ため、
+  // 中断metaに保存した表示順配列を無アニメで直接描画する（cutinFiredの復元とは独立・同期でよい）。
+  RuleHud.restore(m.activeRules || []);
   timeLimitMode=!!m.timeLimitMode; logicGuarantee=!!m.logicGuarantee;
   if(m.currentDiff) currentDiff=m.currentDiff;
   maxHints = m.maxHints ?? maxHints;
@@ -4883,6 +4992,12 @@ function toggleAudio(){
 // ===================== RESTART =====================
 function restartGame(){
   Dialogue.reset(); // RETRY: once発火状態をリセット・進行中カットイン破棄
+  // ⚠️ RuleHudはここでresetしない。stage_startを発火する_cutinStageStart()は
+  // 初回ページロード時（_startBoardAndGame内）にしか呼ばれず、RESTARTボタン経由の
+  // restartGame()では再発火しない。そのため以前はここでRuleHudだけ空にすると
+  // 二度と復元されず「RESTARTするとルール表示だけ消える」バグになっていた。
+  // ルールはステージの恒常的な設定なので、RESTARTでは表示をそのまま維持するのが正しい
+  // （中断/再開はresumeSuspend側のRuleHud.restoreで別途正しく復元される）。
   window._lastPinSec = null;
   // サーチボタン状態をsearchEnabledに同期
   _searchAvailable = false;

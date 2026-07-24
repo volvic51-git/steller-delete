@@ -372,7 +372,8 @@ var EVENT_TYPES = {
   dialogue:  '会話（立ち絵＋台詞）',
   warning:   '警告パネル（バナー）',
   collision: '衝突（右キャラ→左キャラ・二人退場）',
-  shake:     'シェイク（1体を震わせる）'
+  shake:     'シェイク（1体を震わせる）',
+  rule:      'ルール表示（左バー下・追加/除外）'
 };
 var WARN_VARIANTS = { 'default':'青・左→右', 'orangeRTL':'オレンジ・右→左' };
 
@@ -489,6 +490,20 @@ function shakeBodyHtml(ei, ev){
     '</div>';
 }
 
+function ruleBodyHtml(ei, ev){
+  var action = ev.action || 'add';
+  var actOpts = ['add','remove'].map(function(v){
+    return '<option value="'+v+'"'+(action===v?' selected':'')+'>'+(v==='add'?'追加（add）':'除外（remove）')+'</option>';
+  }).join('');
+  return '<div class="sec-label">ルール表示（画面左上バー下に縦積み。テキストのみ）</div>' +
+    '<div class="row3">' +
+      '<div><label>動作</label><select data-ei="'+ei+'" data-field="rule-action">'+actOpts+'</select></div>' +
+      '<div><label>ルールID（一意・除外時はこのIDを指定）</label><input type="text" data-ei="'+ei+'" data-field="rule-id" value="'+escH(ev.ruleId||'')+'" placeholder="例: noflag"></div>' +
+      '<div'+(action==='remove'?' style="opacity:.4"':'')+'><label>表示テキスト（追加時のみ）</label><input type="text" data-ei="'+ei+'" data-field="rule-label" value="'+escH(ev.label||'')+'" placeholder="例: 旗禁止"'+(action==='remove'?' disabled':'')+'></div>' +
+    '</div>' +
+    '<div class="trig-note">※ルール表示はゲーム画面でのみ確認できます（このエディタのプレビュー対象外）。警告パネルと一緒に出す場合は、同じトリガーで warning イベントも別途追加してください。</div>';
+}
+
 function renderEvents(){
   var el = document.getElementById('event-list');
   if(!events.length){ el.innerHTML = '<div class="empty-msg">イベントがありません。「+ イベント追加」から作成してください。</div>'; return; }
@@ -517,12 +532,15 @@ function renderEvents(){
       type==='warning'   ? warningBodyHtml(ei, ev) :
       type==='collision' ? collisionBodyHtml(ei, ev) :
       type==='shake'     ? shakeBodyHtml(ei, ev) :
+      type==='rule'      ? ruleBodyHtml(ei, ev) :
                            dialogueBodyHtml(ei, ev);
 
     d.innerHTML =
       '<div class="card-hdr">' +
         '<span class="card-title">' + escH(ev.id || '(無題イベント)') + inPlayBadge + '</span>' +
         '<div class="card-acts">' +
+          '<button class="btn-sm" data-ei="'+ei+'" data-action="event-up"'+(ei===0?' disabled':'')+'>↑</button>' +
+          '<button class="btn-sm" data-ei="'+ei+'" data-action="event-dn"'+(ei===events.length-1?' disabled':'')+'>↓</button>' +
           '<button class="btn-preview" data-ei="'+ei+'" data-action="preview-event">▶ 再生して確認</button>' +
           '<button class="btn" data-ei="'+ei+'" data-action="dup-event">複製</button>' +
           '<button class="btn btn-danger" data-ei="'+ei+'" data-action="del-event">削除</button>' +
@@ -554,7 +572,8 @@ document.getElementById('btn-add-event').addEventListener('click', function(){
     variant: 'default', image: '', se: '',
     left:  {speaker: did, portrait: dkey},
     right: {speaker: did, portrait: dkey},
-    side: 'left', speaker: did, portrait: dkey, duration: null
+    side: 'left', speaker: did, portrait: dkey, duration: null,
+    action: 'add', ruleId: '', label: ''
   });
   renderEvents();
 });
@@ -567,6 +586,10 @@ document.getElementById('event-list').addEventListener('click', function(e){
   var ev = events[ei];
   if(action==='del-event'){
     if(confirm('このイベントを削除しますか？')){ events.splice(ei,1); renderEvents(); }
+  } else if(action==='event-up'){
+    if(ei>0){ var etmp=events[ei]; events[ei]=events[ei-1]; events[ei-1]=etmp; renderEvents(); }
+  } else if(action==='event-dn'){
+    if(ei<events.length-1){ var etmp2=events[ei]; events[ei]=events[ei+1]; events[ei+1]=etmp2; renderEvents(); }
   } else if(action==='dup-event'){
     var copy = JSON.parse(JSON.stringify(ev));
     copy.id = ev.id + '_copy';
@@ -613,6 +636,8 @@ document.getElementById('event-list').addEventListener('input', function(e){
     else if(field==='warn-image') ev.image = t.value;
     else if(field==='ev-se') ev.se = t.value;
     else if(field==='ev-duration') ev.duration = t.value===''?null:parseInt(t.value,10);
+    else if(field==='rule-id') ev.ruleId = t.value;
+    else if(field==='rule-label') ev.label = t.value;
   }
 });
 
@@ -645,6 +670,9 @@ document.getElementById('event-list').addEventListener('change', function(e){
       if(!ev.right) ev.right = {speaker:'', portrait:'normal'};
       if(ev.variant == null) ev.variant = 'default';
       if(ev.side == null) ev.side = 'left';
+      if(ev.action == null) ev.action = 'add';
+      if(ev.ruleId == null) ev.ruleId = '';
+      if(ev.label == null) ev.label = '';
       if(ev.type==='dialogue' && (!ev.lines || !ev.lines.length)){
         var dc = characters[0];
         ev.lines = [{speaker: dc?dc.id:'', side:'', portrait: dc&&dc.portraits[0]?dc.portraits[0].key:'normal', text:'', duration:null, se:'', seNull:false}];
@@ -667,6 +695,7 @@ document.getElementById('event-list').addEventListener('change', function(e){
       var lk = portraitKeysOf(t.value); ev.left.portrait = lk.length ? lk[0] : '';
       renderEvents();
     } else if(field==='col-left-portrait'){ ev.left = ev.left || {}; ev.left.portrait = t.value; renderEvents(); }
+    else if(field==='rule-action'){ ev.action = t.value; renderEvents(); } // label欄の有効/無効切替のため再描画
   }
 });
 
@@ -733,6 +762,10 @@ function previewEvent(ev){
   } else if(type === 'shake'){
     ensurePreviewInit();
     CutIn.animate({ type:'shake', side: ev.side, speaker: ev.speaker, portrait: ev.portrait, se: ev.se, duration: ev.duration });
+  } else if(type === 'rule'){
+    // ルールHUDはゲーム側の常設DOM（#rule-hud）に描画されるため、このエディタのカットイン
+    // オーバーレイでは再現できない。プレビューは行わず注記のみ表示する。
+    alert('ルール表示はゲーム画面でのみ確認できます（このエディタのプレビュー対象外です）。');
   } else {
     playPreview(ev.lines);
   }
@@ -782,6 +815,10 @@ function buildExportObject(){
       out.portrait = ev.portrait || 'normal';
       if(ev.se) out.se = ev.se;
       if(ev.duration!=null) out.duration = ev.duration;
+    } else if(type === 'rule'){
+      out.action = ev.action || 'add';
+      out.ruleId = ev.ruleId || '';
+      if((ev.action||'add') === 'add' && ev.label) out.label = ev.label;
     } else {
       out.lines = (ev.lines||[]).map(function(l){
         var lo = {speaker:l.speaker, text:l.text||''};
@@ -818,6 +855,9 @@ function validateForExport(){
       if(!(ev.right && ev.right.speaker)) errs.push('イベント「'+ev.id+'」: 右キャラ未設定');
     } else if(type === 'shake'){
       if(!ev.speaker) errs.push('イベント「'+ev.id+'」: キャラ未設定');
+    } else if(type === 'rule'){
+      if(!ev.ruleId) errs.push('イベント「'+ev.id+'」: ルールIDが未設定です');
+      if((ev.action||'add') === 'add' && !ev.label) errs.push('イベント「'+ev.id+'」: 表示テキスト（追加時）が未設定です');
     }
     // warning は必須項目なし（画像は空欄なら 警告.png にフォールバック）
   });
@@ -896,7 +936,8 @@ document.getElementById('load-input').addEventListener('change', function(){
             trigger: {type:(ev.trigger&&ev.trigger.type)||'stage_start', sec:(ev.trigger&&ev.trigger.sec)!=null?ev.trigger.sec:null, gte:(ev.trigger&&ev.trigger.gte)!=null?ev.trigger.gte:null},
             lines: [], variant:'default', image:'', se:(ev.se||''),
             left:{speaker:'',portrait:'normal'}, right:{speaker:'',portrait:'normal'},
-            side:'left', speaker:'', portrait:'normal', duration:(ev.duration!=null?ev.duration:null)
+            side:'left', speaker:'', portrait:'normal', duration:(ev.duration!=null?ev.duration:null),
+            action:'add', ruleId:'', label:''
           };
           if(type === 'warning'){
             base.variant = ev.variant || 'default'; base.image = ev.image || '';
@@ -905,6 +946,9 @@ document.getElementById('load-input').addEventListener('change', function(){
             base.right = {speaker:(ev.right||{}).speaker||'', portrait:(ev.right||{}).portrait||'normal'};
           } else if(type === 'shake'){
             base.side = ev.side || 'left'; base.speaker = ev.speaker || ''; base.portrait = ev.portrait || 'normal';
+          } else if(type === 'rule'){
+            base.action = (ev.action === 'remove') ? 'remove' : 'add';
+            base.ruleId = ev.ruleId || ''; base.label = ev.label || '';
           } else {
             base.lines = (ev.lines||[]).map(function(l){
               return {speaker:l.speaker||'', side:l.side||'', portrait:l.portrait||'normal', text:l.text||'', duration:l.duration!=null?l.duration:null, se:(l.se===null?'':(l.se||'')), seNull:(l.se===null)};
