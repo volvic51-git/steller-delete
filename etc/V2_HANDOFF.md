@@ -1,11 +1,148 @@
 # Stellar Delete V2 引き継ぎ書
 
-作成日: 2026-06-30 / 最終更新: 2026-07-21（LIMIT MODE実装・masterマージまで完了時点）
+作成日: 2026-06-30 / 最終更新: 2026-07-25（**V2完成宣言**。カットイン第一段/第二段・
+ルール表示HUD・LIMIT SCORE書式変更・一連のバグ修正まで完了しuser確認済み）
 V1完成後、V2開発を進めるためのハンドオフ文書。
 
 ---
 
-## ⚠️ 最初に読む：現在のブランチ状態（2026-07-21）
+## ✅ V2完成（2026-07-25、ユーザー宣言）
+
+**「デバッグして問題ありません。これでV2は完成にします」とユーザーが明言。**
+以降のセッションはV2の保守（バグ報告対応）またはV3着手として扱う。
+
+- **カレントブランチは`master`。origin/masterと同期済み（0 ahead/0 behind、pushはユーザー実施）。**
+- 2026-07-21のLIMIT MODE完成以降、**カットイン演出システムの新規構築（第一段＋第二段）**が
+  本セッションのメイン作業。詳細は次章「### 2026-07-22〜25 完了した作業」。
+- **未マージのまま残っているブランチ（意図的・要判断）**：
+  - `V1.7`：STORY MODE2/LIMIT MODEカード非表示＋🐞DEBUGボタン非表示。「このまま残す」で確定済み。
+    ただし**このブランチは放置されておらず、`novel2ステージ設定`/`novel調整`のコミットが
+    後から追加され続けている**（2026-07-25時点でmasterより3コミット分の独自差分）。
+    マージするとLIMIT MODE/STORY2カードが再び非表示に戻る点は要再確認のまま。
+  - `feature/spec-foundation`：古い設計docsのみ、今回作業と無関係。
+  - **`debug/noflag-72x144-check`（新規発見・出自不明）**：2026-07-25時点でmasterに未マージの
+    ローカル/リモート両方に存在するブランチ（「デバッグメニューに地雷表示トグルを追加」
+    「novel2ステージ設定」「novel調整」の3コミット）。**本セッションでClaudeが作成したものではない**
+    （ユーザー自身が別途作業した可能性が高い）。次セッションでマージ要否をユーザーに確認すること。
+  - ローカル`feature/rule-hud`は既にmasterへマージ済みのため削除済み（2026-07-25）。
+- **軽微な積み残し（コード上は動くが内容が仮のまま）**：
+  - `data/stages.json`のid31/32（stage9のSIMPLE/NO FLAGミラー）の`description`が
+    「（説明文未定）」のまま。名前・画像は確定済み。
+  - `data/cutin/stage23.json`・`stage28.json`はユーザーが直接編集を続けている形跡あり
+    （本セッション中に複数回「ユーザーが変更」の通知あり）。内容は都度尊重し上書きしていない。
+- **保留中（V2スコープ外・V3候補として明示的に先送り）**：高密度盤面生成（[[project-high-density-boards]]）、
+  C案（セルInstancedMesh化・draw call削減）、Phase 4（リプレイ/中断の再設計）、盤面お絵描きツール、
+  Hunter/Factory/gameパリティ自動テスト。`tool/board/factory-max-*.js`など一部はV3向けに既に着手済み。
+
+### 2026-07-22〜25 完了した作業（新しい順）
+
+**⑦ 警告パネル連続表示バグ修正**（commit `67afcf4`）
+`CutIn.warn()`が`img.src`差し替え直後にアニメを開始しており、`<img>`は新画像の
+デコード完了まで前の画像を描画し続ける性質のせいで、警告を連続表示する構成
+（stage22/30、別画像8本以上）で**1つ前のパネル画像が0.3秒ほど見えてから正しい画像に化ける**
+バグがあった。ローカル（低遅延・キャッシュ済み）では再現せず、GitHub Pages経由・特に
+スマホでほぼ確実に再現。`_begin()`に分離しレイヤー非表示のまま`img.decode()`完了を
+待ってから表示するよう修正（404/decode非対応環境向けの保険タイマーも追加）。
+`Dialogue.load()`時に警告画像も先読みするよう`js/cutin-dialogue.js`に追加。
+
+**⑥ カットイン関連の一連のバグ修正**（`gamePaused`/`_warningBannerActive`の整合性問題）
+- **RESTART時にルール表示が消えるバグ**（`0482a94`）：`restartGame()`が`RuleHud.reset()`を
+  呼んでいたが、ルール追加イベントを発火する`stage_start`は初回ページロード時にしか
+  呼ばれず、RESTARTでは再発火しない。RuleHud側のresetを削除し、RESTARTではルール表示を
+  維持する（中断/再開は別経路の`RuleHud.restore`が担当）方針に変更。
+- **Factory/seedプール盤面で、カットイン開始前に初手が発動するバグ**（`854cf09`）：
+  `_cutinStageStart()`の`Dialogue.load()`（fetch）が非同期な間、盤面は既にidle＝
+  クリック可能なのにgamePausedがまだtrueになっていない隙間があった。fetch開始前に
+  先回りしてgamePaused=trueにし、stage_startの一連の処理が完全に終わるまで解除しない
+  よう修正。
+- **入力ブロックの多重防御**（`82e12f0`）：`mousedown`/`touchstart`はgamePausedを見て
+  弾くが、実際にdig/flagへ繋がる`mouseup`/`touchend`側はhandleMouseAction内部の
+  1箇所のチェックだけに依存していた非対称な作りに気づき、両方に明示チェックを追加。
+- **★警告と警告の間に台詞/シェイクが挟まる構成で、gamePausedが警告表示中にfalseへ
+  戻ってしまうバグ**（`e3af95b`）：台詞/アニメ演出は`onStart`/`onEnd`、警告バナーは
+  `onWarnStart`/`onWarnEnd`という**独立した2系統**でgamePausedを操作していたため、
+  「台詞のonEnd（_closeLayerの約340ms待ち後に発火）が、次に控えていた警告バナーの
+  表示開始と重なる」場合に、警告表示中にもかかわらずgamePausedがfalseに戻る隙間
+  （実測で最大3秒程度）があった。参照カウント方式（`_cutinAcquirePause`/
+  `_cutinReleasePause`、[sphere-minesweeper.html:2295](../sphere-minesweeper.html:2295)
+  付近）に変更し、会話/アニメ演出と警告バナーのどちらか一方でも進行中ならgamePausedを
+  trueに保つよう修正。警告バナー自体はタイマーを止めない非モーダル設計のまま
+  （pauseGameTime/resumeGameTimeは呼ばない）。
+  ※この一連の調査は「連打すると警告と警告の間で初手が発生するケースがある」という
+  ユーザー報告から、ログを仕込んで実測タイムラインを取ることで原因を特定した。
+  再現には「警告→台詞→シェイク→台詞→警告」のように**会話/アニメ演出が警告の間に
+  挟まる構成**が必要（警告だけが連続する構成では発生しない）。
+
+**⑤ カットインの立ち絵、スマホ幅で肥大化・半透明化していたのを修正**（`742c0b6`）
+`@media(max-width:600px)`でPC版(34vh)より大きい42vhに拡大され、常時`opacity:.55`で
+半透明化していた（未調整の仮値のまま放置されていた）。novel側の設計
+（狭幅ではウィンドウが縦に広がる分キャラは縮小、不透明度は話者かどうかだけで決める）
+に合わせ、`max-height:22vh`・半透明化オーバーライド削除に変更。
+
+**④ LIMIT SCOREの表示書式変更**（`dbd147d`）
+「xxx.xxx単位点」→「xxxx単位xxxx単位点」。`data/limit-config.json`のunitsはexpが
+4刻み（万進法と同じ桁区切り）で並んでいるため、上位単位＋その4桁の数、1段下の単位＋
+その4桁の数、の2組に分解する方式に変更。`js/limit-score.js`の`formatScoreParts`の
+返り値の形が変わったため、呼び出し側（`index.html`のランキング2行表示）も追従。
+
+**③ ルール表示HUD（カットイン第二段）**（`b5052fd`ほか、`feature/rule-hud`ブランチ→
+masterマージ済み。実行計画書は`etc/V2_RULE_HUD_WORKORDER.md`）
+プレイ画面左上バー下に、カットインイベント（`type:"rule"`、`action:"add"/"remove"`）で
+追加/除外されるルール一覧をテキストで縦積み表示する常設HUD（`RuleHud`モジュール、
+[sphere-minesweeper.html](../sphere-minesweeper.html)内）。**最重要要件は中断/RETRY
+での正しい復元**：`stage_start`を発火する`_cutinStageStart()`はresume/RETRY経路では
+再実行されないため、ルール一覧はイベント再生では復元できない→中断metaに
+`activeRules`として直接保存し、resume時は`RuleHud.restore()`で無アニメ即描画する
+方式で解決（詳細は上記ワークオーダー§3）。カットインエディタ（`tool/cutin-editor.html`）
+にもルール型の編集UI・イベント並び替え(↑↓)ボタンを追加。
+その後、`data/cutin/stage23.json`をユーザー作成の本編内容に統合し、カットイン
+イベントの発火を**直列実行**（同一トリガーで複数イベントが同時に始まっていたのを
+1つずつ完了してから次へ進むようPromiseチェーン化。`js/cutin-dialogue.js`の`notify()`）
+に変更、ルール表示の配色を水色グロー（`#66eeff`＋text-shadow/box-shadow）に変更。
+
+**② カットイン第一段（警告バナー/衝突/シェイク/立ち絵/吹き出し）**
+それまでゲーム側(`sphere-minesweeper.html`)に直書きだった警告バナー演出
+（`triggerWarningBanner`）を`js/cutin.js`の`CutIn.warn()`に集約し、エディタの
+プレビューと本番で同一実装を共有する設計に統一。新規に衝突（`CutIn.animate`
+type:'collision'、右キャラが左キャラへ突進し二人退場）・シェイク（type:'shake'、
+1体を震わせる）演出を追加。立ち絵は当初フェードイン(opacity遷移)に依存していたが、
+短い演出中の競合を避けるため即時不透明表示に変更。会話の吹き出しウィンドウを
+話者の左右（`side-left`/`side-right`クラス、speaker省略の特殊ルール告知は中央のまま）
+に寄せる対応も追加。`tool/cutin-editor.html`に4タイプ（dialogue/warning/collision/shake）
+の編集UIを追加。
+
+**① アセット整理の追加ラウンド**（[[project-asset-structure]]参照。詳細はメモリ側）
+`img_bg*`/`mine.png`を`assets/images/plays/`へ、novelで使う`back*`/`image_*`を
+`assets/images/novels/`へ移動。プレイ画面の警告演出テストボタン（🐞DEBUGとは別に
+音声ボタン隣にあった⚠️ボタン）を削除。
+
+### 次セッションの入口（2026-07-25更新。それ以前の版は下の「（旧）」章を参照）
+
+0. **まず`git status`と`git branch --show-current`**。カレントは`master`、
+   origin/masterと同期済み（0 ahead/0 behind、2026-07-25確認）。新規ブランチは
+   ユーザーの指示が無い限り作らない（[[feedback-git]]）。未マージブランチ・要確認事項は
+   本章冒頭の「✅ V2完成」ブロック参照（`V1.7`・`feature/spec-foundation`・
+   `debug/noflag-72x144-check`の3つ）。
+1. **V2はユーザー宣言により完成**。次にやるとすれば：
+   - **バグ報告対応**（最優先。ユーザーが実機/GitHub Pagesで見つけたものを都度直す運用が
+     本セッションの主な進め方だった。`?v=<任意>`でのキャッシュバスター検証→
+     修正後に必ず元に戻す、を徹底すること。[[feedback-preview-audio]]・本HANDOFFの
+     ⑦⑥の各修正エントリに実例あり）
+   - **V3着手**：高密度盤面生成・C案(InstancedMesh)・Phase4(リプレイ再設計)のいずれか。
+     `tool/board/factory-max-*.js`が既にV3向けの検証ツールとして存在するので、
+     まずそこを読むこと。
+   - **軽微な積み残しの解消**：`data/stages.json`のid31/32の`description`
+     （「（説明文未定）」のまま）、`debug/noflag-72x144-check`ブランチのマージ要否確認。
+2. **検証の約束事は変更なし**：dev server起動は許可不要、検証後は必ず音を止める＋
+   サーバー停止（[[feedback-preview-audio]]）。**カットイン系（`js/cutin.js`・
+   `js/cutin-dialogue.js`）を触った時は特にスクリプトキャッシュに注意**：本セッションで
+   繰り返し「修正したのにブラウザが古い版を実行し続ける」事象に遭遇した
+   （原因調査に何度も時間を溶かした）。`<script src="js/cutin.js">`に検証中だけ
+   `?v=<任意の文字列>`を付けて強制リロードし、**検証完了後に必ず元へ戻してからコミット**する。
+
+---
+
+## ⚠️（旧）最初に読む：現在のブランチ状態（2026-07-21）
 
 **カレントブランチは`master`。2026-07-15〜21の作業（下記①〜⑧）はすべて
 `master`にno-ffマージ済み・ローカルの作業ブランチも削除済み。ただし
@@ -734,7 +871,7 @@ if(gameOverMistakeCell && !gameOverMistakeCell.isMine){
 
 ---
 
-## 次セッションの入口（2026-07-21 更新）
+## （旧）次セッションの入口（2026-07-21 更新。最新は冒頭「✅ V2完成」章末を参照）
 
 0. **まず `git status` と `git branch --show-current`**：カレントは`master`のはず。
    `master`はorigin/masterとpush済みで同期済み（ユーザー確認済み、2026-07-21）。
