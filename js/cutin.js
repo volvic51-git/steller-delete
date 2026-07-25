@@ -340,33 +340,15 @@ const CutIn = (() => {
     const enterFrom = V.direction === 'rtl' ? '120vw'  : '-120vw';
     const exitTo    = V.direction === 'rtl' ? '-120vw' : '120vw';
     const file = opts.image || '警告.png';
+    const src  = /[\/:]/.test(file) ? file : (_cfg.imagePath + file);
     layer.style.setProperty('--wb-track-color', V.trackColor);
-    img.src = /[\/:]/.test(file) ? file : (_cfg.imagePath + file);
 
-    // 同期FLIP：先にレイヤーを表示（display:flex）して要素を描画対象にしてから
-    // 初期位置(transition:none)→リフロー→中央(transition:0.3s)を同一tickで設定する。
-    // ※display:none のまま transform を仕込むと突入トランジションの開始フレームが無く、
-    //   中央へスライドインせずいきなり静止位置に飛ぶ（＝アニメが効かない）。
-    layer.classList.add('show');
-    img.style.transition = 'none';
-    img.style.transform  = 'translateX(' + enterFrom + ')';
-    img.style.opacity    = '0';
-    void img.offsetWidth;                         // 初期位置を確定（要素は既に描画対象）
-
-    if(opts.se) _playSe(opts.se);
-
-    // 突入（0.3s）：中央へスライドイン＋通り道ラインをフェードイン
-    img.style.transition = 'transform .3s cubic-bezier(.22,.7,.3,1), opacity .3s ease';
-    img.style.transform  = 'translateX(0)';
-    img.style.opacity    = '1';
-    layer.classList.add('warn-show');
-
-    let done = false, holdTimer = null, enterTimer = null;
+    let done = false, holdTimer = null, enterTimer = null, loadTimer = null, started = false;
     const HOLD_MS = opts.holdMs != null ? opts.holdMs : 1500;
 
     const exit = () => {
       if(done) return; done = true;
-      clearTimeout(holdTimer); clearTimeout(enterTimer);
+      clearTimeout(holdTimer); clearTimeout(enterTimer); clearTimeout(loadTimer);
       document.removeEventListener('pointerdown', onTap, true);
       _warnAbort = null;
       // 離脱（0.3s）：反対側へ抜けて消える
@@ -381,19 +363,64 @@ const CutIn = (() => {
       }, 320);
     };
     const onTap = () => exit();   // クリック/タッチで中央静止を即解除
-    _warnAbort = () => {          // cancel()用：即座に片付ける
+    // cancel()用：即座に片付ける。※画像の読み込み待ち中に呼ばれる可能性があるので
+    // 実際のアニメ開始(_begin)より前に張っておくこと。
+    _warnAbort = () => {
       if(done) return; done = true;
-      clearTimeout(holdTimer); clearTimeout(enterTimer);
+      clearTimeout(holdTimer); clearTimeout(enterTimer); clearTimeout(loadTimer);
       document.removeEventListener('pointerdown', onTap, true);
       layer.classList.remove('show', 'warn-show');
       resolve();
     };
 
-    // 突入完了後に中央静止（HOLD_MS）を開始。タップで前倒しできるよう listener を張る。
-    enterTimer = setTimeout(() => {
-      document.addEventListener('pointerdown', onTap, true);
-      holdTimer = setTimeout(exit, HOLD_MS);
-    }, 300);
+    const _begin = () => {
+      if(started || done) return;   // 読み込み待ちの間にcancel()された場合は何もしない
+      started = true;
+      clearTimeout(loadTimer);
+      // 同期FLIP：先にレイヤーを表示（display:flex）して要素を描画対象にしてから
+      // 初期位置(transition:none)→リフロー→中央(transition:0.3s)を同一tickで設定する。
+      // ※display:none のまま transform を仕込むと突入トランジションの開始フレームが無く、
+      //   中央へスライドインせずいきなり静止位置に飛ぶ（＝アニメが効かない）。
+      layer.classList.add('show');
+      img.style.transition = 'none';
+      img.style.transform  = 'translateX(' + enterFrom + ')';
+      img.style.opacity    = '0';
+      void img.offsetWidth;                       // 初期位置を確定（要素は既に描画対象）
+
+      if(opts.se) _playSe(opts.se);
+
+      // 突入（0.3s）：中央へスライドイン＋通り道ラインをフェードイン
+      img.style.transition = 'transform .3s cubic-bezier(.22,.7,.3,1), opacity .3s ease';
+      img.style.transform  = 'translateX(0)';
+      img.style.opacity    = '1';
+      layer.classList.add('warn-show');
+
+      // 突入完了後に中央静止（HOLD_MS）を開始。タップで前倒しできるよう listener を張る。
+      enterTimer = setTimeout(() => {
+        document.addEventListener('pointerdown', onTap, true);
+        holdTimer = setTimeout(exit, HOLD_MS);
+      }, 300);
+    };
+
+    // ⚠️ <img>のsrcを差し替えても、新しい画像が読み込み・デコードされるまでは
+    // 「前の画像」が描画されたまま残る。レイヤーを隠したまま準備完了を待ってから
+    // 表示・アニメ開始しないと、警告パネルを連続表示する構成（stage22/30等）で
+    // 1つ前のパネル画像がスライドインしてから正しい画像に化けて見える。
+    // ローカル/キャッシュ済みでは一瞬すぎて表面化せず、GitHub Pages等のネットワーク越し
+    // （特にスマホ）でほぼ必ず再現していた。
+    // 読み込み失敗(404)や極端に遅い回線でも演出チェーンを止めないよう、保険タイマーで必ず開始する。
+    loadTimer = setTimeout(_begin, 1500);
+    if(img.getAttribute('src') === src && img.complete && img.naturalWidth > 0){
+      _begin();                                   // 同じ画像を連続表示：待つ必要なし
+    } else {
+      img.src = src;                              // layerはまだ非表示なので旧画像は見えない
+      if(img.decode){
+        img.decode().then(_begin, _begin);        // 失敗時(404/差し替え)も演出は進める
+      } else {
+        img.onload = img.onerror = _begin;        // decode()非対応環境のフォールバック
+        if(img.complete) _begin();
+      }
+    }
   }
 
   function _startTyping(text, onDone){

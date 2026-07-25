@@ -18,11 +18,23 @@ const Dialogue = (() => {
       (_data.events || []).some(ev => IN_PLAY_TRIGGERS.has(ev.trigger && ev.trigger.type));
     CutIn.configure({ characters: _data.characters || {}, se: _data.se || {} });
     _preloadPortraits();
+    _preloadWarnImages();
   }
 
   function _preloadPortraits(){    // 初表示時のデコードjank防止
     Object.values(_data.characters || {}).forEach(ch => {
       Object.values(ch.portraits || {}).forEach(f => { new Image().src = 'assets/images/cutin/' + f; });
+    });
+  }
+
+  // 警告パネル画像も先読みしておく。CutIn.warn側は画像の準備完了を待ってから表示する作りなので、
+  // 先読みが効いていれば待ち時間ゼロで従来どおりのテンポで再生される
+  // （先読みが間に合わなくても表示が崩れることはなく、単に開始が僅かに遅れるだけ）。
+  function _preloadWarnImages(){
+    (_data.events || []).forEach(ev => {
+      if(ev.type !== 'warning') return;
+      const f = ev.image || '警告.png';
+      new Image().src = /[\/:]/.test(f) ? f : ('assets/images/cutin/' + f);
     });
   }
 
