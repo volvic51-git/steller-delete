@@ -27,7 +27,7 @@
       "trigger": {
         "type": "stage_start"
       },
-      "image": "R07.png",
+      "image": "R05.png",
       "se": "EFE_15_keihou.mp3"
     },
     {
