@@ -42,7 +42,7 @@ const SCRIPT = [
   { speaker: '有栖', portrait: 'normal1', text: '一人じゃ無理だったかな' },
   { speaker: 'ニーファ', portrait: 'normal1', text: '誰かいたの？' },
   { speaker: '有栖', portrait: 'normal1', text: 'うん' },
-  { speaker: '有栖', portrait: 'normal2', text: 'エリカっていう高校生の女の子' },
+  { speaker: '有栖', portrait: 'normal2', text: 'エリカっていう女の子' },
   { speaker: 'ニーファ', portrait: 'normal1', text: '有栖より大人？' },
   { speaker: '有栖', portrait: 'normal1', text: 'ずっとね' },
   { speaker: '有栖', portrait: 'normal2', text: '年齢も、生き方も' },
