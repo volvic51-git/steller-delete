@@ -1,0 +1,92 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "animagine-xl-4.0.safetensors"
+    }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "masterpiece, best quality, very aesthetic, absurdres, 1girl, solo, young woman, early 20s, medium hair, soft wavy hair, auburn hair, terracotta brown hair, single ahoge, amber eyes, gentle eyes, round glasses, thin frame glasses, slight smile, closed mouth, head tilt, listening, star hair ornament, eight-pointed asterisk hairclip, orange hairclip, cream cardigan, knit cardigan, white collared blouse, terracotta long skirt, holding notebook, holding pen, open notebook, sticky notes, upper body, looking at viewer, cozy library, bookshelves, warm lighting, afternoon sunlight, window light, dust particles, warm color palette, cream and terracotta, soft focus background, calm atmosphere",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Positive"
+    }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "lowres, worst quality, low quality, bad anatomy, bad hands, extra fingers, missing fingers, jpeg artifacts, signature, watermark, text, logo, username, blurry, nsfw, cleavage, revealing clothes, child, loli",
+      "clip": [
+        "1",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Negative"
+    }
+  },
+  "4": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 4
+    }
+  },
+  "5": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": 20261123,
+      "steps": 28,
+      "cfg": 5.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "normal",
+      "denoise": 1.0,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "2",
+        0
+      ],
+      "negative": [
+        "3",
+        0
+      ],
+      "latent_image": [
+        "4",
+        0
+      ]
+    }
+  },
+  "6": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "5",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    }
+  },
+  "7": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "claude_persona",
+      "images": [
+        "6",
+        0
+      ]
+    }
+  }
+}
